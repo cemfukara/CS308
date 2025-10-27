@@ -1,5 +1,18 @@
-# CS308
+# CS308 Project
 
-PLS READ ME
+This is the full-stack CS308 project repository.
 
-NO, DO NOT READ ME
+- **Frontend:** ReactJS
+- **Backend:** Node.js + Express
+- **Database:** MySQL
+
+---
+
+## 📂 Folder Structure
+
+
+- **backend/** → Node.js + Express backend  
+- **frontend/** → ReactJS frontend  
+- **database/** → MySQL schema, migrations, seeds  
+- **docs/** → project documentation  
+- **.github/** → CI/CD workflows
