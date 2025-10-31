@@ -1,1 +1,2 @@
-// Defines user-related API routes (/register, /login, /profile, etc.).
+// user-related API routes
+// app/routes/userRoutes.js
