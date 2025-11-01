@@ -4,7 +4,7 @@ const router = express.Router();
 
 // define routes
 router.get("/", (req, res) => {
-  res.send("User route works!");
+    res.send("User route works!");
 });
 
 export default router;

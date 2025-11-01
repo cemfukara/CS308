@@ -8,7 +8,7 @@ import {
     orderRoutes,
     productRoutes,
     userRoutes,
-} from "./routes/index.js";
+} from "../routes/index.js";
 
 const app = express();
 app.use(
@@ -18,6 +18,10 @@ app.use(
     })
 );
 app.use(express.json());
+
+app.get("/", (req, res) => {
+    res.send("ITS ALIVE!");
+});
 
 // Sample route
 app.use("/api/users", userRoutes);
