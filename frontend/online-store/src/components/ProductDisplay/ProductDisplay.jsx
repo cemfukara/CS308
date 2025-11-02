@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import './ProductDisplay.css';
 import { useState } from 'react';
 function ProductDisplay({ image, name, currency, price, serialNo }) {
@@ -9,28 +10,33 @@ function ProductDisplay({ image, name, currency, price, serialNo }) {
   };
 
   return (
-    <div className="product-display">
-      <img
-        className={`product-image ${loaded ? 'fade-in' : ''}`}
-        src={image}
-        alt="Product Image"
-        onLoad={handleImageLoad}
-        style={{
-          objectFit: fitMode,
-          opacity: loaded ? 1 : 0,
-        }}
-        loading="lazy"
-      />
+    <Link
+      to={`/products/${name.toLowerCase().replace(/ /g, '-')}-${serialNo}`}
+      style={{ textDecoration: 'none', color: 'inherit' }}
+    >
+      <div className="product-display">
+        <img
+          className={`product-image ${loaded ? 'fade-in' : ''}`}
+          src={image}
+          alt="Product Image"
+          onLoad={handleImageLoad}
+          style={{
+            objectFit: fitMode,
+            opacity: loaded ? 1 : 0,
+          }}
+          loading="lazy"
+        />
 
-      <div className="product-details">
-        <p className="product-serialno">{serialNo}</p>
-        <p className="product-name">{name}</p>
-        <p className="product-price">
-          {currency}
-          {price}
-        </p>
+        <div className="product-details">
+          <p className="product-serialno">{serialNo}</p>
+          <p className="product-name">{name}</p>
+          <p className="product-price">
+            {currency}
+            {price}
+          </p>
+        </div>
       </div>
-    </div>
+    </Link>
   );
 }
 
