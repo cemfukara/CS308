@@ -1,77 +1,156 @@
 import React, { useState } from "react";
-import { FaBars, FaShoppingCart, FaUser, FaHome } from "react-icons/fa";
 import { Link } from "react-router-dom";
+import { AiOutlineShoppingCart, AiOutlineUser } from "react-icons/ai";
+import "./Navbar.css";
 
-function Navbar() {
-  const [menuOpen, setMenuOpen] = useState(false);
+const Navbar = () => {
+  const [activeDropdown, setActiveDropdown] = useState(null);
 
-  const toggleMenu = () => {
-    setMenuOpen(!menuOpen);
+  const handleMouseEnter = (category) => {
+    setActiveDropdown(category);
+  };
+
+  const handleMouseLeave = () => {
+    setActiveDropdown(null);
   };
 
   return (
-    <div className="fixed top-0 left-0 w-full bg-white shadow z-50">
-      <div className="flex items-center justify-between px-6 py-4">
-        {/* Left: menu icon */}
-        <button onClick={toggleMenu} className="text-2xl md:hidden">
-          <FaBars />
-        </button>
+    <nav className="navbar">
+      {/* Top Navbar */}
+      <div className="navbar-top">
+        <div className="navbar-logo">
+          <Link to="/">TechZone</Link>
+        </div>
 
-        {/* Center-left: Logo */}
-        <h1 className="text-3xl font-bold text-blue-500 ml-4 md:ml-0">
-          Your Store
-        </h1>
+        <div className="navbar-search">
+          <input type="text" placeholder="Search for products..." />
+          <button>Search</button>
+        </div>
 
-        {/* Right: Home, Cart, Login */}
-        <div className="flex items-center space-x-6" style={{ marginRight: "40px" }}>
-          <Link to="/">
-            <FaHome className="hover:text-blue-600 transition text-2xl" />
+        <div className="navbar-icons">
+          <Link to="/auth" className="icon">
+            <AiOutlineUser />
           </Link>
-          <Link to="/cart">
-            <FaShoppingCart className="text-2xl" />
-          </Link>
-          <Link to="/login">
-            <FaUser className="text-2xl" />
+          <Link to="/cart" className="icon">
+            <AiOutlineShoppingCart />
           </Link>
         </div>
       </div>
 
-      {/* Mobile sliding menu */}
-      {menuOpen && (
-        <div className="bg-gray-100 w-64 p-6 space-y-4 shadow-lg md:hidden">
-          <h2 className="text-xl font-bold mb-4">Categories</h2>
-          <ul className="space-y-2">
-            <li>
-              <Link to="/products/tops" onClick={toggleMenu}>
-                Tops
+      {/* Category Bar */}
+      <div className="navbar-categories">
+        {/* Laptops */}
+        <div
+          className="category"
+          onMouseEnter={() => handleMouseEnter("laptops")}
+          onMouseLeave={handleMouseLeave}
+        >
+          Laptops
+          {activeDropdown === "laptops" && (
+            <div className="dropdown">
+              <Link to="/category/laptops/gaming" className="dropdown-item">
+                Gaming Laptops
               </Link>
-            </li>
-            <li>
-              <Link to="/products/bottoms" onClick={toggleMenu}>
-                Bottoms
+              <Link to="/category/laptops/ultrabook" className="dropdown-item">
+                Ultrabooks
               </Link>
-            </li>
-            <li>
-              <Link to="/products/accessories" onClick={toggleMenu}>
-                Accessories
+              <Link to="/category/laptops/business" className="dropdown-item">
+                Business Laptops
               </Link>
-            </li>
-            <li>
-              <Link to="/products/new" onClick={toggleMenu}>
-                New In
-              </Link>
-            </li>
-            <li>
-              <Link to="/products/popular" onClick={toggleMenu}>
-                Popular
-              </Link>
-            </li>
-          </ul>
+            </div>
+          )}
         </div>
-      )}
-    </div>
+
+        {/* Phones */}
+        <div
+          className="category"
+          onMouseEnter={() => handleMouseEnter("phones")}
+          onMouseLeave={handleMouseLeave}
+        >
+          Phones
+          {activeDropdown === "phones" && (
+            <div className="dropdown">
+              <Link to="/category/phones/android" className="dropdown-item">
+                Android Phones
+              </Link>
+              <Link to="/category/phones/iphone" className="dropdown-item">
+                iPhones
+              </Link>
+              <Link to="/category/phones/accessories" className="dropdown-item">
+                Phone Accessories
+              </Link>
+            </div>
+          )}
+        </div>
+
+        {/* TVs */}
+        <div
+          className="category"
+          onMouseEnter={() => handleMouseEnter("tvs")}
+          onMouseLeave={handleMouseLeave}
+        >
+          TVs
+          {activeDropdown === "tvs" && (
+            <div className="dropdown">
+              <Link to="/category/tvs/smart" className="dropdown-item">
+                Smart TVs
+              </Link>
+              <Link to="/category/tvs/4k" className="dropdown-item">
+                4K TVs
+              </Link>
+              <Link to="/category/tvs/oled" className="dropdown-item">
+                OLED TVs
+              </Link>
+            </div>
+          )}
+        </div>
+
+        {/* Computer Parts */}
+        <div
+          className="category"
+          onMouseEnter={() => handleMouseEnter("parts")}
+          onMouseLeave={handleMouseLeave}
+        >
+          Computer Parts
+          {activeDropdown === "parts" && (
+            <div className="dropdown">
+              <Link to="/category/parts/cpu" className="dropdown-item">
+                CPUs
+              </Link>
+              <Link to="/category/parts/gpu" className="dropdown-item">
+                Graphics Cards
+              </Link>
+              <Link to="/category/parts/motherboards" className="dropdown-item">
+                Motherboards
+              </Link>
+            </div>
+          )}
+        </div>
+
+        {/* Accessories */}
+        <div
+          className="category"
+          onMouseEnter={() => handleMouseEnter("accessories")}
+          onMouseLeave={handleMouseLeave}
+        >
+          Accessories
+          {activeDropdown === "accessories" && (
+            <div className="dropdown">
+              <Link to="/category/accessories/mouse" className="dropdown-item">
+                Mouse
+              </Link>
+              <Link to="/category/accessories/keyboard" className="dropdown-item">
+                Keyboard
+              </Link>
+              <Link to="/category/accessories/headphones" className="dropdown-item">
+                Headphones
+              </Link>
+            </div>
+          )}
+        </div>
+      </div>
+    </nav>
   );
-}
+};
 
 export default Navbar;
-
