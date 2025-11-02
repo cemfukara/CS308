@@ -1,99 +1,98 @@
 /* General Navbar Layout */
 .navbar {
-    font-family: system-ui, sans-serif;
-    background: white;
-    border-bottom: 1px solid #e5e5e5;
-  }
-  
-  /* ---- TOP NAVBAR ---- */
-  .navbar-top {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 12px 40px;
-  }
-  
-  .navbar-logo a {
-    text-decoration: none;
-    font-size: 1.5rem;
-    font-weight: bold;
-    color: #1a1a1a;
-  }
-  
-  .navbar-search {
-    display: flex;
-    align-items: center;
-    width: 40%;
-  }
-  
-  .navbar-search input {
-    width: 100%;
-    padding: 8px;
-    border: 1px solid #ccc;
-    border-radius: 4px 0 0 4px;
-    outline: none;
-  }
-  
-  .navbar-search button {
-    background: #ff6600;
-    border: none;
-    color: white;
-    padding: 8px 12px;
-    border-radius: 0 4px 4px 0;
-    cursor: pointer;
-  }
-  
-  .navbar-icons {
-    display: flex;
-    gap: 12px;
-  }
-  
-  .icon {
-    font-size: 1.3rem;
-    text-decoration: none;
-  }
-  
-  /* ---- CATEGORY BAR ---- */
-  .navbar-categories {
-    display: flex;
-    justify-content: center;
-    background: #f8f8f8;
-    border-top: 1px solid #ddd;
-  }
-  
-  .category {
-    position: relative;
-    padding: 10px 20px;
-    cursor: pointer;
-    font-weight: 500;
-  }
-  
-  .category:hover {
-    background: #fff;
-    border-bottom: 2px solid #ff6600;
-  }
-  
-  /* ---- DROPDOWN ---- */
-  .dropdown {
-    position: absolute;
-    top: 40px;
-    left: 0;
-    background: white;
-    border: 1px solid #ddd;
-    border-top: none;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    z-index: 10;
-    min-width: 180px;
-  }
-  
-  .dropdown-item {
-    display: block;
-    padding: 8px 12px;
-    color: #333;
-    text-decoration: none;
-  }
-  
-  .dropdown-item:hover {
-    background: #f5f5f5;
-  }
-  
+  font-family: system-ui, sans-serif;
+  background: white;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+/* ---- TOP NAVBAR ---- */
+.navbar-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 40px;
+}
+
+.navbar-logo a {
+  text-decoration: none;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #1a1a1a;
+}
+
+.navbar-search {
+  display: flex;
+  align-items: center;
+  width: 40%;
+}
+
+.navbar-search input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px 0 0 4px;
+  outline: none;
+}
+
+.navbar-search button {
+  background: #ff6600;
+  border: none;
+  color: white;
+  padding: 8px 12px;
+  border-radius: 0 4px 4px 0;
+  cursor: pointer;
+}
+
+.navbar-icons {
+  display: flex;
+  gap: 12px;
+}
+
+.icon {
+  font-size: 1.3rem;
+  text-decoration: none;
+}
+
+/* ---- CATEGORY BAR ---- */
+.navbar-categories {
+  display: flex;
+  justify-content: center;
+  background: #f8f8f8;
+  border-top: 1px solid #ddd;
+}
+
+.category {
+  position: relative;
+  padding: 10px 20px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.category:hover {
+  background: #fff;
+  border-bottom: 2px solid #ff6600;
+}
+
+/* ---- DROPDOWN ---- */
+.dropdown {
+  position: absolute;
+  top: 40px;
+  left: 0;
+  background: white;
+  border: 1px solid #ddd;
+  border-top: none;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+  min-width: 180px;
+}
+
+.dropdown-item {
+  display: block;
+  padding: 8px 12px;
+  color: #333;
+  text-decoration: none;
+}
+
+.dropdown-item:hover {
+  background: #f5f5f5;
+}

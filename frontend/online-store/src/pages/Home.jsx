@@ -1,7 +1,7 @@
-import React from "react";
-import { Link } from "react-router-dom";
-import HeroSlider from "../components/HeroSlider";
-import "./Home.css"; // optional if you have custom styles
+import React from 'react';
+import { Link } from 'react-router-dom';
+import HeroSlider from '../components/HeroSlider';
+import './Home.css'; // optional if you have custom styles
 
 function Home() {
   return (
@@ -21,9 +21,7 @@ function Home() {
 
       {/* Featured Product Section */}
       <section className="max-w-6xl mx-auto px-6 py-12">
-        <h2 className="text-2xl font-bold mb-6 text-gray-800 text-center">
-          Featured Product
-        </h2>
+        <h2 className="text-2xl font-bold mb-6 text-gray-800 text-center">Featured Product</h2>
 
         <div className="flex justify-center">
           <div className="border rounded-lg p-6 shadow-md hover:shadow-lg transition w-80 text-center bg-white">
@@ -32,9 +30,7 @@ function Home() {
               alt="Wireless Headphones"
               className="w-full h-52 object-cover rounded-md mb-4"
             />
-            <h3 className="text-lg font-semibold mb-2">
-              Wireless Headphones
-            </h3>
+            <h3 className="text-lg font-semibold mb-2">Wireless Headphones</h3>
             <p className="text-gray-600 mb-3">
               High-quality sound with Bluetooth 5.0 and noise cancellation.
             </p>

@@ -1,6 +1,6 @@
-import React from "react";
-import useCartStore from "../store/cartStore";
-import "./Cart.css";
+import React from 'react';
+import useCartStore from '../store/cartStore';
+import './Cart.css';
 
 const Cart = () => {
   const { cart, removeFromCart, clearCart } = useCartStore();
@@ -16,15 +16,13 @@ const Cart = () => {
       ) : (
         <>
           <div className="cart-items">
-            {cart.map((item) => (
+            {cart.map(item => (
               <div className="cart-item" key={item.id}>
                 <img src={item.image} alt={item.name} />
                 <div className="info">
                   <h3>{item.name}</h3>
                   <p>${item.price.toFixed(2)}</p>
-                  <button onClick={() => removeFromCart(item.id)}>
-                    Remove
-                  </button>
+                  <button onClick={() => removeFromCart(item.id)}>Remove</button>
                 </div>
               </div>
             ))}

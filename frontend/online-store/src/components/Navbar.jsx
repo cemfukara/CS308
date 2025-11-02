@@ -1,12 +1,12 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
-import { AiOutlineShoppingCart, AiOutlineUser } from "react-icons/ai";
-import "./Navbar.css";
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { AiOutlineShoppingCart, AiOutlineUser } from 'react-icons/ai';
+import './Navbar.css';
 
 const Navbar = () => {
   const [activeDropdown, setActiveDropdown] = useState(null);
 
-  const handleMouseEnter = (category) => {
+  const handleMouseEnter = category => {
     setActiveDropdown(category);
   };
 
@@ -42,11 +42,11 @@ const Navbar = () => {
         {/* Laptops */}
         <div
           className="category"
-          onMouseEnter={() => handleMouseEnter("laptops")}
+          onMouseEnter={() => handleMouseEnter('laptops')}
           onMouseLeave={handleMouseLeave}
         >
           Laptops
-          {activeDropdown === "laptops" && (
+          {activeDropdown === 'laptops' && (
             <div className="dropdown">
               <Link to="/category/laptops/gaming" className="dropdown-item">
                 Gaming Laptops
@@ -64,11 +64,11 @@ const Navbar = () => {
         {/* Phones */}
         <div
           className="category"
-          onMouseEnter={() => handleMouseEnter("phones")}
+          onMouseEnter={() => handleMouseEnter('phones')}
           onMouseLeave={handleMouseLeave}
         >
           Phones
-          {activeDropdown === "phones" && (
+          {activeDropdown === 'phones' && (
             <div className="dropdown">
               <Link to="/category/phones/android" className="dropdown-item">
                 Android Phones
@@ -86,11 +86,11 @@ const Navbar = () => {
         {/* TVs */}
         <div
           className="category"
-          onMouseEnter={() => handleMouseEnter("tvs")}
+          onMouseEnter={() => handleMouseEnter('tvs')}
           onMouseLeave={handleMouseLeave}
         >
           TVs
-          {activeDropdown === "tvs" && (
+          {activeDropdown === 'tvs' && (
             <div className="dropdown">
               <Link to="/category/tvs/smart" className="dropdown-item">
                 Smart TVs
@@ -108,11 +108,11 @@ const Navbar = () => {
         {/* Computer Parts */}
         <div
           className="category"
-          onMouseEnter={() => handleMouseEnter("parts")}
+          onMouseEnter={() => handleMouseEnter('parts')}
           onMouseLeave={handleMouseLeave}
         >
           Computer Parts
-          {activeDropdown === "parts" && (
+          {activeDropdown === 'parts' && (
             <div className="dropdown">
               <Link to="/category/parts/cpu" className="dropdown-item">
                 CPUs
@@ -130,11 +130,11 @@ const Navbar = () => {
         {/* Accessories */}
         <div
           className="category"
-          onMouseEnter={() => handleMouseEnter("accessories")}
+          onMouseEnter={() => handleMouseEnter('accessories')}
           onMouseLeave={handleMouseLeave}
         >
           Accessories
-          {activeDropdown === "accessories" && (
+          {activeDropdown === 'accessories' && (
             <div className="dropdown">
               <Link to="/category/accessories/mouse" className="dropdown-item">
                 Mouse

@@ -1,7 +1,7 @@
 /* General Home page styling */
 .home {
   background-color: #f9fafb;
-  font-family: "Inter", sans-serif;
+  font-family: 'Inter', sans-serif;
 }
 
 /* Center the Start Shopping button */
@@ -48,7 +48,9 @@
   padding: 24px;
   width: 320px;
   background-color: white;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
 }
 
 .home .border:hover {

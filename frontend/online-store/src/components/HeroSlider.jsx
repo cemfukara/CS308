@@ -1,20 +1,20 @@
-import React, { useState, useEffect } from "react";
-import hero1 from "../assets/hero1.jpg";
-import hero2 from "../assets/hero2.jpg";
-import hero3 from "../assets/hero3.jpg";
+import React, { useState, useEffect } from 'react';
+import hero1 from '../assets/hero1.jpg';
+import hero2 from '../assets/hero2.jpg';
+import hero3 from '../assets/hero3.jpg';
 
 const slides = [
   {
     image: hero1,
-    title: "Experience Premium Sound",
+    title: 'Experience Premium Sound',
   },
   {
     image: hero2,
-    title: "Smart Tech, Smart Prices",
+    title: 'Smart Tech, Smart Prices',
   },
   {
     image: hero3,
-    title: "Power Up Anytime",
+    title: 'Power Up Anytime',
   },
 ];
 
@@ -23,7 +23,7 @@ const HeroSlider = () => {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setCurrent((prev) => (prev === slides.length - 1 ? 0 : prev + 1));
+      setCurrent(prev => (prev === slides.length - 1 ? 0 : prev + 1));
     }, 4000);
     return () => clearInterval(interval);
   }, []);
@@ -34,18 +34,12 @@ const HeroSlider = () => {
         <div
           key={index}
           className={`absolute inset-0 transition-opacity duration-700 ${
-            index === current ? "opacity-100" : "opacity-0"
+            index === current ? 'opacity-100' : 'opacity-0'
           }`}
         >
-          <img
-            src={slide.image}
-            alt={slide.title}
-            className="w-full h-full object-cover"
-          />
+          <img src={slide.image} alt={slide.title} className="w-full h-full object-cover" />
           <div className="absolute inset-0 flex flex-col justify-center items-center text-center bg-black/30 text-white px-4">
-            <h1 className="text-4xl md:text-5xl font-bold drop-shadow-lg">
-              {slide.title}
-            </h1>
+            <h1 className="text-4xl md:text-5xl font-bold drop-shadow-lg">{slide.title}</h1>
           </div>
         </div>
       ))}
@@ -57,7 +51,7 @@ const HeroSlider = () => {
             key={index}
             onClick={() => setCurrent(index)}
             className={`w-3 h-3 rounded-full transition-all duration-300 ${
-              index === current ? "bg-white scale-125" : "bg-gray-400"
+              index === current ? 'bg-white scale-125' : 'bg-gray-400'
             }`}
           ></button>
         ))}
