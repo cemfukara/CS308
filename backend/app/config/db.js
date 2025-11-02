@@ -1,8 +1,6 @@
 // This file configures the connection to the MySQL database using Sequelize.
 import mysql from "mysql2";
-import dotenv from "dotenv";
-
-dotenv.config(); //Gets sensitive info from .env
+import "./dotenv.js";
 
 export const db = await mysql.createConnection({ //Connects to database
   host: process.env.DB_HOST,
