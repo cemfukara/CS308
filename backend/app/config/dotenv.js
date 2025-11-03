@@ -2,5 +2,5 @@
 //Import this file
 //      (import "../config/dotenv.js";)
 //      and use .config() to reach sensitive data.
-import dotenv from "dotenv";
+import dotenv from 'dotenv';
 dotenv.config();
