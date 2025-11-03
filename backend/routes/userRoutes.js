@@ -51,28 +51,4 @@ router.put("/profile", (req, res) => {
     });
 });
 
-/**
- * @route   GET /api/users/
- * @desc    Get all users (admin only)
- * @access  Private/Admin
- */
-router.get("/", (req, res) => {
-    // TODO: implement admin list all users logic
-    res.status(501).json({
-        message: "List users endpoint not implemented yet",
-    });
-});
-
-/**
- * @route   DELETE /api/users/:id
- * @desc    Delete a user by ID (admin only)
- * @access  Private/Admin
- */
-router.delete("/:id", (req, res) => {
-    // TODO: implement delete user by ID logic
-    res.status(501).json({
-        message: "Delete user endpoint not implemented yet",
-    });
-});
-
 export default router;
