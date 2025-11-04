@@ -19,9 +19,13 @@
     "*.{js,jsx,ts,tsx,css,json,md}": "prettier --write"
   },
   "dependencies": {
+    "@fortawesome/free-regular-svg-icons": "^7.1.0",
+    "@fortawesome/free-solid-svg-icons": "^7.1.0",
+    "@fortawesome/react-fontawesome": "^3.1.0",
     "lucide-react": "^0.552.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
+    "react-hot-toast": "^2.6.0",
     "react-icons": "^5.5.0",
     "react-router-dom": "^7.9.5",
     "react-slick": "^0.31.0",
