@@ -3,9 +3,9 @@ import useCartStore from '../store/cartStore';
 import './Cart.css';
 
 const Cart = () => {
-  const { cart, removeFromCart, clearCart } = useCartStore();
+  const { cart, updateQuantity, removeFromCart, clearCart } = useCartStore();
 
-  const total = cart.reduce((sum, item) => sum + item.price, 0);
+  const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
   return (
     <div className="cart-page">
@@ -18,10 +18,28 @@ const Cart = () => {
           <div className="cart-items">
             {cart.map(item => (
               <div className="cart-item" key={item.id}>
-                <img src={item.image} alt={item.name} />
+                <img
+                  src={new URL(`../assets/${item.image}`, import.meta.url).href}
+                  alt={item.name}
+                />
                 <div className="info">
                   <h3>{item.name}</h3>
                   <p>${item.price.toFixed(2)}</p>
+                  <div className="quantity-control">
+                    <p>Quantity:</p>
+                    <button onClick={() => updateQuantity(item.id, item.quantity - 1)}>-</button>
+                    <input
+                      type="number"
+                      min="1"
+                      value={item.quantity}
+                      onChange={e => {
+                        const value = e.target.value;
+                        const parsed = parseInt(value);
+                        updateQuantity(item.id, !parsed || parsed < 1 ? 1 : parsed);
+                      }}
+                    />
+                    <button onClick={() => updateQuantity(item.id, item.quantity + 1)}>+</button>
+                  </div>
                   <button onClick={() => removeFromCart(item.id)}>Remove</button>
                 </div>
               </div>

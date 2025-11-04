@@ -2,25 +2,31 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Home from './pages/Home';
 import Products from './pages/Products';
+import ProductDetails from './pages/ProductDetails';
 import Auth from './pages/Auth';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Cart from './pages/Cart';
+import { Toaster } from 'react-hot-toast';
 
 function App() {
   return (
-    <Router>
-      <Navbar />
+    <>
+      <Router>
+        <Navbar />
 
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/products" element={<Products />} />
-        <Route path="/auth" element={<Auth />} />
-        <Route path="/cart" element={<Cart />} />
-      </Routes>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/products" element={<Products />} />
+          <Route path="/auth" element={<Auth />} />
+          <Route path="/cart" element={<Cart />} />
+          <Route path={`/products/:id`} element={<ProductDetails />} />
+        </Routes>
 
-      <Footer />
-    </Router>
+        <Footer />
+      </Router>
+      <Toaster position="top-right" />
+    </>
   );
 }
 

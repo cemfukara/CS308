@@ -100,3 +100,39 @@
   color: #64748b;
   font-size: 1.1rem;
 }
+
+.quantity-control {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.quantity-control input {
+  width: 30px;
+  text-align: center;
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.quantity-control p {
+  margin-top: 10px;
+  margin-right: 3px;
+}
+
+.quantity-control button {
+  padding: 4px 10px;
+  font-size: 18px;
+  border-radius: 4px;
+  text-align: center;
+  justify-content: center;
+}
+
+.quantity-control input::-webkit-inner-spin-button,
+.quantity-control input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.quantity-control input {
+  appearance: inherit;
+  -moz-appearance: textfield;
+}
