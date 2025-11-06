@@ -32,11 +32,11 @@ function ProductDetails() {
             alignItems: 'center',
             gap: '14px',
             background: '#969696',
-            border: '1px solid #00c853',
+
             color: '#fff',
             borderRadius: '10px',
             padding: '14px 18px',
-            boxShadow: '0 0 12px rgba(0, 255, 128, 0.25)',
+            boxShadow: '0 0 12px #241111bf',
             animation: t.visible ? 'fadeIn 0.3s ease' : 'fadeOut 0.3s ease forwards',
             width: '320px',
           }}
@@ -49,7 +49,7 @@ function ProductDetails() {
               height: '60px',
               borderRadius: '8px',
               objectFit: 'cover',
-              border: '1px solid #00c853',
+              border: '1px solid #241111bf',
             }}
           />
           <div style={{ flex: 1 }}>
@@ -66,7 +66,7 @@ function ProductDetails() {
             </p>
             <button
               style={{
-                background: 'linear-gradient(135deg, #00e676, #00c853)',
+                backgroundColor: '#2337eedb',
                 border: 'none',
                 fontFamily: 'Exo 2',
                 color: '#fff',
@@ -91,11 +91,10 @@ function ProductDetails() {
               fontWeight: 'bold',
               fontFamily: 'Exo 2',
               color: '#00e676',
-              webkitTextStroke: '0.3px black',
             }}
           >
             {product.currency}
-            {product.price}
+            {product.price.toFixed(2)}
           </p>
         </div>
       ),
