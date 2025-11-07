@@ -23,7 +23,7 @@ app.get("/", (req, res) => {
     res.send("ITS ALIVE!");
 });
 
-// Sample route
+// All routes to be used
 app.use("/api/users", userRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/cart", cartRoutes);

@@ -9,7 +9,7 @@ export async function fetchProducts(req, res) {
     if (category) {
       products = await getProductsByCategory(category);
     } else {
-      products = await getAllProducts();
+      products = await getBrieflyProducts();
     }
 
     res.json(products);
