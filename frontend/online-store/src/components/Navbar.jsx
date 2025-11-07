@@ -10,17 +10,24 @@ const Navbar = () => {
     JSON.parse(localStorage.getItem('loggedInUser')) || null
   );
 
-  // ✅ Ensure navbar updates when login/logout happens
+  // ✅ Keep login state in sync even after refresh or between tabs
   useEffect(() => {
     const handleStorageChange = () => {
       const user = JSON.parse(localStorage.getItem('loggedInUser'));
       setLoggedInUser(user);
     };
+
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
-  // ✅ Profile icon click behavior
+  // ✅ Always check for loggedInUser on component load
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem('loggedInUser'));
+    if (user) setLoggedInUser(user);
+  }, []);
+
+  // ✅ Clicking the user icon takes you to profile if logged in, else to Auth
   const handleProfileClick = () => {
     if (loggedInUser) navigate('/account/profile');
     else navigate('/auth');
@@ -42,14 +49,14 @@ const Navbar = () => {
         </div>
 
         <div className="navbar-right">
-          {/* ✅ Profile icon (dynamic redirect) */}
+          {/* 👤 Profile icon */}
           <span className="nav-link" aria-label="Login" onClick={handleProfileClick}>
             <span className="nav-icon">
               <FontAwesomeIcon icon={faUser} />
             </span>
           </span>
 
-          {/* 🛒 Cart icon unchanged */}
+          {/* 🛒 Cart icon */}
           <Link to="/cart" className="nav-link" aria-label="Cart">
             <span className="nav-icon">
               <FontAwesomeIcon icon={faCartShopping} />
@@ -58,7 +65,7 @@ const Navbar = () => {
         </div>
       </nav>
 
-      {/* ---------- CATEGORY BAR BELOW NAV ---------- */}
+      {/* ---------- CATEGORY BAR ---------- */}
       <div className="category-bar">
         <ul className="categories">
           <li className="category-item">
