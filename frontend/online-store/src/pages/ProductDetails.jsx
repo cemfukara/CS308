@@ -60,20 +60,86 @@ function ProductDetails() {
 
   const handleAddToCart = () => {
     addToCart(product, 1);
+    toast.custom(
+      t => (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '14px',
+            background: '#969696',
 
-    toast.success(`${product.name} has been added to your cart 🛒`, {
-      position: 'top-right',
-      duration: 2500,
-      style: {
-        borderRadius: '10px',
-        background: '#333',
-        color: '#fff',
-        fontFamily: 'Exo 2, sans-serif',
-        fontWeight: 500,
-      },
-    });
+            color: '#fff',
+            borderRadius: '10px',
+            padding: '14px 18px',
+            boxShadow: '0 0 12px #241111bf',
+            animation: t.visible ? 'fadeIn 0.3s ease' : 'fadeOut 0.3s ease forwards',
+            width: '320px',
+          }}
+        >
+          <img
+            src={new URL(`../assets/${product.image}`, import.meta.url).href}
+            alt={product.name}
+            style={{
+              width: '60px',
+              height: '60px',
+              borderRadius: '8px',
+              objectFit: 'cover',
+              border: '1px solid #241111bf',
+            }}
+          />
+          <div style={{ flex: 1 }}>
+            <p style={{ margin: 0, fontWeight: 600, fontFamily: 'Exo 2' }}>{product.name}</p>
+            <p
+              style={{
+                margin: '4px 0 8px 0',
+                color: '#b2ff59',
+                fontSize: '14px',
+                fontFamily: 'Exo 2',
+              }}
+            >
+              Added to cart
+            </p>
+            <button
+              style={{
+                backgroundColor: '#2337eedb',
+                border: 'none',
+                fontFamily: 'Exo 2',
+                color: '#fff',
+                borderRadius: '6px',
+                padding: '6px 10px',
+                cursor: 'pointer',
+                fontWeight: '600',
+                transition: '0.25s',
+              }}
+              onClick={() => {
+                toast.dismiss(t.id);
+                navigate('/cart');
+              }}
+            >
+              View Cart
+            </button>
+          </div>
+          <p
+            style={{
+              flex: 0.5,
+              fontSize: 32,
+              fontWeight: 'bold',
+              fontFamily: 'Exo 2',
+              color: '#00e676',
+            }}
+          >
+            {product.currency}
+            {product.price.toFixed(2)}
+          </p>
+        </div>
+      ),
+      {
+        duration: 2500,
+        position: 'top-right',
+      }
+    );
   };
-
   return (
     <div className="product-description">
       <div className="product-img-container">
