@@ -1,98 +1,227 @@
-/* General Navbar Layout */
-.navbar {
-  font-family: system-ui, sans-serif;
-  background: white;
-  border-bottom: 1px solid #e5e5e5;
+/* ===========================
+   MAIN NAVBAR WRAPPER
+   =========================== */
+.navbar-wrapper {
+  width: 100%;
+  font-family: 'Inter', sans-serif;
 }
 
-/* ---- TOP NAVBAR ---- */
-.navbar-top {
+/* ===========================
+     TOP NAVBAR
+     =========================== */
+.navbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 40px;
+  padding: 14px 50px;
+  background-color: #ffffff;
+  border-bottom: 1px solid #ddd;
 }
 
-.navbar-logo a {
+/* Left section (logo) */
+.navbar-left .logo {
+  font-size: 22px;
+  font-weight: 700;
+  color: #1565c0;
   text-decoration: none;
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: #1a1a1a;
 }
 
-.navbar-search {
+.navbar-left .logo:hover {
+  color: #0d47a1;
+}
+
+/* Center section (search bar) */
+.navbar-center {
   display: flex;
   align-items: center;
-  width: 40%;
+  gap: 10px;
 }
 
-.navbar-search input {
-  width: 100%;
-  padding: 8px;
+.search-input {
+  width: 280px;
+  padding: 8px 12px;
+  border-radius: 5px;
   border: 1px solid #ccc;
-  border-radius: 4px 0 0 4px;
+  font-size: 14px;
   outline: none;
+  transition: border-color 0.2s ease;
 }
 
-.navbar-search button {
-  background: #ff6600;
-  border: none;
+.search-input:focus {
+  border-color: #1565c0;
+}
+
+.search-button {
+  padding: 8px 14px;
+  background-color: #1565c0;
   color: white;
-  padding: 8px 12px;
-  border-radius: 0 4px 4px 0;
+  border: none;
+  border-radius: 5px;
   cursor: pointer;
-}
-
-.navbar-icons {
-  display: flex;
-  gap: 12px;
-}
-
-.icon {
-  font-size: 1.3rem;
-  text-decoration: none;
-}
-
-/* ---- CATEGORY BAR ---- */
-.navbar-categories {
-  display: flex;
-  justify-content: center;
-  background: #f8f8f8;
-  border-top: 1px solid #ddd;
-}
-
-.category {
-  position: relative;
-  padding: 10px 20px;
-  cursor: pointer;
+  font-size: 14px;
   font-weight: 500;
+  transition: background-color 0.2s ease;
 }
 
-.category:hover {
-  background: #fff;
-  border-bottom: 2px solid #ff6600;
+.search-button:hover {
+  background-color: #0d47a1;
 }
 
-/* ---- DROPDOWN ---- */
-.dropdown {
+/* Right section (icons) */
+.navbar-right {
+  display: flex;
+  align-items: center;
+  gap: 25px;
+}
+
+.nav-link {
+  color: #222;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.nav-icon {
+  font-size: 18px;
+  transition: color 0.2s ease;
+}
+
+.nav-link:hover .nav-icon {
+  color: #1565c0;
+}
+
+/* ===========================
+     CATEGORY BAR BELOW NAVBAR
+     =========================== */
+.category-bar {
+  background-color: #f8f9fa;
+  border-top: 1px solid #ddd;
+  border-bottom: 1px solid #ddd;
+}
+
+.categories {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 50px;
+  list-style: none;
+  margin: 0;
+  padding: 12px 0;
+}
+
+/* Each main category item */
+.category-item {
+  position: relative;
+  /* create a small invisible hover-bridge to the dropdown so it doesn't collapse */
+}
+
+.category-item a,
+.category-item > span {
+  color: #222;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 15px;
+  transition: color 0.2s ease;
+}
+
+/* Hand cursor for non-link headers (Phones / Computers / Accessories) */
+.category-item > span {
+  cursor: pointer;
+}
+
+.category-item a:hover,
+.category-item > span:hover {
+  color: #1565c0;
+}
+
+/* ===========================
+     SUBCATEGORIES (Dropdowns)
+     =========================== */
+.subcategory {
+  display: none;
   position: absolute;
-  top: 40px;
   left: 0;
-  background: white;
+  top: calc(100% + 8px); /* sits right below the header */
+  background-color: #fff;
   border: 1px solid #ddd;
-  border-top: none;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  z-index: 10;
+  list-style: none;
+  padding: 10px 0;
   min-width: 180px;
+  z-index: 50;
 }
 
-.dropdown-item {
+/* Keep dropdown open when moving mouse to it */
+.category-item:hover .subcategory,
+.subcategory:hover {
   display: block;
-  padding: 8px 12px;
+}
+
+/* Invisible hover bridge to prevent flicker between header and dropdown */
+.category-item::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  height: 8px; /* matches the gap above */
+  background: transparent;
+  z-index: 40;
+}
+
+.subcategory li {
+  padding: 0; /* reset so link controls spacing */
+}
+
+.subcategory li a {
   color: #333;
   text-decoration: none;
+  font-size: 14px;
+  display: block;
+  padding: 8px 16px;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
 }
 
-.dropdown-item:hover {
-  background: #f5f5f5;
+.subcategory li a:hover {
+  color: #1565c0;
+  background-color: #f6f9ff;
+}
+
+/* ===========================
+     RESPONSIVE DESIGN
+     =========================== */
+@media (max-width: 1024px) {
+  .navbar {
+    flex-direction: column;
+    gap: 12px;
+    padding: 15px 25px;
+  }
+
+  .navbar-center {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .categories {
+    flex-wrap: wrap;
+    gap: 25px;
+  }
+}
+
+@media (max-width: 600px) {
+  .search-input {
+    width: 180px;
+  }
+
+  .categories {
+    flex-wrap: wrap;
+    gap: 18px;
+  }
+
+  .category-item {
+    font-size: 14px;
+  }
 }

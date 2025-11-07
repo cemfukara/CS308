@@ -1,24 +1,49 @@
-// src/pages/AboutUs.jsx
 import React from 'react';
-import Navbar from '../components/Navbar';
-import Footer from '../components/Footer';
+import './AboutUs.css';
 
-function AboutUs() {
+const AboutUs = () => {
   return (
-    <div className="flex flex-col min-h-screen bg-gray-100">
-      <Navbar />
-      <main className="flex-1 flex flex-col items-center justify-center px-6 pt-36 text-center">
-        <h1 className="text-4xl font-bold text-blue-500 mb-6">About TechZone</h1>
-        <p className="max-w-2xl text-gray-700 text-lg leading-relaxed">
-          TechZone is your trusted source for the latest in technology. We specialize in laptops,
-          smartphones, accessories, and PC components — combining quality, affordability, and
-          innovation. Our mission is to help people connect with the tools they need to stay ahead
-          in today’s digital world.
+    <div className="about-page">
+      <div className="about-container">
+        <h1>About TechZone</h1>
+        <p className="intro-text">
+          At <strong>TechZone</strong>, we believe technology should be accessible, reliable, and
+          exciting. Since our founding, we’ve been committed to connecting customers with the most
+          innovative devices and electronics from trusted global brands.
         </p>
-      </main>
-      <Footer />
+
+        <div className="about-sections">
+          <div className="about-card">
+            <h3>Our Mission</h3>
+            <p>
+              To empower people through technology by providing the best products, prices, and
+              service possible. We aim to simplify shopping for electronics while delivering
+              exceptional customer care.
+            </p>
+          </div>
+
+          <div className="about-card">
+            <h3>What We Offer</h3>
+            <p>
+              From smartphones and laptops to accessories and gaming gear, we provide a wide range
+              of products to suit every need. Our team continuously updates our catalog with the
+              latest releases to keep you ahead of the curve.
+            </p>
+          </div>
+
+          <div className="about-card">
+            <h3>Why Choose Us?</h3>
+            <ul>
+              <li>Trusted by thousands of customers nationwide</li>
+              <li>Fast shipping and easy returns</li>
+              <li>Secure payments and transparent pricing</li>
+              <li>Friendly customer support</li>
+            </ul>
+          </div>
+        </div>
+      </div>
     </div>
   );
-}
+};
 
 export default AboutUs;

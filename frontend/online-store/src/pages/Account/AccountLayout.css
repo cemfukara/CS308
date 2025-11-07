@@ -1,0 +1,13 @@
+.account-layout {
+  display: flex;
+  min-height: 80vh;
+  background-color: #f8f9fa;
+  font-family: 'Inter', sans-serif;
+}
+
+.account-content {
+  flex: 1;
+  padding: 40px 50px;
+  background-color: #ffffff;
+  border-left: 1px solid #e0e0e0;
+}
