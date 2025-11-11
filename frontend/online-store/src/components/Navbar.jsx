@@ -1,41 +1,39 @@
-import React, { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUser, faCartShopping } from '@fortawesome/free-solid-svg-icons';
-import './Navbar.css';
+import React, { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faUser, faCartShopping } from "@fortawesome/free-solid-svg-icons";
+import "./Navbar.css";
 
 const Navbar = () => {
   const navigate = useNavigate();
   const [loggedInUser, setLoggedInUser] = useState(
-    JSON.parse(localStorage.getItem('loggedInUser')) || null
+    JSON.parse(localStorage.getItem("loggedInUser"))
   );
 
-  // ✅ Keep login state in sync even after refresh or between tabs
+  // ✅ Keep login state synced between tabs or refreshes
   useEffect(() => {
     const handleStorageChange = () => {
-      const user = JSON.parse(localStorage.getItem('loggedInUser'));
-      setLoggedInUser(user);
+      setLoggedInUser(JSON.parse(localStorage.getItem("loggedInUser")));
     };
-
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
 
-  // ✅ Always check for loggedInUser on component load
+  // ✅ Refresh check when Navbar mounts
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem('loggedInUser'));
+    const user = JSON.parse(localStorage.getItem("loggedInUser"));
     if (user) setLoggedInUser(user);
   }, []);
 
-  // ✅ Clicking the user icon takes you to profile if logged in, else to Auth
+  // ✅ Handle Profile icon click correctly
   const handleProfileClick = () => {
-    if (loggedInUser) navigate('/account/profile');
-    else navigate('/auth');
+    const user = JSON.parse(localStorage.getItem("loggedInUser"));
+    if (user) navigate("/account/profile");
+    else navigate("/auth");
   };
 
   return (
     <div className="navbar-wrapper">
-      {/* ---------- TOP NAVBAR ---------- */}
       <nav className="navbar">
         <div className="navbar-left">
           <Link to="/" className="logo">
@@ -44,13 +42,21 @@ const Navbar = () => {
         </div>
 
         <div className="navbar-center">
-          <input type="text" placeholder="Search for products..." className="search-input" />
+          <input
+            type="text"
+            placeholder="Search for products..."
+            className="search-input"
+          />
           <button className="search-button">Search</button>
         </div>
 
         <div className="navbar-right">
           {/* 👤 Profile icon */}
-          <span className="nav-link" aria-label="Login" onClick={handleProfileClick}>
+          <span
+            className="nav-link"
+            aria-label="Login"
+            onClick={handleProfileClick}
+          >
             <span className="nav-icon">
               <FontAwesomeIcon icon={faUser} />
             </span>
@@ -65,13 +71,11 @@ const Navbar = () => {
         </div>
       </nav>
 
-      {/* ---------- CATEGORY BAR ---------- */}
       <div className="category-bar">
         <ul className="categories">
           <li className="category-item">
             <Link to="/products">All Products</Link>
           </li>
-
           <li className="category-item">
             <span>Phones</span>
             <ul className="subcategory">
@@ -86,7 +90,6 @@ const Navbar = () => {
               </li>
             </ul>
           </li>
-
           <li className="category-item">
             <span>Computers</span>
             <ul className="subcategory">
@@ -101,7 +104,6 @@ const Navbar = () => {
               </li>
             </ul>
           </li>
-
           <li className="category-item">
             <span>Accessories</span>
             <ul className="subcategory">
