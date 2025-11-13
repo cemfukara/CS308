@@ -32,9 +32,7 @@ const useCartStore = create((set, get) => ({
   },
 
   updateQuantity: (id, quantity) => {
-    const cart = get().cart.map(p =>
-      p.id === id ? { ...p, quantity: Math.max(1, quantity) } : p
-    );
+    const cart = get().cart.map(p => (p.id === id ? { ...p, quantity: Math.max(1, quantity) } : p));
 
     saveCart(cart);
     set({ cart });

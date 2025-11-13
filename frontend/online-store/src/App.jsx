@@ -1,4 +1,3 @@
-// src/App.jsx
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 
@@ -27,10 +26,13 @@ import Orders from './pages/Account/Orders';
 import Support from './pages/Account/Support';
 import Logout from './pages/Account/Logout';
 
+// ✅ New: Order details page
+import OrderDetails from './pages/Account/OrderDetails';
+
 function App() {
   return (
     <Router>
-      {/* Global toast container for popups (Add to cart, favorites, profile updates, etc.) */}
+      {/* Global toast container */}
       <Toaster position="top-right" reverseOrder={false} />
 
       <Navbar />
@@ -39,7 +41,6 @@ function App() {
         {/* Public routes */}
         <Route path="/" element={<Home />} />
         <Route path="/products" element={<Products />} />
-        {/* product detail expects id like /products/Name-12345 (your existing pattern) */}
         <Route path="/products/:id" element={<ProductDetails />} />
         <Route path="/cart" element={<Cart />} />
         <Route path="/auth" element={<Auth />} />
@@ -48,20 +49,20 @@ function App() {
         <Route path="/terms-policy" element={<TermsPolicy />} />
         <Route path="/contact" element={<Contact />} />
 
-        {/* Account routes (keep EXACT slugs you were using before) */}
+        {/* Account routes (nested under /account) */}
         <Route path="/account" element={<AccountLayout />}>
-          {/* default redirect to profile for /account */}
           <Route index element={<Navigate to="profile" replace />} />
           <Route path="profile" element={<ProfileInfo />} />
           <Route path="password" element={<ChangePassword />} />
           <Route path="addresses" element={<Addresses />} />
           <Route path="favorites" element={<Favorites />} />
           <Route path="orders" element={<Orders />} />
+          <Route path="orders/:id" element={<OrderDetails />} /> {/* ✅ Added */}
           <Route path="support" element={<Support />} />
           <Route path="logout" element={<Logout />} />
         </Route>
 
-        {/* Fallback: unknown routes go home */}
+        {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
 
