@@ -1,5 +1,5 @@
 // This file configures the connection to the MySQL database using Sequelize.
-import mysql from 'mysql2';
+import mysql from 'mysql2/promise';
 import './dotenv.js';
 
 export const db = await mysql.createConnection({
