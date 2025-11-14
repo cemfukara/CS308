@@ -2,6 +2,7 @@
 //app/app.js → should only handle app configuration and middleware setup (no server start logic here).
 import express from 'express';
 import cors from 'cors'; //Cross Origin Resource Sharing, Frontend can make a request
+import cookieParser from 'cookie-parser';
 import {
     adminRoutes,
     cartRoutes,
@@ -9,15 +10,19 @@ import {
     productRoutes,
     userRoutes,
 } from '../routes/index.js';
-
 const app = express();
+
+app.use(express.json());
+
 app.use(
     cors({
         //Connection with frontend only in the given port
         origin: 'http://localhost:2000',
+        credentials: true,
     })
 );
-app.use(express.json());
+
+app.use(cookieParser());
 
 app.get('/', (req, res) => {
     res.send('ITS ALIVE!');

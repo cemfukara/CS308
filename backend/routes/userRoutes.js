@@ -1,5 +1,6 @@
 // Defines user-related API routes (/register, /login, /profile, etc.).
 import express from 'express';
+import { login, register } from '../app/controllers/userController.js';
 
 const router = express.Router();
 
@@ -8,22 +9,14 @@ const router = express.Router();
  * @desc    Register a new user
  * @access  Public
  */
-router.post('/register', (req, res) => {
-    // TODO: implement user registration logic
-    // Expected: name, email, password
-    res.status(501).json({ message: 'Register endpoint not implemented yet' });
-});
+router.post('/register', register);
 
 /**
  * @route   POST /api/users/login
  * @desc    Authenticate user and return token
  * @access  Public
  */
-router.post('/login', (req, res) => {
-    // TODO: implement login logic
-    // Expected: email, password
-    res.status(501).json({ message: 'Login endpoint not implemented yet' });
-});
+router.post('/login', login);
 
 /**
  * @route   GET /api/users/profile
