@@ -1,7 +1,7 @@
 // Defines routes for order handling (/api/orders, /api/orders/:id).
 // app/routes/orderRoutes.js
 
-import express from "express";
+import express from 'express';
 
 const router = express.Router();
 
@@ -10,9 +10,9 @@ const router = express.Router();
  * @desc    Get all orders for logged-in user
  * @access  Private
  */
-router.get("/", (req, res) => {
+router.get('/', (req, res) => {
     // TODO: implement get all user orders logic
-    res.status(501).json({ message: "Get user orders not implemented yet" });
+    res.status(501).json({ message: 'Get user orders not implemented yet' });
 });
 
 /**
@@ -20,9 +20,9 @@ router.get("/", (req, res) => {
  * @desc    Get order details by ID
  * @access  Private
  */
-router.get("/:id", (req, res) => {
+router.get('/:id', (req, res) => {
     // TODO: implement get order by ID logic
-    res.status(501).json({ message: "Get order details not implemented yet" });
+    res.status(501).json({ message: 'Get order details not implemented yet' });
 });
 
 /**
@@ -30,9 +30,9 @@ router.get("/:id", (req, res) => {
  * @desc    Create a new order (checkout)
  * @access  Private
  */
-router.post("/", (req, res) => {
+router.post('/', (req, res) => {
     // TODO: implement create order logic
-    res.status(501).json({ message: "Create order not implemented yet" });
+    res.status(501).json({ message: 'Create order not implemented yet' });
 });
 
 /**
@@ -40,10 +40,10 @@ router.post("/", (req, res) => {
  * @desc    Update order status (e.g., shipped, delivered)
  * @access  Private/Admin
  */
-router.patch("/:id/status", (req, res) => {
+router.patch('/:id/status', (req, res) => {
     // TODO: implement update order status logic
     res.status(501).json({
-        message: "Update order status not implemented yet",
+        message: 'Update order status not implemented yet',
     });
 });
 
@@ -52,9 +52,9 @@ router.patch("/:id/status", (req, res) => {
  * @desc    Cancel an order
  * @access  Private
  */
-router.delete("/:id", (req, res) => {
+router.delete('/:id', (req, res) => {
     // TODO: implement cancel order logic
-    res.status(501).json({ message: "Cancel order not implemented yet" });
+    res.status(501).json({ message: 'Cancel order not implemented yet' });
 });
 
 export default router;
