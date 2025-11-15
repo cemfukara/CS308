@@ -3,84 +3,84 @@
     "serialNo": "KB67890",
     "name": "Mechanical Keyboard",
     "price": 89.0,
-    "currency": "USD",
+    "currency": "$",
     "image": "KB.jpg"
   },
   {
     "serialNo": "MS12345",
     "name": "Wireless Mouse",
     "price": 49.0,
-    "currency": "USD",
+    "currency": "$",
     "image": "WM1.jpg"
   },
   {
     "serialNo": "FG12345",
     "name": "Wireless Mouse",
     "price": 49.0,
-    "currency": "USD",
+    "currency": "$",
     "image": "WM2.jpg"
   },
   {
     "serialNo": "KB67890",
     "name": "Mechanical Keyboard",
     "price": 89.0,
-    "currency": "USD",
+    "currency": "$",
     "image": "KB.jpg"
   },
   {
     "serialNo": "MS12345",
     "name": "Wireless Mouse",
     "price": 49.0,
-    "currency": "USD",
+    "currency": "$",
     "image": "WM1.jpg"
   },
   {
     "serialNo": "FG12345",
     "name": "Wireless Mouse",
     "price": 49.0,
-    "currency": "USD",
+    "currency": "$",
     "image": "WM2.jpg"
   },
   {
     "serialNo": "KB67890",
     "name": "Mechanical Keyboard",
     "price": 89.0,
-    "currency": "USD",
+    "currency": "$",
     "image": "KB.jpg"
   },
   {
     "serialNo": "MS12345",
     "name": "Wireless Mouse",
     "price": 49.0,
-    "currency": "USD",
+    "currency": "$",
     "image": "WM1.jpg"
   },
   {
     "serialNo": "FG12345",
     "name": "Wireless Mouse",
     "price": 49.0,
-    "currency": "USD",
+    "currency": "$",
     "image": "WM2.jpg"
   },
   {
     "serialNo": "KB67890",
     "name": "Mechanical Keyboard",
     "price": 89.0,
-    "currency": "USD",
+    "currency": "$",
     "image": "KB.jpg"
   },
   {
     "serialNo": "MS12345",
     "name": "Wireless Mouse",
     "price": 49.0,
-    "currency": "USD",
+    "currency": "$",
     "image": "WM1.jpg"
   },
   {
     "serialNo": "FG12345",
     "name": "Wireless Mouse",
     "price": 49.0,
-    "currency": "USD",
+    "currency": "$",
     "image": "WM2.jpg"
   }
 ]

@@ -8,7 +8,15 @@ export async function getAllProducts() {
     return rows;
 }
 
-// (Optional) Filter by category
+//Function to fetch all products' only name, model and price
+export async function getBrieflyProducts() {
+  const [rows] = await db
+  .promise()
+  .query("SELECT name, model, price FROM products");
+  return rows;
+}
+
+// (Optional) Filter by category, only get name, model and price
 export async function getProductsByCategory(categoryId) {
     const [rows] = await db.query(
         'SELECT * FROM products WHERE category_id = ?',

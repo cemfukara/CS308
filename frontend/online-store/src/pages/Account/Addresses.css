@@ -1,0 +1,109 @@
+.address-card {
+  width: 700px;
+  margin: 40px auto;
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 14px;
+  padding: 26px 28px 30px;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.06);
+}
+
+.address-title {
+  text-align: center;
+  margin-bottom: 20px;
+  font-weight: 700;
+  font-size: 24px;
+}
+
+.address-input-group {
+  display: flex;
+  gap: 10px;
+}
+
+.address-input {
+  flex: 1;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #dcdcdc;
+}
+
+.btn-add {
+  background: #1565c0;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 16px;
+  cursor: pointer;
+}
+
+.btn-add:hover {
+  background: #0d47a1;
+}
+
+.address-list {
+  list-style: none;
+  padding: 0;
+  margin-top: 20px;
+}
+
+.address-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f9f9f9;
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 10px;
+}
+
+.btn-delete {
+  background: #e53935;
+  border: none;
+  color: #fff;
+  border-radius: 6px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.btn-delete:hover {
+  background: #c62828;
+}
+
+.no-address {
+  text-align: center;
+  color: #666;
+  margin-top: 15px;
+}
+
+/* ✅ Reuse success popup */
+.popup-success {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  background: #12b886;
+  color: white;
+  padding: 14px 20px;
+  border-radius: 8px;
+  font-weight: 500;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  animation: fadeInOut 2s ease;
+  z-index: 10000;
+}
+
+@keyframes fadeInOut {
+  0% {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+  10% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+}

@@ -1,0 +1,78 @@
+.account-sidebar {
+  width: 260px;
+  background-color: #fff;
+  border-right: 1px solid #ddd;
+  padding: 25px 20px;
+  font-family: 'Inter', sans-serif;
+}
+
+.account-sidebar h3 {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 25px;
+  color: #000;
+  text-align: left;
+}
+
+.account-sidebar ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.account-sidebar ul li {
+  border-bottom: 1px solid #eee;
+}
+
+.account-sidebar ul li:last-child {
+  border-bottom: none;
+}
+
+.account-sidebar ul li a {
+  display: block;
+  text-decoration: none;
+  color: #222;
+  padding: 12px 10px;
+  font-size: 15px;
+  font-weight: 500;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.account-sidebar ul li a:hover {
+  background-color: #f2f4f7;
+  color: #0d47a1;
+}
+
+.account-sidebar ul li a.active {
+  color: #0d47a1;
+  font-weight: 600;
+  background-color: #f0f4ff;
+  border-left: 3px solid #0d47a1;
+}
+
+/* ✅ Updated Logout Button — Blue Theme */
+.logout-btn {
+  margin-top: 30px;
+  width: 100%;
+  padding: 12px;
+  background-color: #1565c0; /* main blue */
+  color: white;
+  font-size: 15px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    transform 0.1s ease;
+}
+
+.logout-btn:hover {
+  background-color: #0d47a1; /* darker hover blue */
+  transform: translateY(-1px);
+}
+
+.logout-btn:active {
+  transform: scale(0.98);
+}
