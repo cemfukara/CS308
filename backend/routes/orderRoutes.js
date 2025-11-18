@@ -1,59 +1,47 @@
 // Defines routes for order handling (/api/orders, /api/orders/:id).
-// app/routes/orderRoutes.js
-
 import express from 'express';
+import {
+    getOrders,
+    getOrderDetails,
+    checkoutOrder
+} from '../controllers/orderController.js';
 
 const router = express.Router();
 
 /**
  * @route   GET /api/orders
- * @desc    Get all orders for logged-in user
+ * @desc    Get all orders for logged-in user (except carts)
  * @access  Private
  */
-router.get('/', (req, res) => {
-    // TODO: implement get all user orders logic
-    res.status(501).json({ message: 'Get user orders not implemented yet' });
-});
+router.get('/', getOrders);
 
 /**
  * @route   GET /api/orders/:id
- * @desc    Get order details by ID
+ * @desc    Get order details by ID (items inside)
  * @access  Private
  */
-router.get('/:id', (req, res) => {
-    // TODO: implement get order by ID logic
-    res.status(501).json({ message: 'Get order details not implemented yet' });
-});
+router.get('/:id', getOrderDetails);
 
 /**
  * @route   POST /api/orders
- * @desc    Create a new order (checkout)
+ * @desc    Checkout current cart → create order / update status
  * @access  Private
  */
-router.post('/', (req, res) => {
-    // TODO: implement create order logic
-    res.status(501).json({ message: 'Create order not implemented yet' });
-});
+router.post('/', checkoutOrder);
 
 /**
  * @route   PATCH /api/orders/:id/status
  * @desc    Update order status (e.g., shipped, delivered)
  * @access  Private/Admin
  */
-router.patch('/:id/status', (req, res) => {
-    // TODO: implement update order status logic
-    res.status(501).json({
-        message: 'Update order status not implemented yet',
-    });
-});
+router.patch('/:id/status', checkoutOrder); // same controller can be used
 
 /**
  * @route   DELETE /api/orders/:id
- * @desc    Cancel an order
+ * @desc    Cancel an order (future implementation)
  * @access  Private
  */
 router.delete('/:id', (req, res) => {
-    // TODO: implement cancel order logic
     res.status(501).json({ message: 'Cancel order not implemented yet' });
 });
 
