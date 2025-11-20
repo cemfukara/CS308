@@ -19,7 +19,11 @@
 
 ## Authentication
 
-**To be implemented**
+**WIP**
+
+### JWT Token Contents
+
+**WIP**
 
 # API Endpoints
 
@@ -44,6 +48,67 @@ api/users/
 |  POST  |  /login   |  Authenticate user and return token  | Public  |
 |  GET   | /profile  |  Get logged-in user's profile info   | Private |
 |  PUT   | /profile  | Update logged-in user's profile info | Private |
+
+### POST /users/register
+
+Registers the user with given credentials
+
+-   Request Body:
+
+    ```
+        {
+            "email": "user_email",
+            "password": "user_password"
+        }
+    ```
+
+-   Response Body (+ JWT cookie):
+
+    ```
+    {
+        "message": "User registered successfully",
+        "user": {
+            "user_id": 7,
+            "email": "user_email",
+            "role": "customer"
+        }
+    }
+    ```
+
+-   Error:
+    ```
+    {message: 'Email and password required'}
+    OR
+    {message: 'Email already registered'}
+    OR
+    { message: 'Server error' }
+    ```
+
+### POST /users/login
+
+Try to log the user in with given credentials
+
+-   Request Body:
+
+    ```
+        {
+            "email": "user_email",
+            "password": "user_password"
+        }
+    ```
+
+-   Response Body (+ JWT cookie):
+
+    ```
+    {message: 'Login successful'}
+    ```
+
+-   Error:
+    ```
+    { message: 'Invalid credentials' }
+    OR
+    { message: 'Server error' }
+    ```
 
 ## Product Endpoints
 

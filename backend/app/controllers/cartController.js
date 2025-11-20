@@ -6,7 +6,7 @@ import {
     addToCart,
     removeFromCart,
     clearCart,
-} from "../models/Cart.js";
+} from '../../models/Cart.js';
 
 //------------------------------------------------------
 // GET /cart  →  Get user's active cart + items
@@ -24,11 +24,11 @@ export async function getCart(req, res) {
         res.status(200).json({
             success: true,
             cart,
-            items
+            items,
         });
     } catch (error) {
-        console.error("Error getting cart:", error);
-        res.status(500).json({ success: false, message: "Server error" });
+        console.error('Error getting cart:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
     }
 }
 
@@ -41,7 +41,9 @@ export async function addItemToCart(req, res) {
         const { productId, quantity } = req.body;
 
         if (!productId)
-            return res.status(400).json({ success: false, message: "productId required" });
+            return res
+                .status(400)
+                .json({ success: false, message: 'productId required' });
 
         // Get or create cart
         const cart = await getOrCreateCart(userId);
@@ -51,11 +53,11 @@ export async function addItemToCart(req, res) {
 
         res.status(200).json({
             success: true,
-            message: "Item added to cart"
+            message: 'Item added to cart',
         });
     } catch (error) {
-        console.error("Error adding item:", error);
-        res.status(500).json({ success: false, message: "Server error" });
+        console.error('Error adding item:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
     }
 }
 
@@ -67,20 +69,24 @@ export async function deleteCartItem(req, res) {
         const { orderItemId } = req.params;
 
         if (!orderItemId)
-            return res.status(400).json({ success: false, message: "orderItemId required" });
+            return res
+                .status(400)
+                .json({ success: false, message: 'orderItemId required' });
 
         const [result] = await removeFromCart(orderItemId);
 
         if (result.affectedRows === 0)
-            return res.status(404).json({ success: false, message: "Item not found" });
+            return res
+                .status(404)
+                .json({ success: false, message: 'Item not found' });
 
         res.status(200).json({
             success: true,
-            message: "Item removed from cart"
+            message: 'Item removed from cart',
         });
     } catch (error) {
-        console.error("Error removing item:", error);
-        res.status(500).json({ success: false, message: "Server error" });
+        console.error('Error removing item:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
     }
 }
 
@@ -97,10 +103,10 @@ export async function clearUserCart(req, res) {
 
         res.status(200).json({
             success: true,
-            message: "Cart cleared"
+            message: 'Cart cleared',
         });
     } catch (error) {
-        console.error("Error clearing cart:", error);
-        res.status(500).json({ success: false, message: "Server error" });
+        console.error('Error clearing cart:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
     }
 }

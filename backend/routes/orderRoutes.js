@@ -3,8 +3,9 @@ import express from 'express';
 import {
     getOrders,
     getOrderDetails,
-    checkoutOrder
-} from '../controllers/orderController.js';
+    checkoutOrder,
+} from '../app/controllers/orderController.js';
+import { authenticateToken } from '../app/middlewares/authMiddleware.js';
 
 const router = express.Router();
 
@@ -13,7 +14,7 @@ const router = express.Router();
  * @desc    Get all orders for logged-in user (except carts)
  * @access  Private
  */
-router.get('/', getOrders);
+router.get('/', authenticateToken, getOrders);
 
 /**
  * @route   GET /api/orders/:id

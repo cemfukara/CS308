@@ -2,8 +2,8 @@
 import {
     getUserOrders,
     getOrderItems,
-    updateOrderStatus
-} from '../models/order.js';
+    updateOrderStatus,
+} from '../../models/order.js';
 
 // ===================================================================
 // GET all user orders (except carts)
@@ -15,11 +15,11 @@ export async function getOrders(req, res) {
 
         res.status(200).json({
             success: true,
-            orders
+            orders,
         });
     } catch (err) {
-        console.error("Error fetching user orders:", err);
-        res.status(500).json({ success: false, message: "Server error" });
+        console.error('Error fetching user orders:', err);
+        res.status(500).json({ success: false, message: 'Server error' });
     }
 }
 
@@ -35,11 +35,11 @@ export async function getOrderDetails(req, res) {
         res.status(200).json({
             success: true,
             orderId,
-            items
+            items,
         });
     } catch (err) {
-        console.error("Error fetching order items:", err);
-        res.status(500).json({ success: false, message: "Server error" });
+        console.error('Error fetching order items:', err);
+        res.status(500).json({ success: false, message: 'Server error' });
     }
 }
 
@@ -54,17 +54,17 @@ export async function checkoutOrder(req, res) {
         if (!status) {
             return res
                 .status(400)
-                .json({ success: false, message: "Missing status field" });
+                .json({ success: false, message: 'Missing status field' });
         }
 
         await updateOrderStatus(orderId, status);
 
         res.status(200).json({
             success: true,
-            message: "Order status updated successfully"
+            message: 'Order status updated successfully',
         });
     } catch (err) {
-        console.error("Error updating order status:", err);
-        res.status(500).json({ success: false, message: "Server error" });
+        console.error('Error updating order status:', err);
+        res.status(500).json({ success: false, message: 'Server error' });
     }
 }
