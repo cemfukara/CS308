@@ -2,10 +2,13 @@
 
 import jwt from 'jsonwebtoken';
 
-export const authenticateToken = (req, res, next) => {
+export const isAuthenticated = (req, res, next) => {
     const token = req.cookies.token; // read from cookie
 
-    if (!token) return res.status(401).json({ message: 'Unauthorized' });
+    if (!token)
+        return res
+            .status(401)
+            .json({ message: 'Unauthorized: No token provided' });
 
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET); //try to verify token
@@ -17,7 +20,7 @@ export const authenticateToken = (req, res, next) => {
 };
 
 // check auth for specified roles. "allowedRoles" could be "admin", "user", "product_manager" etc.
-export const authorizeRoles = (allowedRoles) => {
+export const authorizeRoles = (allowedRoles = []) => {
     return (req, res, next) => {
         const user = req.user;
 
@@ -34,3 +37,5 @@ export const authorizeRoles = (allowedRoles) => {
         next();
     };
 };
+
+export const isAdmin = authorizeRoles(['product manager']);

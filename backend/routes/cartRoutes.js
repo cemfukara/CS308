@@ -6,7 +6,7 @@ import {
     deleteCartItem,
     clearUserCart,
 } from '../app/controllers/cartController.js';
-import { authenticateToken } from '../app/middlewares/authMiddleware.js';
+import { isAuthenticated } from '../app/middlewares/authMiddleware.js';
 
 const router = express.Router();
 
@@ -15,14 +15,14 @@ const router = express.Router();
  * @desc    Get user's current cart
  * @access  Private
  */
-router.get('/', authenticateToken, getCart);
+router.get('/', isAuthenticated, getCart);
 
 /**
  * @route   POST /api/cart/add
  * @desc    Add product to cart
  * @access  Private
  */
-router.post('/add', authenticateToken, addItemToCart);
+router.post('/add', isAuthenticated, addItemToCart);
 
 /**
  * @route   PUT /api/cart/update
@@ -47,6 +47,6 @@ router.delete('/remove/:orderItemId', deleteCartItem);
  * @desc    Clear all items from cart
  * @access  Private
  */
-router.delete('/clear', authenticateToken, clearUserCart);
+router.delete('/clear', isAuthenticated, clearUserCart);
 
 export default router;

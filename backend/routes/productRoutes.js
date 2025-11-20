@@ -1,16 +1,15 @@
 // backend/routes/productRoutes.js
 // Defines product-related routes (/api/products, /api/products/:id).
 import express from 'express';
-import { 
-    fetchProducts, 
+import {
+    fetchProducts,
     fetchProductDetails,
     addProduct,
     updateProductDetails,
-    removeProduct 
+    removeProduct,
 } from '../app/controllers/productController.js';
 
-// **ASSUMPTION:** Import middleware for auth and role checks
-import { isAuthenticated, isAdmin } from '../app/middlewares/authMiddleware.js'; // Adjust path if needed
+import { isAuthenticated, isAdmin } from '../app/middlewares/authMiddleware.js'; // auth middlewares
 import { validateProductInput } from '../app/middlewares/validationMiddleware.js';
 
 const router = express.Router();
@@ -47,7 +46,13 @@ router.post('/', isAuthenticated, isAdmin, validateProductInput, addProduct);
  * @access  Private/Admin
  */
 // Added validation middleware here
-router.put('/:id', isAuthenticated, isAdmin, validateProductInput, updateProductDetails); 
+router.put(
+    '/:id',
+    isAuthenticated,
+    isAdmin,
+    validateProductInput,
+    updateProductDetails
+);
 
 /**
  * @route   DELETE /api/products/:id

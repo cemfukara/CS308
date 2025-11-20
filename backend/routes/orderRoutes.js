@@ -5,7 +5,7 @@ import {
     getOrderDetails,
     checkoutOrder,
 } from '../app/controllers/orderController.js';
-import { authenticateToken } from '../app/middlewares/authMiddleware.js';
+import { isAuthenticated } from '../app/middlewares/authMiddleware.js';
 
 const router = express.Router();
 
@@ -14,7 +14,7 @@ const router = express.Router();
  * @desc    Get all orders for logged-in user (except carts)
  * @access  Private
  */
-router.get('/', authenticateToken, getOrders);
+router.get('/', isAuthenticated, getOrders);
 
 /**
  * @route   GET /api/orders/:id
