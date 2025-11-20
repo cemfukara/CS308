@@ -1,12 +1,25 @@
+// backend/routes/productRoutes.js
 // Defines product-related routes (/api/products, /api/products/:id).
 import express from 'express';
-import { fetchProducts } from '../app/controllers/productController.js';
+import { 
+    fetchProducts, 
+    fetchProductDetails,
+    addProduct,
+    updateProductDetails,
+    removeProduct 
+} from '../app/controllers/productController.js';
+
+// **ASSUMPTION:** Import middleware for auth and role checks
+import { isAuthenticated, isAdmin } from '../app/middlewares/authMiddleware.js'; // Adjust path if needed
+import { validateProductInput } from '../app/middlewares/validationMiddleware.js';
 
 const router = express.Router();
 
+// --- PUBLIC ROUTES (Read Access) ---
+
 /**
  * @route   GET /api/products
- * @desc    Get all products
+ * @desc    Get all products (with pagination, sorting, search, filter)
  * @access  Public
  */
 router.get('/', fetchProducts);
@@ -16,41 +29,31 @@ router.get('/', fetchProducts);
  * @desc    Get single product by ID
  * @access  Public
  */
-router.get('/:id', (req, res) => {
-    // TODO: implement fetch product details
-    res.status(501).json({
-        message: 'Get product details not implemented yet',
-    });
-});
+router.get('/:id', fetchProductDetails); // Use the new controller function
+
+// --- ADMIN ROUTES (Modification Access) ---
 
 /**
  * @route   POST /api/products
  * @desc    Add a new product
  * @access  Private/Admin
  */
-router.post('/', (req, res) => {
-    // TODO: implement add new product
-    res.status(501).json({ message: 'Add product not implemented yet' });
-});
+// APPLY isAuthenticated and isAdmin middleware
+router.post('/', isAuthenticated, isAdmin, validateProductInput, addProduct);
 
 /**
  * @route   PUT /api/products/:id
  * @desc    Update product by ID
  * @access  Private/Admin
  */
-router.put('/:id', (req, res) => {
-    // TODO: implement update product
-    res.status(501).json({ message: 'Update product not implemented yet' });
-});
+// Added validation middleware here
+router.put('/:id', isAuthenticated, isAdmin, validateProductInput, updateProductDetails); 
 
 /**
  * @route   DELETE /api/products/:id
  * @desc    Delete product by ID
  * @access  Private/Admin
  */
-router.delete('/:id', (req, res) => {
-    // TODO: implement delete product
-    res.status(501).json({ message: 'Delete product not implemented yet' });
-});
+router.delete('/:id', isAuthenticated, isAdmin, removeProduct);
 
 export default router;
