@@ -56,33 +56,34 @@ Registers the user with given credentials
 - Request Body:
 
   ```
-      {
+  {
       "full_name":"Ali Mehmet Yılmaz",
       "email":"alimemo@provider.com",
       "password":"alimemoyılmaz"
-      }
+  }
   ```
 
 - Response Body:
 
   ```
   {
-      "message": "User registered successfully",
-      "user": {
-          "full_name": "isma tagg rosesoldier",
-          "user_id": 10,
-          "email": "test@techzone.com"
-      }
+    // http status: 201
+    "message": "User registered successfully",
+    "user": {
+        "full_name": "Ali Mehmet Yılmaz",
+        "user_id": auto_incremented_id,
+        "email": "alimemo@provider.com"
+    }
   }
   ```
 
 - Error:
   ```
-  {message: 'Email and password required'}
+  {message: 'Email and password required'} // http status: 400
   OR
-  {message: 'Email already registered'}
+  {message: 'Email already registered'} // http status: 409
   OR
-  { message: 'Server error' }
+  { message: 'Server error' } // http status: 500
   ```
 
 ### POST /users/login
@@ -92,23 +93,23 @@ Try to log the user in with given credentials
 - Request Body:
 
   ```
-      {
-          "email": "user_email",
-          "password": "user_password"
-      }
+    {
+        "email": "user_email",
+        "password": "user_password"
+    }
   ```
 
 - Response Body (+ JWT cookie):
 
   ```
-  {message: 'Login successful'}
+  {message: 'Login successful'} // http status: 201
   ```
 
 - Error:
   ```
-  { message: 'Invalid credentials' }
+  { message: 'Invalid credentials' } // http status: 401
   OR
-  { message: 'Server error' }
+  { message: 'Server error' } // http status: 500
   ```
 
 ## Product Endpoints
