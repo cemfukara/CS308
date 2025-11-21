@@ -1,50 +1,82 @@
 // backend/models/Product.js
-// This Sequelize model defines the Product table schema (id, name, price, stock, etc.)
-//Defines functions to reach data and use in productController.js
+// Updated to match the MySQL schema you provided
+
 import { db } from '../app/config/db.js';
 
-// --- ENHANCED: Function to fetch all products with pagination, sorting, search, and category ---
-export async function getAllProducts({ limit = 10, page = 1, sortBy = 'id', sortOrder = 'ASC', search = '', category = null } = {}) {
+// VALID sortable columns (must exist in DB)
+const validSortColumns = [
+    'product_id',
+    'name',
+    'price',
+    'list_price',
+    'quantity_in_stock',
+    'discount_ratio',
+];
+
+// GET ALL PRODUCTS (pagination, search, sorting, category filter)
+export async function getAllProducts({
+    limit = 10,
+    page = 1,
+    sortBy = 'product_id',
+    sortOrder = 'ASC',
+    search = '',
+    category = null
+} = {}) {
+
     const offset = (page - 1) * limit;
-    
-    // Base WHERE clause
-    let whereClause = 'WHERE 1=1'; // Start with a true condition
+    let whereClause = 'WHERE 1=1';
     const queryParams = [];
 
-    // Search condition (Story 2)
+    // Search condition
     if (search) {
         whereClause += ` AND (name LIKE ? OR description LIKE ?)`;
         queryParams.push(`%${search}%`, `%${search}%`);
     }
 
-    // Category filter condition (Story 2)
+    // Category filter
     if (category) {
         whereClause += ` AND category_id = ?`;
         queryParams.push(category);
     }
-    
-    // Sanitizing sort columns to prevent SQL injection (important!)
-    const validSortColumns = ['id', 'name', 'price', 'stock', 'popularity']; // Assuming 'popularity' is a column
-    const safeSortBy = validSortColumns.includes(sortBy) ? sortBy : 'id';
+
+    // Sort sanitization
+    const safeSortBy = validSortColumns.includes(sortBy) ? sortBy : 'product_id';
     const safeSortOrder = sortOrder.toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
 
-    // 1. Get the total count (before limit/offset)
-    const [countRows] = await db.query(`SELECT COUNT(*) as totalCount FROM products ${whereClause}`, queryParams);
+    // 1. Count
+    const [countRows] = await db.query(
+        `SELECT COUNT(*) AS totalCount FROM products ${whereClause}`,
+        queryParams
+    );
+
     const totalCount = countRows[0].totalCount;
 
-    // 2. Get the products with pagination and sorting
+    // 2. Main product query
     const productQuery = `
-        SELECT * FROM products
+        SELECT 
+            product_id,
+            category_id,
+            name,
+            model,
+            serial_number,
+            description,
+            quantity_in_stock,
+            price,
+            list_price,
+            warranty_status,
+            distributor_info,
+            discount_ratio,
+            (list_price - price) AS discount_amount
+        FROM products
         ${whereClause}
         ORDER BY ${safeSortBy} ${safeSortOrder}
         LIMIT ? OFFSET ?
     `;
-    
-    // Add limit and offset for the main product query
+
     queryParams.push(limit, offset);
 
     const [rows] = await db.query(productQuery, queryParams);
-    
+
     return {
         products: rows,
         totalCount,
@@ -53,51 +85,91 @@ export async function getAllProducts({ limit = 10, page = 1, sortBy = 'id', sort
     };
 }
 
-// Function to fetch a single product by ID
+// GET PRODUCT BY ID
 export async function getProductById(productId) {
-    const [rows] = await db.query('SELECT * FROM products WHERE id = ?', [productId]);
-    return rows[0]; // Return the first (and only) row
-}
-
-// Function to create a new product
-export async function createProduct(productData) {
-    const { name, description, price, stock, category_id, popularity } = productData;
-    const [result] = await db.query(
-        'INSERT INTO products (name, description, price, stock, category_id, popularity) VALUES (?, ?, ?, ?, ?, ?)',
-        [name, description, price, stock, category_id, popularity || 0] // Default popularity to 0
+    const [rows] = await db.query(
+        `SELECT * FROM products WHERE product_id = ?`,
+        [productId]
     );
-    // Return the newly created product's ID
-    return result.insertId; 
+
+    return rows[0];
 }
 
-// Function to update an existing product
-export async function updateProduct(productId, productData) {
-    const fields = Object.keys(productData).map(key => `${key} = ?`).join(', ');
-    const values = Object.values(productData);
-    
-    if (fields.length === 0) return 0; // Nothing to update
-    
-    values.push(productId);
-    
+// CREATE PRODUCT (matches your SQL columns)
+export async function createProduct(productData) {
+
+    const {
+        category_id,
+        name,
+        model,
+        serial_number,
+        description,
+        quantity_in_stock,
+        price,
+        list_price,
+        warranty_status,
+        distributor_info
+    } = productData;
+
     const [result] = await db.query(
-        `UPDATE products SET ${fields} WHERE id = ?`,
+        `
+        INSERT INTO products (
+            category_id,
+            name,
+            model,
+            serial_number,
+            description,
+            quantity_in_stock,
+            price,
+            list_price,
+            warranty_status,
+            distributor_info
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `,
+        [
+            category_id || null,
+            name,
+            model || null,
+            serial_number || null,
+            description || null,
+            quantity_in_stock ?? 0,
+            price,
+            list_price || null,
+            warranty_status || null,
+            distributor_info || null
+        ]
+    );
+
+    return result.insertId;
+}
+
+// UPDATE PRODUCT
+export async function updateProduct(productId, productData) {
+
+    const fields = Object.keys(productData)
+        .filter(key => key !== "product_id") // protect PK
+        .map(key => `${key} = ?`)
+        .join(', ');
+
+    if (!fields) return 0;
+
+    const values = Object.values(productData);
+    values.push(productId);
+
+    const [result] = await db.query(
+        `UPDATE products SET ${fields} WHERE product_id = ?`,
         values
     );
-    return result.affectedRows; // Number of rows updated (0 or 1)
+
+    return result.affectedRows;
 }
 
-// Function to delete a product
+// DELETE PRODUCT
 export async function deleteProduct(productId) {
-    const [result] = await db.query('DELETE FROM products WHERE id = ?', [productId]);
-    return result.affectedRows; // Number of rows deleted (0 or 1)
+    const [result] = await db.query(
+        `DELETE FROM products WHERE product_id = ?`,
+        [productId]
+    );
+
+    return result.affectedRows;
 }
-
-// NOTE: I commented out or removed the original simple functions like getBrieflyProducts 
-// and getProductsByCategory since the new getAllProducts is more comprehensive.
-// Original functions for simple fetch/briefly/category were:
-// export async function getBrieflyProducts() { ... }
-// export async function getProductsByCategory(categoryId) { ... }
-
-// --- Retaining a simple export for the database connection ---
-// (Assuming db is not exported from Product.js originally, keeping exports clear)
-// export { db };
