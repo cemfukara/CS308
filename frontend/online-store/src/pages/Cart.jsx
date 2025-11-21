@@ -9,7 +9,7 @@ const Cart = () => {
   const navigate = useNavigate();
 
   // 🧮 Calculate total cost
-  const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const total = cart.reduce((sum, item) => sum + Number(item.price || 0) * item.quantity, 0);
 
   // 🧾 Handle checkout — login check, save order, clear cart
   const handleCheckout = () => {
@@ -26,7 +26,8 @@ const Cart = () => {
       toast.error('Your cart is empty!');
       return;
     }
-
+    navigate('/checkout');
+    /*
     // ✅ Create new order object
     const newOrder = {
       id: Date.now(),
@@ -47,6 +48,7 @@ const Cart = () => {
 
     // ✅ Redirect to Order History
     navigate('/account/orders');
+    */
   };
 
   return (
@@ -59,30 +61,52 @@ const Cart = () => {
         <>
           <div className="cart-items">
             {cart.map(item => (
-              <div key={item.id} className="cart-item">
+              <div key={item.product_id} className="cart-item">
                 <img
-                  src={new URL(`../assets/${item.image}`, import.meta.url).href}
+                  src={
+                    item.image
+                      ? new URL(`../assets/${item.image}`, import.meta.url).href
+                      : new URL('../assets/placeholder.jpg', import.meta.url).href
+                  }
                   alt={item.name}
                 />
 
                 <div className="info">
                   <h3>{item.name}</h3>
-                  <p>${item.price.toFixed(2)}</p>
+                  <p>${Number(item.price || 0).toFixed(2)}</p>
 
                   <div className="quantity-control">
-                    <button onClick={() => updateQuantity(item.id, Math.max(1, item.quantity - 1))}>
+                    <button
+                      onClick={() =>
+                        updateQuantity(item.product_id, Math.max(1, item.quantity - 1))
+                      }
+                    >
                       −
                     </button>
                     <input
                       type="number"
                       value={item.quantity}
-                      onChange={e => updateQuantity(item.id, Number(e.target.value))}
+                      onChange={e =>
+                        updateQuantity(
+                          item.product_id,
+                          Math.min(Number(e.target.value), item.quantity_in_stock)
+                        )
+                      }
                     />
-                    <button onClick={() => updateQuantity(item.id, item.quantity + 1)}>+</button>
+                    <button
+                      onClick={() =>
+                        updateQuantity(
+                          item.product_id,
+                          Math.min(item.quantity_in_stock, item.quantity + 1)
+                        )
+                      }
+                    >
+                      +
+                    </button>
                   </div>
                 </div>
 
-                <button onClick={() => removeFromCart(item.id)}>Remove</button>
+                <button onClick={() => removeFromCart(item.product_id)}>Remove</button>
               </div>
             ))}
           </div>

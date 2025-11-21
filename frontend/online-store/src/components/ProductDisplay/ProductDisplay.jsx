@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import './ProductDisplay.css';
 import { useState } from 'react';
-function ProductDisplay({ image, name, currency, price, serialNo }) {
+function ProductDisplay({ image, name, currency, price, serialNo, productId, model }) {
   const [fitMode, setFitMode] = useState('cover');
   const [loaded, setLoaded] = useState(false);
   const handleImageLoad = e => {
@@ -11,7 +11,7 @@ function ProductDisplay({ image, name, currency, price, serialNo }) {
 
   return (
     <Link
-      to={`/products/${name.toLowerCase().replace(/ /g, '-')}-${serialNo}`}
+      to={`/products/${name.toLowerCase().replace(/ /g, '-')}-${serialNo}-${productId}`}
       style={{ textDecoration: 'none', color: 'inherit' }}
     >
       <div className="product-display">
@@ -28,7 +28,9 @@ function ProductDisplay({ image, name, currency, price, serialNo }) {
         />
 
         <div className="product-details">
-          <p className="product-serialno">{serialNo}</p>
+          <p className="product-serialno">
+            {model}/{serialNo}
+          </p>
           <p className="product-name">{name}</p>
           <p className="product-price">
             {currency}

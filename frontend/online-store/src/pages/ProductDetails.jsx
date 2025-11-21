@@ -1,5 +1,4 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import products from '../data/products.json';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCartPlus, faHeart as faHeartSolid } from '@fortawesome/free-solid-svg-icons';
 import { faHeart } from '@fortawesome/free-regular-svg-icons';
@@ -7,6 +6,7 @@ import { useState, useEffect } from 'react';
 import './ProductDetails.css';
 import useCartStore from '../store/cartStore';
 import toast from 'react-hot-toast';
+import { getProductsById } from '../lib/productsApi';
 
 function ProductDetails() {
   const { id: idParam = '' } = useParams();
@@ -14,33 +14,86 @@ function ProductDetails() {
   const [fitMode, setFitMode] = useState('cover');
   const [loaded, setLoaded] = useState(false);
   const [liked, setLiked] = useState(false);
+  const [product, setProduct] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [rating, setRating] = useState(0);
+  const [hoverRating, setHoverRating] = useState(0);
+
   const navigate = useNavigate();
+  const serialNo = idParam.split('-').pop(); //last part of URL
 
   const handleImageLoad = e => {
     e.target.naturalWidth > e.target.naturalHeight ? setFitMode('contain') : setFitMode('cover');
     setLoaded(true);
   };
 
-  const serialNo = idParam.split('-').pop();
-  const src = products.find(p => String(p.serialNo) === String(serialNo));
+  useEffect(() => {
+    let isMounted = true;
 
-  if (!src) {
+    async function load() {
+      try {
+        setLoading(true);
+        setError('');
+
+        const data = await getProductsById(serialNo);
+
+        if (!isMounted) return;
+
+        const normalized = {
+          ...data,
+          serialNo: data.serialNo ?? data.serial_number ?? data.product_id ?? serialNo,
+          currency: data.currency ?? '$',
+          quantity: data.quantity ?? 1,
+          quantity_in_stock: data.quantity_in_stock ?? 0,
+        };
+
+        setProduct(normalized);
+      } catch (err) {
+        if (!isMounted) return;
+        setError(err.message || 'Failed to load product');
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    }
+
+    load();
+    return () => {
+      isMounted = false;
+    };
+  }, [serialNo]);
+
+  useEffect(() => {
+    if (!product) return;
+    const favorites = JSON.parse(localStorage.getItem('favorites')) || [];
+    setLiked(favorites.some(f => f.serialNo === product.serialNo));
+    const savedRating = JSON.parse(localStorage.getItem(`rating-${product.serialNo}`)) || 0;
+    setRating(savedRating);
+  }, [product]);
+
+  if (loading) {
     return (
       <div className="product-description">
-        <h3>Product not found</h3>
+        <h3>Loading product…</h3>
       </div>
     );
   }
 
-  const product = { ...src, id: serialNo, quantity: src.quantity ?? 1 };
-  const imageUrl = new URL(`../assets/${product.image}`, import.meta.url).href;
+  if (error || !product) {
+    return (
+      <div className="product-description">
+        <h3>{error || 'Product not found'}</h3>
+      </div>
+    );
+  }
+  const inStock = (product.quantity_in_stock ?? 0) > 0; //Check if product is out of stock
+
+  //Create image path
+  const imagePath = product.image
+    ? new URL(`../assets/${product.image}`, import.meta.url).href
+    : new URL(`../assets/placeholder.jpg`, import.meta.url).href;
 
   // ✅ Check favorites to set liked state
-  useEffect(() => {
-    const favorites = JSON.parse(localStorage.getItem('favorites')) || [];
-    setLiked(favorites.some(f => f.serialNo === product.serialNo));
-  }, [product.serialNo]);
-
   const handleAddToFavorites = () => {
     let favorites = JSON.parse(localStorage.getItem('favorites')) || [];
     const exists = favorites.some(f => f.serialNo === product.serialNo);
@@ -58,7 +111,13 @@ function ProductDetails() {
     }
   };
 
+  const handleRating = value => {
+    setRating(value);
+    localStorage.setItem(`rating-${product.serialNo}`, JSON.stringify(value));
+  };
+
   const handleAddToCart = () => {
+    if (!product || (product.quantity_in_stock ?? 0) <= 0) return;
     addToCart(product, 1);
     toast.custom(
       t => (
@@ -78,7 +137,7 @@ function ProductDetails() {
           }}
         >
           <img
-            src={new URL(`../assets/${product.image}`, import.meta.url).href}
+            src={imagePath}
             alt={product.name}
             style={{
               width: '60px',
@@ -130,7 +189,7 @@ function ProductDetails() {
             }}
           >
             {product.currency}
-            {product.price.toFixed(2)}
+            {Number(product.price || 0).toFixed(2)}
           </p>
         </div>
       ),
@@ -144,7 +203,7 @@ function ProductDetails() {
     <div className="product-description">
       <div className="product-img-container">
         <img
-          src={imageUrl}
+          src={imagePath}
           className="product-img"
           loading="lazy"
           alt={product.name}
@@ -154,16 +213,43 @@ function ProductDetails() {
       </div>
 
       <div className="product-card">
-        <h3>{serialNo}</h3>
-        <h2>{product.name}</h2>
+        <h3>
+          {product.model}/{product.serial_number}
+        </h3>
+        <div className="name-rating">
+          <h2>{product.name}</h2>
+
+          <div className="rating-stars">
+            {[1, 2, 3, 4, 5].map(star => (
+              <span
+                key={star}
+                className={`star ${star <= (hoverRating || rating) ? 'filled' : ''}`}
+                onClick={() => handleRating(star)}
+                onMouseEnter={() => setHoverRating(star)}
+                onMouseLeave={() => setHoverRating(0)}
+              >
+                ★
+              </span>
+            ))}
+          </div>
+        </div>
+
         <h1>
           {product.currency}
-          {product.price.toFixed(2)}
+          {Number(product.price || 0).toFixed(2)}
         </h1>
+        <p className={inStock ? 'stock-ok' : 'stock-bad'}>
+          {inStock ? `In stock: ${product.quantity_in_stock}` : 'Currently out of stock'}
+        </p>
 
         <div>
-          <button onClick={handleAddToCart}>
-            <FontAwesomeIcon icon={faCartPlus} /> Add to Cart
+          <button
+            id="add-cart-btn"
+            onClick={inStock ? handleAddToCart : undefined}
+            className={!inStock ? 'out-of-stock' : ''}
+            disabled={!inStock}
+          >
+            <FontAwesomeIcon icon={faCartPlus} /> {inStock ? 'Add to Cart' : 'Out of Stock'}
           </button>
 
           <button

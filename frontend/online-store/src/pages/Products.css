@@ -7,3 +7,10 @@
   padding: 20px;
   background-color: #f9f9f9;
 }
+
+.loading,
+.error {
+  text-align: center;
+  font-size: 4.5rem;
+  font-family: 'Exo 2', sans-serif;
+}

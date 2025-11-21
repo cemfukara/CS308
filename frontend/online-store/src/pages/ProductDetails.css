@@ -118,13 +118,8 @@ textarea::-webkit-scrollbar:hover {
   letter-spacing: 0.6px;
   transition: 0.3s ease;
 }
-.product-card div button:first-child {
-  background: linear-gradient(135deg, hsl(151, 100%, 55%), hsl(145, 100%, 35%));
-  box-shadow: 0 0 10px rgba(0, 230, 118, 0.4);
-  flex: 1;
-}
 
-.product-card div button:first-child:hover {
+.product-card div .product-comment-btn:hover {
   background: linear-gradient(135deg, hsl(150, 100%, 45%), hsl(148, 100%, 23%));
   box-shadow: 0 0 15px rgba(0, 255, 128, 0.6);
   transform: translateY(-2px);
@@ -164,10 +159,86 @@ textarea::-webkit-scrollbar:hover {
   align-self: flex-end;
   max-width: 80px;
   padding: 6px 8px;
+  background: linear-gradient(135deg, hsl(150, 100%, 45%), hsl(148, 100%, 30%));
+  box-shadow: 0 0 10px rgba(0, 230, 118, 0.4);
+  flex: 1;
 }
 
 .product-card div svg {
   font-size: 16px;
+}
+
+#add-cart-btn {
+  background: linear-gradient(135deg, hsl(150, 100%, 45%), hsl(148, 100%, 30%));
+  box-shadow: 0 0 10px rgba(0, 230, 118, 0.4);
+  flex: 1;
+}
+
+#add-cart-btn:not(.out-of-stock):hover {
+  background: linear-gradient(135deg, hsl(150, 100%, 45%), hsl(148, 100%, 23%));
+  box-shadow: 0 0 15px rgba(0, 255, 128, 0.6);
+  transform: translateY(-2px);
+}
+
+#add-cart-btn.out-of-stock,
+#add-cart-btn:disabled {
+  background: hsl(0, 0%, 60%);
+  box-shadow: none;
+  cursor: not-allowed;
+  transform: none;
+  opacity: 0.6;
+}
+
+.stock-ok,
+.stock-bad {
+  font-size: 2rem;
+  font-weight: bolder;
+}
+
+.stock-ok {
+  color: hsl(215, 80%, 23%);
+  font-weight: 500;
+  margin: 4px 0 0;
+}
+
+.stock-bad {
+  color: hsl(0, 80%, 50%);
+  font-weight: 500;
+  margin: 4px 0 0;
+}
+
+.name-rating {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+}
+
+.name-rating h2 {
+  margin: 0;
+  flex: 1;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.rating-stars {
+  display: flex;
+  gap: 4px;
+  font-size: 40px;
+  cursor: pointer;
+  color: #ccc;
+  margin: 0;
+}
+
+.rating-stars .star.filled {
+  color: hsl(48, 100%, 50%);
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.6);
+}
+
+.rating-stars .star:hover {
+  transform: scale(1.15);
+  transition: 0.15s;
 }
 
 @keyframes fadeIn {
