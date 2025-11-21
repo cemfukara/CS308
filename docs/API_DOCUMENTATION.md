@@ -6,16 +6,16 @@
 
 <font size="4">This document describes the REST API endpoints for project backend, and explains usage.</font>
 
--   All data is exchanged in JSON.
+- All data is exchanged in JSON.
 
--   Authentication is handled via JWT tokens in the Authorization header.
+- Authentication is handled via JWT tokens in the Authorization header.
 
--   Error messages follow a consistent format:
-    ```
-    {
-        "message": "Error description"
-    }
-    ```
+- Error messages follow a consistent format:
+  ```
+  {
+      "message": "Error description"
+  }
+  ```
 
 ## Authentication
 
@@ -53,62 +53,63 @@ api/users/
 
 Registers the user with given credentials
 
--   Request Body:
+- Request Body:
 
-    ```
-        {
-            "email": "user_email",
-            "password": "user_password"
-        }
-    ```
+  ```
+      {
+      "full_name":"Ali Mehmet Yılmaz",
+      "email":"alimemo@provider.com",
+      "password":"alimemoyılmaz"
+      }
+  ```
 
--   Response Body (+ JWT cookie):
+- Response Body:
 
-    ```
-    {
-        "message": "User registered successfully",
-        "user": {
-            "user_id": 7,
-            "email": "user_email",
-            "role": "customer"
-        }
-    }
-    ```
+  ```
+  {
+      "message": "User registered successfully",
+      "user": {
+          "full_name": "isma tagg rosesoldier",
+          "user_id": 10,
+          "email": "test@techzone.com"
+      }
+  }
+  ```
 
--   Error:
-    ```
-    {message: 'Email and password required'}
-    OR
-    {message: 'Email already registered'}
-    OR
-    { message: 'Server error' }
-    ```
+- Error:
+  ```
+  {message: 'Email and password required'}
+  OR
+  {message: 'Email already registered'}
+  OR
+  { message: 'Server error' }
+  ```
 
 ### POST /users/login
 
 Try to log the user in with given credentials
 
--   Request Body:
+- Request Body:
 
-    ```
-        {
-            "email": "user_email",
-            "password": "user_password"
-        }
-    ```
+  ```
+      {
+          "email": "user_email",
+          "password": "user_password"
+      }
+  ```
 
--   Response Body (+ JWT cookie):
+- Response Body (+ JWT cookie):
 
-    ```
-    {message: 'Login successful'}
-    ```
+  ```
+  {message: 'Login successful'}
+  ```
 
--   Error:
-    ```
-    { message: 'Invalid credentials' }
-    OR
-    { message: 'Server error' }
-    ```
+- Error:
+  ```
+  { message: 'Invalid credentials' }
+  OR
+  { message: 'Server error' }
+  ```
 
 ## Product Endpoints
 
@@ -151,4 +152,4 @@ api/orders/
 
 `/api/reviews`:Product reviews & ratings
 
--   Manager approval system for reviews
+- Manager approval system for reviews
