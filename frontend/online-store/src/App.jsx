@@ -15,6 +15,8 @@ import ForgotPassword from './pages/ForgotPassword';
 import AboutUs from './pages/AboutUs';
 import TermsPolicy from './pages/TermsPolicy';
 import Contact from './pages/Contact';
+import Checkout from './pages/Checkout/Checkout';
+import Payment from './pages/Checkout/Payment';
 
 // Account (nested)
 import AccountLayout from './pages/Account/AccountLayout';
@@ -28,6 +30,7 @@ import Logout from './pages/Account/Logout';
 
 // ✅ New: Order details page
 import OrderDetails from './pages/Account/OrderDetails';
+import Confirmation from './pages/Checkout/Confirmation';
 
 function App() {
   return (
@@ -48,6 +51,9 @@ function App() {
         <Route path="/about" element={<AboutUs />} />
         <Route path="/terms-policy" element={<TermsPolicy />} />
         <Route path="/contact" element={<Contact />} />
+        <Route path="/checkout" element={<Checkout />} />
+        <Route path="/checkout/payment" element={<Payment />} />
+        <Route path="/checkout/confirmation" element={<Confirmation />} />
 
         {/* Account routes (nested under /account) */}
         <Route path="/account" element={<AccountLayout />}>

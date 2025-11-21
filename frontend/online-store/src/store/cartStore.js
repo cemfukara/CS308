@@ -2,6 +2,7 @@ import { create } from 'zustand';
 
 // ✅ Helper functions for localStorage
 const loadCart = () => {
+  if (typeof window === 'undefined') return [];
   try {
     return JSON.parse(localStorage.getItem('cart')) || [];
   } catch {
@@ -19,7 +20,7 @@ const useCartStore = create((set, get) => ({
 
   addToCart: (item, qty = 1) => {
     const cart = [...get().cart];
-    const existing = cart.find(p => p.id === item.id);
+    const existing = cart.find(p => p.product_id === item.product_id);
 
     if (existing) {
       existing.quantity += qty;
@@ -32,14 +33,16 @@ const useCartStore = create((set, get) => ({
   },
 
   updateQuantity: (id, quantity) => {
-    const cart = get().cart.map(p => (p.id === id ? { ...p, quantity: Math.max(1, quantity) } : p));
+    const cart = get().cart.map(p =>
+      p.product_id === id ? { ...p, quantity: Math.max(1, quantity) } : p
+    );
 
     saveCart(cart);
     set({ cart });
   },
 
   removeFromCart: id => {
-    const cart = get().cart.filter(p => p.id !== id);
+    const cart = get().cart.filter(p => p.product_id !== id);
     saveCart(cart);
     set({ cart });
   },

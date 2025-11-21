@@ -11,21 +11,37 @@ const Orders = () => {
     setOrders(storedOrders);
   }, []);
 
+  const displayOrders = orders.map(order => ({
+    ...order,
+    status: order.status || 'Processing',
+  }));
+
   return (
     <div className="orders-page">
       <h2>Order History</h2>
 
-      {orders.length === 0 ? (
+      {displayOrders.length === 0 ? (
         <p className="empty">You have no orders yet.</p>
       ) : (
         <div className="orders-list">
-          {orders.map(order => (
+          {displayOrders.map(order => (
             <div className="order-card" key={order.id}>
               <div className="order-summary">
                 <div>
                   <h3>Order #{order.id}</h3>
-                  <p>Date: {order.date}</p>
-                  <p>Total: ${order.total.toFixed(2)}</p>
+                  <p>
+                    Date:{' '}
+                    {order.createdAt
+                      ? new Date(order.createdAt).toLocaleString()
+                      : order.date || '—'}
+                  </p>
+                  <p>
+                    Total: $
+                    {(typeof order.total === 'number'
+                      ? order.total
+                      : Number(order.total || 0)
+                    ).toFixed(2)}
+                  </p>
                 </div>
                 <div className="order-actions">
                   <span className={`status ${order.status.toLowerCase()}`}>{order.status}</span>
