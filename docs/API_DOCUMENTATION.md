@@ -31,23 +31,23 @@
 
 api/admin/
 
-| METHOD |  ENDPOINT  |            DESCRIPTION            |    Access     |
-| :----: | :--------: | :-------------------------------: | :-----------: |
-|  GET   |   /users   |          List all users           | Private/Admin |
-|  GET   | /analytics |    Get sales/revenue analytics    | Private/Admin |
-| PATCH  | /discounts | Apply or update product discounts | Private/Admin |
-| DELETE | /users/:id |          Delete an user           | Private/Admin |
+| METHOD |  ENDPOINT  |            DESCRIPTION            |    Access     |     Status      |
+| :----: | :--------: | :-------------------------------: | :-----------: | :-------------: |
+|  GET   |   /users   |          List all users           | Private/Admin | Not Implemented |
+|  GET   | /analytics |    Get sales/revenue analytics    | Private/Admin | Not Implemented |
+| PATCH  | /discounts | Apply or update product discounts | Private/Admin | Not Implemented |
+| DELETE | /users/:id |          Delete an user           | Private/Admin | Not Implemented |
 
 ## User Endpoints
 
 api/users/
 
-| METHOD | ENDPOINT  |             DESCRIPTION              | Access  |
-| :----: | :-------: | :----------------------------------: | :-----: |
-|  POST  | /register |         Register a new user          | Public  |
-|  POST  |  /login   |  Authenticate user and return token  | Public  |
-|  GET   | /profile  |  Get logged-in user's profile info   | Private |
-|  PUT   | /profile  | Update logged-in user's profile info | Private |
+| METHOD | ENDPOINT  |             DESCRIPTION              | Access  |     Status      |
+| :----: | :-------: | :----------------------------------: | :-----: | :-------------: |
+|  POST  | /register |         Register a new user          | Public  |    Finished     |
+|  POST  |  /login   |  Authenticate user and return token  | Public  |    Finished     |
+|  GET   | /profile  |  Get logged-in user's profile info   | Private | Not Implemented |
+| PATCH  | /profile  | Update logged-in user's profile info | Private | Not Implemented |
 
 ### POST /users/register
 
@@ -116,36 +116,36 @@ Try to log the user in with given credentials
 
 api/products/
 
-| METHOD | ENDPOINT |       DESCRIPTION        |    Access     |
-| :----: | :------: | :----------------------: | :-----------: |
-|  GET   |    /     |     Get all products     |    Public     |
-|  GET   |   /:id   | Get single product by ID |    Public     |
-|  POST  |    /     |    Add a new product     | Private/Admin |
-|  PUT   |   /:id   |   Update product by ID   | Private/Admin |
-| DELETE |   /:id   |   Delete product by ID   | Private/Admin |
+| METHOD | ENDPOINT |       DESCRIPTION        |    Access     |     Status      |
+| :----: | :------: | :----------------------: | :-----------: | :-------------: |
+|  GET   |    /     |     Get all products     |    Public     | Not Implemented |
+|  GET   |   /:id   | Get single product by ID |    Public     | Not Implemented |
+|  POST  |    /     |    Add a new product     | Private/Admin | Not Implemented |
+|  PUT   |   /:id   |   Update product by ID   | Private/Admin | Not Implemented |
+| DELETE |   /:id   |   Delete product by ID   | Private/Admin | Not Implemented |
 
 ## Cart Endpoints
 
 api/cart
 
-| METHOD |      ENDPOINT      |           DESCRIPTION           | Access  |
-| :----: | :----------------: | :-----------------------------: | :-----: |
-|  GET   |         /          |     Get user's current cart     | Private |
-|  POST  |        /add        |   Add product to user's cart    | Private |
-|  PUT   |      /update       | Update quantity or item in cart | Private |
-| DELETE | /remove/:productId |    Remove product from cart     | Private |
+| METHOD |      ENDPOINT      |           DESCRIPTION           | Access  |     Status      |
+| :----: | :----------------: | :-----------------------------: | :-----: | :-------------: |
+|  GET   |         /          |     Get user's current cart     | Private | Not Implemented |
+|  POST  |        /add        |   Add product to user's cart    | Private | Not Implemented |
+|  PUT   |      /update       | Update quantity or item in cart | Private | Not Implemented |
+| DELETE | /remove/:productId |    Remove product from cart     | Private | Not Implemented |
 
 ## Order Endpoints
 
 api/orders/
 
-| METHOD |  ENDPOINT   |                  DESCRIPTION                   |    Access     |
-| :----: | :---------: | :--------------------------------------------: | :-----------: |
-|  GET   |      /      |       Get all orders for logged-in user        |    Private    |
-|  GET   |    /:id     |            Get order details by ID             |    Private    |
-|  POST  |      /      |         Create a new order (checkout)          |    Private    |
-| PATCH  | /:id/status | Update order status (e.g., shipped, delivered) | Private/Admin |
-| DELETE |    /:id     |                Cancel an order                 |    Private    |
+| METHOD |  ENDPOINT   |                  DESCRIPTION                   |    Access     |     Status      |
+| :----: | :---------: | :--------------------------------------------: | :-----------: | :-------------: |
+|  GET   |      /      |       Get all orders for logged-in user        |    Private    | Not Implemented |
+|  GET   |    /:id     |            Get order details by ID             |    Private    | Not Implemented |
+|  POST  |      /      |         Create a new order (checkout)          |    Private    | Not Implemented |
+| PATCH  | /:id/status | Update order status (e.g., shipped, delivered) | Private/Admin | Not Implemented |
+| DELETE |    /:id     |                Cancel an order                 |    Private    | Not Implemented |
 
 # Future Expansions
 
