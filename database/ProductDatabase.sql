@@ -54,7 +54,7 @@ CREATE TABLE users (
     password_hash VARCHAR(255) NOT NULL, 
     
     -- 'customer' is the default value
-    role ENUM('customer', 'sales manager', 'product manager', 'support agent') NOT NULL DEFAULT 'customer',
+    role ENUM('customer', 'sales manager', 'product manager', 'support agent', 'dev') NOT NULL DEFAULT 'customer',
     
     -- Fields for encrypted Personally Identifiable Information (PII)
     first_name_encrypted BLOB,
@@ -218,6 +218,16 @@ VALUES
     (2, 9, 2, 49.99),
     -- Items for order 3 (processing)
     (3, 5, 1, 899.50);
+    
+--  Dev data insertion into users table for dev test   
+SET SESSION sql_mode = 'NO_AUTO_VALUE_ON_ZERO';
+
+INSERT INTO users (user_id, email, password_hash, role, first_name_encrypted, last_name_encrypted, address_encrypted, tax_id_encrypted)
+VALUES
+	(0,'dev@test.local', '$2b$10$fakehash.for.dev.dev', 'dev', 'ENCRYPTED_FIRST_NAME', 'ENCRYPTED_LAST_NAME', 'ENCRYPTED_ADDRESS', 'ENCRYPTED_TAX_ID'  );
+
+SET SESSION sql_mode = '';
+-- dev insertion ends
 
 
 -- ===================================================================
