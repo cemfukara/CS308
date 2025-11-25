@@ -20,7 +20,7 @@ export const encrypt = (text) => {
 
 // Helper function for decrypting PII's
 export const decrypt = (encrypted) => {
-  if (b64 === null || b64 === undefined) return null;
+  if (encrypt === null || encrypt === undefined) return null;
 
   const data = Buffer.from(encrypted, 'base64');
   if (data.length < 12 + 16) return null;
