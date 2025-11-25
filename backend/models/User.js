@@ -52,3 +52,27 @@ export const findById = async (userId) => {
     throw err; // controller will handle
   }
 };
+
+export const updateUserProfile = async (userId, fields) => {
+  // Convert fields to arrays
+  const columns = Object.keys(fields);
+  const values = Object.values(fields);
+
+  // Build a SET clause
+  const setClause = columns.map((col) => `${col} = ?`).join(', ');
+
+  // create the SQL query
+  const sql = `
+    UPDATE users
+    SET ${setClause}
+    WHERE user_id = ?
+  `;
+
+  // Append userId to values
+  values.push(userId);
+
+  // Execute the query
+  const [result] = await db.query(sql, values);
+
+  return result.affectedRows > 0; // boolean success
+};

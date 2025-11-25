@@ -1,5 +1,6 @@
 // Helper functions to encrypt and decrypt data
 import crypto from 'crypto';
+import '../app/config/dotenv.js';
 
 // Helper function for encrypting PII's
 export const encrypt = (text) => {
@@ -15,28 +16,33 @@ export const encrypt = (text) => {
   ]);
   const authTag = cipher.getAuthTag();
 
-  return Buffer.concat([iv, authTag, encrypted]).toString('base64');
+  return Buffer.concat([iv, authTag, encrypted]);
 };
 
 // Helper function for decrypting PII's
-export const decrypt = (encrypted) => {
-  if (encrypt === null || encrypt === undefined) return null;
+export const decrypt = (data) => {
+  if (data === null || data === undefined) return null;
 
-  const data = Buffer.from(encrypted, 'base64');
   if (data.length < 12 + 16) return null;
 
   const key = Buffer.from(process.env.ENCRYPTION_KEY, 'hex');
+  if (key.length !== 32) throw new Error('Invalid AES-256 key length');
+
   const iv = data.slice(0, 12);
   const tag = data.slice(12, 28);
   const ciphertext = data.slice(28);
 
   const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
-
   decipher.setAuthTag(tag);
 
-  const decrypted = Buffer.concat([
-    decipher.update(ciphertext),
-    decipher.final(),
-  ]).toString('utf8');
-  return decrypted;
+  try {
+    const decrypted = Buffer.concat([
+      decipher.update(ciphertext),
+      decipher.final(),
+    ]).toString('utf8');
+    return decrypted;
+  } catch (err) {
+    console.error('Decryption failed:', err.message);
+    return null;
+  }
 };
