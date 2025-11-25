@@ -1,26 +1,11 @@
 // This Sequelize model defines the structure and attributes for the User table.
-import crypto from 'crypto';
+import { encrypt, decrypt } from '../utils/encrypter.js';
 import { db } from '../app/config/db.js';
 
 // Find user by email
 export const findByEmail = async (email) => {
   const [rows] = await db.query('SELECT * FROM users WHERE email = ?', [email]);
   return rows[0];
-};
-
-// Helper function for encrypting PII's
-const encrypt = (text) => {
-  const key = Buffer.from(process.env.ENCRYPTION_KEY, 'hex');
-  const iv = crypto.randomBytes(12);
-  const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
-
-  const encrypted = Buffer.concat([
-    cipher.update(text, 'utf8'),
-    cipher.final(),
-  ]);
-  const authTag = cipher.getAuthTag();
-
-  return Buffer.concat([iv, authTag, encrypted]);
 };
 
 // create user model. Takes already splitted full name
@@ -39,4 +24,31 @@ export const createUser = async (firstName, lastName, email, password_hash) => {
   );
 
   return result.insertId;
+};
+
+// return user info by id
+export const findById = async (userId) => {
+  try {
+    const [rows] = await db.query(`SELECT * FROM users WHERE user_id = ?`, [
+      userId,
+    ]);
+    const user = rows[0] || null;
+    if (!user) return null;
+
+    // Decrypt sensitive fields, some fields can be null as users can register without some PII's
+    user.first_name = user.first_name_encrypted
+      ? decrypt(user.first_name_encrypted)
+      : null;
+    user.last_name = user.last_name_encrypted
+      ? decrypt(user.last_name_encrypted)
+      : null;
+    user.address = user.address_encrypted
+      ? decrypt(user.address_encrypted)
+      : null;
+    user.tax_id = user.tax_id_encrypted ? decrypt(user.tax_id_encrypted) : null;
+
+    return user;
+  } catch (err) {
+    throw err; // controller will handle
+  }
 };

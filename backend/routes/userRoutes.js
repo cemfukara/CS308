@@ -1,6 +1,11 @@
 // Defines user-related API routes (/register, /login, /profile, etc.).
 import express from 'express';
-import { login, register } from '../app/controllers/userController.js';
+import {
+  login,
+  register,
+  getProfile,
+} from '../app/controllers/userController.js';
+import { isAuthenticated } from '../app/middlewares/authMiddleware.js';
 
 const router = express.Router();
 
@@ -23,13 +28,7 @@ router.post('/login', login);
  * @desc    Get logged-in user's profile info
  * @access  Private
  */
-router.get('/profile', (req, res) => {
-  // TODO: implement profile retrieval logic
-  // Expected: authenticated user data
-  res.status(501).json({
-    message: 'Get profile endpoint not implemented yet',
-  });
-});
+router.get('/profile', isAuthenticated, getProfile);
 
 /**
  * @route   PUT /api/users/profile

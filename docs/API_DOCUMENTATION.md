@@ -46,7 +46,7 @@ api/users/
 | :----: | :-------: | :----------------------------------: | :-----: | :-------------: |
 |  POST  | /register |         Register a new user          | Public  |    Finished     |
 |  POST  |  /login   |  Authenticate user and return token  | Public  |    Finished     |
-|  GET   | /profile  |  Get logged-in user's profile info   | Private | Not Implemented |
+|  GET   | /profile  |  Get logged-in user's profile info   | Private |    Finished     |
 | PATCH  | /profile  | Update logged-in user's profile info | Private | Not Implemented |
 
 ### POST /users/register
@@ -108,6 +108,39 @@ Try to log the user in with given credentials
 - Error:
   ```
   { message: 'Invalid credentials' } // http status: 401
+  OR
+  { message: 'Server error' } // http status: 500
+  ```
+
+### GET /users/profile
+
+Returns user information
+
+- Request Body (+ JWT cookie):
+
+  ```
+  // Empty body, authentication done by JWT cookie
+  ```
+
+- Response Body:
+
+  ```
+  {
+    "id":19,
+    "email":"alimemo@provider.com",
+    "firstName": Ali Mehmet,
+    "lastName": Yılmaz,
+    "taxId":123456, // can be null
+    "address": "Tuzla/ISTANBUL", // can be null
+    "role":"user_role",
+    "createdAt":"2025-11-19T13:48:11.000Z"
+  }
+  // http status: 200
+  ```
+
+- Error:
+  ```
+  { message: 'User not found' } // http status: 404
   OR
   { message: 'Server error' } // http status: 500
   ```

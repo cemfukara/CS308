@@ -2,7 +2,7 @@
 
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
-import { findByEmail, createUser } from '../../models/User.js';
+import { findByEmail, createUser, findById } from '../../models/User.js';
 
 export const login = async (req, res) => {
   const { email, password } = req.body;
@@ -18,7 +18,7 @@ export const login = async (req, res) => {
     const token = jwt.sign(
       { user_id: user.user_id, role: user.role },
       process.env.JWT_SECRET,
-      { expiresIn: '1h' }
+      { expiresIn: '7d' }
     );
 
     res.cookie('token', token, {
@@ -82,5 +82,30 @@ export const register = async (req, res) => {
   } catch (err) {
     console.error('Register error:', err);
     res.status(500).json({ message: 'Server error' });
+  }
+};
+
+export const getProfile = async (req, res) => {
+  const userId = req.user.user_id;
+  try {
+    const user = await findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    return res.json({
+      id: user.user_id,
+      email: user.email,
+      firstName: user.first_name,
+      lastName: user.last_name,
+      taxId: user.tax_id,
+      address: user.address,
+      role: user.role,
+      createdAt: user.created_at,
+    });
+  } catch (err) {
+    console.error('Error fetching user:', err);
+    return res.status(500).json({ message: 'Server error' });
   }
 };
