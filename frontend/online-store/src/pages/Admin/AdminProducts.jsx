@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import styles from './AdminProducts.module.css';
 import { getAllProducts, deleteProduct } from '../../lib/productsApi';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 
 function Dropdown({ label, value, onChange, options }) {
   const [open, setOpen] = useState(false);
@@ -100,7 +100,7 @@ function AdminProducts() {
 
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
-  const fetchProducts = () => {
+  const fetchProducts = useCallback(() => {
     setLoading(true);
     setError(null);
 
@@ -128,11 +128,11 @@ function AdminProducts() {
         setError(err.message || 'Failed to load products');
       })
       .finally(() => setLoading(false));
-  };
+  }, [search, sortBy, sortOrder, page]);
 
   useEffect(() => {
     fetchProducts();
-  }, [search, sortBy, sortOrder, page]);
+  }, [fetchProducts]);
 
   const handleSearchSubmit = e => {
     e.preventDefault();
@@ -182,12 +182,12 @@ function AdminProducts() {
     setDeleteOpen(true);
   };
 
-  const closeDeleteModal = () => {
+  const closeDeleteModal = useCallback(() => {
     if (deleteLoading) return;
     setDeleteOpen(false);
     setDeleteTarget(null);
     setDeleteError('');
-  };
+  },[])};
 
   const handleConfirmDelete = async () => {
     if (!deleteTarget) return;
