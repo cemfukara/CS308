@@ -222,9 +222,9 @@ VALUES
 --  Dev data insertion into users table for dev test   
 SET SESSION sql_mode = 'NO_AUTO_VALUE_ON_ZERO';
 
-INSERT INTO users (user_id, email, password_hash, role, first_name_encrypted, last_name_encrypted, address_encrypted, tax_id_encrypted)
+INSERT INTO users (user_id, email, password_hash, role)
 VALUES
-	(0,'dev@test.local', '$2b$10$fakehash.for.dev.dev', 'dev', 'ENCRYPTED_FIRST_NAME', 'ENCRYPTED_LAST_NAME', 'ENCRYPTED_ADDRESS', 'ENCRYPTED_TAX_ID'  );
+	(0,'dev@test.local', '$2b$10$fakehash.for.dev.dev', 'dev');
 
 SET SESSION sql_mode = '';
 -- dev insertion ends
