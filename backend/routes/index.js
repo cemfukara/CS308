@@ -7,5 +7,13 @@ import cartRoutes from './cartRoutes.js';
 import orderRoutes from './orderRoutes.js';
 import productRoutes from './productRoutes.js';
 import userRoutes from './userRoutes.js';
+import categoryRoutes from './categoryRoutes.js';
 
-export { adminRoutes, cartRoutes, orderRoutes, productRoutes, userRoutes };
+export {
+  adminRoutes,
+  cartRoutes,
+  orderRoutes,
+  productRoutes,
+  userRoutes,
+  categoryRoutes,
+};

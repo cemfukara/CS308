@@ -4,28 +4,29 @@ import express from 'express';
 import cors from 'cors'; //Cross Origin Resource Sharing, Frontend can make a request
 import cookieParser from 'cookie-parser';
 import {
-    adminRoutes,
-    cartRoutes,
-    orderRoutes,
-    productRoutes,
-    userRoutes,
+  adminRoutes,
+  cartRoutes,
+  orderRoutes,
+  productRoutes,
+  userRoutes,
+  categoryRoutes,
 } from '../routes/index.js';
 const app = express();
 
 app.use(express.json());
 
 app.use(
-    cors({
-        //Connection with frontend only in the given port
-        origin: 'http://localhost:2000',
-        credentials: true,
-    })
+  cors({
+    //Connection with frontend only in the given port
+    origin: 'http://localhost:2000',
+    credentials: true,
+  })
 );
 
 app.use(cookieParser());
 
 app.get('/', (req, res) => {
-    res.send('ITS ALIVE!');
+  res.send('ITS ALIVE!');
 });
 
 // Sample route
@@ -35,5 +36,6 @@ app.use('/api/cart', cartRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/categories', categoryRoutes);
 
 export default app;
