@@ -33,6 +33,8 @@ import OrderDetails from './pages/Account/OrderDetails';
 //Admin
 import AdminLayout from './pages/Admin/AdminLayout.jsx';
 import AdminProducts from './pages/Admin/AdminProducts.jsx';
+import AdminProductEdit from './pages/Admin/AdminProductEdit.jsx';
+import AdminProductNew from './pages/Admin/AdminProductNew.jsx';
 
 function AppContent() {
   const location = useLocation();
@@ -77,7 +79,8 @@ function AppContent() {
         {/* Admin routes */}
         <Route path="/admin" element={<AdminLayout />}>
           <Route path="products" element={<AdminProducts />} />
-          {/* later: categories, inventory, deliveries, comments ... */}
+          <Route path="products/new" element={<AdminProductNew />} />
+          <Route path="products/edit/:id" element={<AdminProductEdit />} />
         </Route>
 
         {/* Fallback */}
