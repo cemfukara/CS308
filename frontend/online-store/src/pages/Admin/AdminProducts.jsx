@@ -187,7 +187,7 @@ function AdminProducts() {
     setDeleteOpen(false);
     setDeleteTarget(null);
     setDeleteError('');
-  },[])};
+  }, [deleteLoading]);
 
   const handleConfirmDelete = async () => {
     if (!deleteTarget) return;
@@ -216,7 +216,7 @@ function AdminProducts() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [deleteOpen]);
+  }, [deleteOpen, closeDeleteModal]);
 
   return (
     <div className={styles.wrapper}>
