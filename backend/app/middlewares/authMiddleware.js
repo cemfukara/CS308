@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken';
 
 export const isAuthenticated = (req, res, next) => {
   if (
-    process.env.AUTH_DISABLED === `true` &&
+    process.env.AUTH_DISABLED === 'true' &&
     process.env.NODE_ENV == 'development'
   ) {
     req.user = {

@@ -4,6 +4,7 @@ import {
   login,
   register,
   getProfile,
+  updateProfile,
 } from '../app/controllers/userController.js';
 import { isAuthenticated } from '../app/middlewares/authMiddleware.js';
 
@@ -35,12 +36,6 @@ router.get('/profile', isAuthenticated, getProfile);
  * @desc    Update logged-in user's profile info
  * @access  Private
  */
-router.patch('/profile', (req, res) => {
-  // TODO: implement profile update logic
-  // Expected: new name, email, password (optional)
-  res.status(501).json({
-    message: 'Update profile endpoint not implemented yet',
-  });
-});
+router.patch('/profile', isAuthenticated, updateProfile);
 
 export default router;

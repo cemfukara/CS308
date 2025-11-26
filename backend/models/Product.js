@@ -5,55 +5,54 @@ import { db } from '../app/config/db.js';
 
 // VALID sortable columns (must exist in DB)
 const validSortColumns = [
-    'product_id',
-    'name',
-    'price',
-    'list_price',
-    'quantity_in_stock',
-    'discount_ratio',
+  'product_id',
+  'name',
+  'price',
+  'list_price',
+  'quantity_in_stock',
+  'discount_ratio',
 ];
 
 // GET ALL PRODUCTS (pagination, search, sorting, category filter)
 export async function getAllProducts({
-    limit = 10,
-    page = 1,
-    sortBy = 'product_id',
-    sortOrder = 'ASC',
-    search = '',
-    category = null
+  limit = 10,
+  page = 1,
+  sortBy = 'product_id',
+  sortOrder = 'ASC',
+  search = '',
+  category = null,
 } = {}) {
+  const offset = (page - 1) * limit;
+  let whereClause = 'WHERE 1=1';
+  const queryParams = [];
 
-    const offset = (page - 1) * limit;
-    let whereClause = 'WHERE 1=1';
-    const queryParams = [];
+  // Search condition
+  if (search) {
+    whereClause += ` AND (name LIKE ? OR description LIKE ?)`;
+    queryParams.push(`%${search}%`, `%${search}%`);
+  }
 
-    // Search condition
-    if (search) {
-        whereClause += ` AND (name LIKE ? OR description LIKE ?)`;
-        queryParams.push(`%${search}%`, `%${search}%`);
-    }
+  // Category filter
+  if (category) {
+    whereClause += ` AND category_id = ?`;
+    queryParams.push(category);
+  }
 
-    // Category filter
-    if (category) {
-        whereClause += ` AND category_id = ?`;
-        queryParams.push(category);
-    }
+  // Sort sanitization
+  const safeSortBy = validSortColumns.includes(sortBy) ? sortBy : 'product_id';
+  const safeSortOrder = sortOrder.toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
 
-    // Sort sanitization
-    const safeSortBy = validSortColumns.includes(sortBy) ? sortBy : 'product_id';
-    const safeSortOrder = sortOrder.toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
+  // 1. Count
+  const [countRows] = await db.query(
+    `SELECT COUNT(*) AS totalCount FROM products ${whereClause}`,
+    queryParams
+  );
 
-    // 1. Count
-    const [countRows] = await db.query(
-        `SELECT COUNT(*) AS totalCount FROM products ${whereClause}`,
-        queryParams
-    );
+  const totalCount = countRows[0].totalCount;
 
-    const totalCount = countRows[0].totalCount;
-
-    // 2. Main product query
-    const productQuery = `
-        SELECT 
+  // 2. Main product query
+  const productQuery = `
+        SELECT
             product_id,
             category_id,
             name,
@@ -73,46 +72,44 @@ export async function getAllProducts({
         LIMIT ? OFFSET ?
     `;
 
-    queryParams.push(limit, offset);
+  queryParams.push(Number(limit), offset);
 
-    const [rows] = await db.query(productQuery, queryParams);
+  const [rows] = await db.query(productQuery, queryParams);
 
-    return {
-        products: rows,
-        totalCount,
-        currentPage: Number(page),
-        limit: Number(limit)
-    };
+  return {
+    products: rows,
+    totalCount,
+    currentPage: Number(page),
+    limit: Number(limit),
+  };
 }
 
 // GET PRODUCT BY ID
 export async function getProductById(productId) {
-    const [rows] = await db.query(
-        `SELECT * FROM products WHERE product_id = ?`,
-        [productId]
-    );
+  const [rows] = await db.query(`SELECT * FROM products WHERE product_id = ?`, [
+    productId,
+  ]);
 
-    return rows[0];
+  return rows[0];
 }
 
 // CREATE PRODUCT (matches your SQL columns)
 export async function createProduct(productData) {
+  const {
+    category_id,
+    name,
+    model,
+    serial_number,
+    description,
+    quantity_in_stock,
+    price,
+    list_price,
+    warranty_status,
+    distributor_info,
+  } = productData;
 
-    const {
-        category_id,
-        name,
-        model,
-        serial_number,
-        description,
-        quantity_in_stock,
-        price,
-        list_price,
-        warranty_status,
-        distributor_info
-    } = productData;
-
-    const [result] = await db.query(
-        `
+  const [result] = await db.query(
+    `
         INSERT INTO products (
             category_id,
             name,
@@ -126,50 +123,48 @@ export async function createProduct(productData) {
             distributor_info
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `,
-        [
-            category_id || null,
-            name,
-            model || null,
-            serial_number || null,
-            description || null,
-            quantity_in_stock ?? 0,
-            price,
-            list_price || null,
-            warranty_status || null,
-            distributor_info || null
-        ]
-    );
+    [
+      category_id || null,
+      name,
+      model || null,
+      serial_number || null,
+      description || null,
+      quantity_in_stock ?? 0,
+      price,
+      list_price || null,
+      warranty_status || null,
+      distributor_info || null,
+    ]
+  );
 
-    return result.insertId;
+  return result.insertId;
 }
 
 // UPDATE PRODUCT
 export async function updateProduct(productId, productData) {
+  const fields = Object.keys(productData)
+    .filter((key) => key !== 'product_id') // protect PK
+    .map((key) => `${key} = ?`)
+    .join(', ');
 
-    const fields = Object.keys(productData)
-        .filter(key => key !== "product_id") // protect PK
-        .map(key => `${key} = ?`)
-        .join(', ');
+  if (!fields) return 0;
 
-    if (!fields) return 0;
+  const values = Object.values(productData);
+  values.push(productId);
 
-    const values = Object.values(productData);
-    values.push(productId);
+  const [result] = await db.query(
+    `UPDATE products SET ${fields} WHERE product_id = ?`,
+    values
+  );
 
-    const [result] = await db.query(
-        `UPDATE products SET ${fields} WHERE product_id = ?`,
-        values
-    );
-
-    return result.affectedRows;
+  return result.affectedRows;
 }
 
 // DELETE PRODUCT
 export async function deleteProduct(productId) {
-    const [result] = await db.query(
-        `DELETE FROM products WHERE product_id = ?`,
-        [productId]
-    );
+  const [result] = await db.query(`DELETE FROM products WHERE product_id = ?`, [
+    productId,
+  ]);
 
-    return result.affectedRows;
+  return result.affectedRows;
 }

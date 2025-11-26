@@ -2,7 +2,13 @@
 
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
-import { findByEmail, createUser, findById } from '../../models/User.js';
+import { encrypt } from '../../utils/encrypter.js';
+import {
+  findByEmail,
+  createUser,
+  findById,
+  updateUserProfile,
+} from '../../models/User.js';
 
 export const login = async (req, res) => {
   const { email, password } = req.body;
@@ -106,6 +112,63 @@ export const getProfile = async (req, res) => {
     });
   } catch (err) {
     console.error('Error fetching user:', err);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+export const updateProfile = async (req, res) => {
+  try {
+    const userId = req.user.user_id;
+
+    // Validate allowed fields to prevent uncontrolled updates
+    const allowedFields = [
+      'first_name',
+      'last_name',
+      'address',
+      'tax_id',
+      'email',
+    ];
+    for (const key in req.body) {
+      if (!allowedFields.includes(key)) {
+        return res.status(400).json({ message: `Invalid field: ${key}` });
+      }
+    }
+
+    const { first_name, last_name, address, tax_id, email } = req.body;
+
+    const updateFields = {};
+
+    updateFields.first_name_encrypted =
+      first_name !== undefined && first_name !== null
+        ? encrypt(first_name)
+        : null;
+    updateFields.last_name_encrypted =
+      last_name !== undefined && last_name !== null ? encrypt(last_name) : null;
+
+    if (address !== undefined) {
+      updateFields.address_encrypted = address ? encrypt(address) : null;
+    }
+    if (tax_id !== undefined) {
+      updateFields.tax_id_encrypted = tax_id ? encrypt(tax_id) : null;
+    }
+
+    // Email format validation
+    if (email !== undefined) {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        return res.status(400).json({ message: 'Invalid email format.' });
+      }
+      updateFields.email = email;
+    }
+    // If no valid fields to update return error to prevent empty update (might break SQL)
+    if (Object.keys(updateFields).length === 0) {
+      return res.status(400).json({ message: 'No valid fields to update.' });
+    }
+
+    await updateUserProfile(userId, updateFields);
+
+    return res.status(200).json({ message: 'Profile updated successfully' });
+  } catch (error) {
+    console.error('updateProfile error:', error);
     return res.status(500).json({ message: 'Server error' });
   }
 };
