@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 
 // Layout
@@ -17,6 +17,7 @@ import TermsPolicy from './pages/TermsPolicy';
 import Contact from './pages/Contact';
 import Checkout from './pages/Checkout/Checkout';
 import Payment from './pages/Checkout/Payment';
+import Confirmation from './pages/Checkout/Confirmation';
 
 // Account (nested)
 import AccountLayout from './pages/Account/AccountLayout';
@@ -27,18 +28,23 @@ import Favorites from './pages/Account/Favorites';
 import Orders from './pages/Account/Orders';
 import Support from './pages/Account/Support';
 import Logout from './pages/Account/Logout';
-
-// ✅ New: Order details page
 import OrderDetails from './pages/Account/OrderDetails';
-import Confirmation from './pages/Checkout/Confirmation';
 
-function App() {
+//Admin
+import AdminLayout from './pages/Admin/AdminLayout.jsx';
+import AdminProducts from './pages/Admin/AdminProducts.jsx';
+
+function AppContent() {
+  const location = useLocation();
+  const isAdminRoute = location.pathname.startsWith('/admin');
+
   return (
-    <Router>
+    <>
       {/* Global toast container */}
       <Toaster position="top-right" reverseOrder={false} />
 
-      <Navbar />
+      {/* Hide Navbar/Footer on /admin routes */}
+      {!isAdminRoute && <Navbar />}
 
       <Routes>
         {/* Public routes */}
@@ -63,16 +69,31 @@ function App() {
           <Route path="addresses" element={<Addresses />} />
           <Route path="favorites" element={<Favorites />} />
           <Route path="orders" element={<Orders />} />
-          <Route path="orders/:id" element={<OrderDetails />} /> {/* ✅ Added */}
+          <Route path="orders/:id" element={<OrderDetails />} />
           <Route path="support" element={<Support />} />
           <Route path="logout" element={<Logout />} />
+        </Route>
+
+        {/* Admin routes */}
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route path="products" element={<AdminProducts />} />
+          {/* later: categories, inventory, deliveries, comments ... */}
         </Route>
 
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
 
-      <Footer />
+      {!isAdminRoute && <Footer />}
+    </>
+  );
+}
+
+// Top-level component that provides the Router
+function App() {
+  return (
+    <Router>
+      <AppContent />
     </Router>
   );
 }

@@ -1,0 +1,169 @@
+.adminShell {
+  width: 100%;
+  max-width: 1500px;
+  margin: 0;
+  padding: 20px;
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  gap: 24px;
+}
+
+/* Sidebar */
+
+.sidebar {
+  background: #0f172a;
+  color: #e5e7eb;
+  border-radius: 16px;
+  padding: 20px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  justify-content: flex-start;
+  box-shadow: 0 15px 40px rgba(15, 23, 42, 0.45);
+}
+
+.brand {
+  margin-bottom: 16px;
+}
+
+.brandMain {
+  display: block;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.brandSub {
+  display: block;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #9ca3af;
+}
+
+/* Nav links */
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-size: 14px;
+  color: #e5e7eb;
+  text-decoration: none;
+  transition:
+    background 0.18s ease,
+    color 0.18s ease,
+    transform 0.08s ease;
+}
+
+.link:hover {
+  background: rgba(148, 163, 184, 0.25);
+  transform: translateY(-1px);
+}
+
+.active {
+  background: #2563eb;
+  color: #f9fafb;
+}
+
+/* Sidebar footer */
+
+.footer {
+  margin-top: auto;
+  padding-top: 14px;
+  border-top: 1px solid rgba(148, 163, 184, 0.45);
+  font-size: 12px;
+}
+
+.footerLabel {
+  display: block;
+  color: #9ca3af;
+}
+
+.footerRole {
+  display: block;
+  font-weight: 500;
+}
+
+/* Main admin content */
+
+.mainArea {
+  min-width: 0;
+}
+
+/* On small screens, put sidebar on top */
+
+@media (max-width: 900px) {
+  .adminShell {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .sidebar {
+    flex-direction: row;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .footer {
+    display: none;
+  }
+}
+
+.backToStoreWrapper {
+  margin-bottom: 14px;
+}
+
+.backToStore {
+  display: inline-block;
+  padding: 6px 12px;
+  font-size: 13px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #e5e7eb;
+  border-radius: 8px;
+  text-decoration: none;
+  transition:
+    background 0.2s ease,
+    transform 0.1s ease,
+    color 0.2s ease;
+}
+
+.backToStore:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.backToStore {
+  position: relative;
+  padding-left: 18px;
+}
+
+.backToStore::before {
+  content: '←';
+  position: absolute;
+  left: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0.5;
+  transition:
+    transform 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.backToStore:hover::before {
+  transform: translate(-2px, -50%);
+  opacity: 1;
+}
