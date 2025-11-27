@@ -169,8 +169,13 @@ export const updateProfile = async (req, res) => {
       updateFields.email = email;
     }
 
+    // Check if any field is updated
+    const allNull = Object.keys(updateFields).every(
+      (key) => updateFields[key] === null
+    );
+
     // If no valid fields to update return error to prevent empty update (might break SQL)
-    if (Object.keys(updateFields).length === 0) {
+    if (allNull) {
       return res.status(400).json({ message: 'No valid fields to update.' });
     }
 
@@ -184,7 +189,7 @@ export const updateProfile = async (req, res) => {
       let token = null;
       token = generateAccessToken({
         user_id: userId,
-        email,
+        email: email,
         role: req.user.role,
       });
 

@@ -12,7 +12,6 @@ export const generateAccessToken = (payload) => {
     email: payload.email,
     role: payload.role,
   };
-  console.log(`generating token ${payloadToBeSent.email}`);
 
   // Sign
   return jwt.sign(payloadToBeSent, ACCESS_TOKEN_SECRET, {
