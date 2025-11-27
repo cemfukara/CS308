@@ -3,6 +3,7 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { encrypt } from '../../utils/encrypter.js';
+import { generateAccessToken } from '../../utils/generateToken.js';
 import {
   findByEmail,
   createUser,
@@ -20,13 +21,14 @@ export const login = async (req, res) => {
     const valid = await bcrypt.compare(password, user.password_hash);
     if (!valid) return res.status(401).json({ message: 'Invalid credentials' });
 
-    // Create token
-    const token = jwt.sign(
-      { user_id: user.user_id, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: '7d' }
-    );
+    // create token
+    const token = generateAccessToken({
+      user_id: userId,
+      email,
+      role: req.user.role,
+    });
 
+    // pass as cookie
     res.cookie('token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production', // only true in production
@@ -152,19 +154,53 @@ export const updateProfile = async (req, res) => {
       updateFields.tax_id_encrypted = tax_id ? encrypt(tax_id) : null;
     }
 
+    let emailChanged = false; // email change flag
+
     // Email format validation
     if (email !== undefined) {
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         return res.status(400).json({ message: 'Invalid email format.' });
       }
+
+      if (email != req.user.email) {
+        // check if email is different
+        emailChanged = true;
+      }
       updateFields.email = email;
     }
+
+    // Check if any field is updated
+    const allNull = Object.keys(updateFields).every(
+      (key) => updateFields[key] === null
+    );
+
     // If no valid fields to update return error to prevent empty update (might break SQL)
-    if (Object.keys(updateFields).length === 0) {
+    if (allNull) {
       return res.status(400).json({ message: 'No valid fields to update.' });
     }
 
     await updateUserProfile(userId, updateFields);
+
+    // In dev mode, req.user is always same, so even with updated email, token may not be regenerated. Force regenerate.
+    if (process.env.NODE_ENV === 'development') emailChanged = true;
+
+    // return new cookie with updated email if email is changed
+    if (emailChanged) {
+      let token = null;
+      token = generateAccessToken({
+        user_id: userId,
+        email: email,
+        role: req.user.role,
+      });
+
+      // pass as cookie
+      res.cookie('token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production', // only true in production
+        sameSite: 'strict',
+        maxAge: 60 * 60 * 1000,
+      });
+    }
 
     return res.status(200).json({ message: 'Profile updated successfully' });
   } catch (error) {

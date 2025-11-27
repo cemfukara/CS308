@@ -2,6 +2,8 @@
 
 import jwt from 'jsonwebtoken';
 
+// This function decodes the valid JWT token from cookies and passes its contents to req.user
+// IMPORTANT: This function does not checks for user roles, only decodes the token. Must used with authorizeRoles([-allowed roles-]) for role checks.
 export const isAuthenticated = (req, res, next) => {
   if (
     process.env.AUTH_DISABLED === 'true' &&

@@ -1,6 +1,5 @@
 // Helper functions to encrypt and decrypt data
 import crypto from 'crypto';
-import '../app/config/dotenv.js';
 
 // Helper function for encrypting PII's
 export const encrypt = (text) => {

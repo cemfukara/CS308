@@ -25,10 +25,6 @@ app.use(
 
 app.use(cookieParser());
 
-app.get('/', (req, res) => {
-  res.send('ITS ALIVE!');
-});
-
 // Sample route
 app.use('/api/users', userRoutes);
 app.use('/api/admin', adminRoutes);
