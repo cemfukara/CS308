@@ -13,7 +13,7 @@ function Dropdown({ label, value, onChange, options }) {
 
   // Find currently selected option
   const currentIndex = options.findIndex(o => o.value === value);
-  const current = options[currentIndex] || options[0];
+  const current = options.find(o => o.value === value) || null;
 
   /* =======================================================
      OPEN/CLOSE LOGIC
@@ -157,7 +157,7 @@ function Dropdown({ label, value, onChange, options }) {
           setActiveIndex(currentIndex >= 0 ? currentIndex : 0);
         }}
       >
-        <span>{current?.label}</span>
+        <span>{current ? current.label : label}</span>
         <span className={styles.dropdownChevron}>▾</span>
       </button>
 
