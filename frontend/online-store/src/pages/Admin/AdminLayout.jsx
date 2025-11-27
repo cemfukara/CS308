@@ -1,7 +1,14 @@
 import { NavLink, Outlet, Link } from 'react-router-dom';
 import styles from './AdminLayout.module.css';
+import useAuthStore from '../../store/authStore';
+
+function capitalize(s) {
+  if (s == null || s == undefined) return null;
+  return s.toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+}
 
 export default function AdminLayout() {
+  const user = useAuthStore(state => state.user);
   return (
     <div className={styles.adminShell}>
       <aside className={styles.sidebar}>
@@ -65,7 +72,7 @@ export default function AdminLayout() {
 
         <div className={styles.footer}>
           <span className={styles.footerLabel}>Logged in as</span>
-          <span className={styles.footerRole}>Product Manager</span>
+          <span className={styles.footerRole}>{capitalize(user?.role) || 'Loading...'}</span>
         </div>
       </aside>
 

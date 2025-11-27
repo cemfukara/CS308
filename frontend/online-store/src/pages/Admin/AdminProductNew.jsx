@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { createProduct, getCategories } from '../../lib/productsApi';
+import { createProduct } from '../../lib/productsApi';
+import { getCategories } from '../../lib/categoriesApi';
 import styles from './AdminProducts.module.css';
 import Dropdown from '../../components/Dropdown.jsx';
 

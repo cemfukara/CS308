@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import styles from './AdminProducts.module.css';
-import { getAllProducts, deleteProduct, getCategories } from '../../lib/productsApi';
+import { getAllProducts, deleteProduct } from '../../lib/productsApi';
+import { getCategories } from '../../lib/categoriesApi';
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Dropdown from '../../components/Dropdown.jsx';

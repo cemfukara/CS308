@@ -3,28 +3,15 @@ import { Link, useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUser, faCartShopping } from '@fortawesome/free-solid-svg-icons';
 import './Navbar.css';
+import useAuthStore from '../store/authStore';
 
 const Navbar = () => {
   const navigate = useNavigate();
-  const [loggedInUser, setLoggedInUser] = useState(null);
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef();
 
-  // ✅ Load user on mount
-  useEffect(() => {
-    const user = JSON.parse(localStorage.getItem('loggedInUser'));
-    setLoggedInUser(user);
-  }, []);
-
-  // ✅ Listen for login/logout changes in other tabs
-  useEffect(() => {
-    const handleStorageChange = () => {
-      const user = JSON.parse(localStorage.getItem('loggedInUser'));
-      setLoggedInUser(user);
-    };
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
+  const user = useAuthStore(state => state.user);
+  const logout = useAuthStore(state => state.logout);
 
   // ✅ Close dropdown when clicking outside
   useEffect(() => {
@@ -37,22 +24,20 @@ const Navbar = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // ✅ Handle login/logout logic correctly
+  // ✅ Profile icon click
   const handleProfileClick = () => {
-    const user = JSON.parse(localStorage.getItem('loggedInUser'));
     if (user) {
-      // User is logged in → toggle dropdown
+      // Logged in → open/close dropdown
       setShowDropdown(prev => !prev);
-      setLoggedInUser(user); // ensure state stays in sync
     } else {
-      // User not logged in → go to auth page
+      // Not logged in → go to auth page
       navigate('/auth');
     }
   };
 
+  // ✅ Logout
   const handleLogout = () => {
-    localStorage.removeItem('loggedInUser');
-    setLoggedInUser(null);
+    logout(); // clears cookie + authStore.user
     setShowDropdown(false);
     navigate('/auth');
   };
@@ -83,7 +68,7 @@ const Navbar = () => {
           </span>
 
           {/* ✅ Dropdown (only when logged in) */}
-          {loggedInUser && showDropdown && (
+          {user && showDropdown && (
             <div className="profile-dropdown">
               <Link to="/account/profile" onClick={() => setShowDropdown(false)}>
                 Profile Info
@@ -100,6 +85,14 @@ const Navbar = () => {
               <Link to="/account/support" onClick={() => setShowDropdown(false)}>
                 Support
               </Link>
+
+              {/* 🛠 Admin link only for PM / dev */}
+              {user.role === 'product manager' || user.role === 'dev' ? (
+                <Link to="/admin/products" onClick={() => setShowDropdown(false)}>
+                  Admin Panel
+                </Link>
+              ) : null}
+
               <button onClick={handleLogout}>Logout</button>
             </div>
           )}
