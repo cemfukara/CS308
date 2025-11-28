@@ -145,6 +145,22 @@ CREATE TABLE order_items (
 );
 
 -- ===================================================================
+-- 8. WISHLISTS TABLE (NEW)
+-- ===================================================================
+CREATE TABLE wishlists (
+    wishlist_id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT NOT NULL,
+    product_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (user_id) REFERENCES users(user_id),
+    FOREIGN KEY (product_id) REFERENCES products(product_id),
+    
+    -- Prevent duplicate entries: A user can only wishlist a product once
+    CONSTRAINT uq_user_product_wishlist UNIQUE(user_id, product_id)
+);
+
+-- ===================================================================
 -- DATA INSERTION
 -- ===================================================================
 -- (Note: Data is inserted in order of dependency)
@@ -218,6 +234,14 @@ VALUES
     (2, 9, 2, 49.99),
     -- Items for order 3 (processing)
     (3, 5, 1, 899.50);
+    
+-- 8. Insert Wishlist items
+-- (Depends on users and products)    
+INSERT INTO wishlists (user_id, product_id) 
+VALUES
+(1, 4), -- John wants the AeroBook Pro
+(1, 7), -- John also wants the Speaker
+(2, 6); -- Jane wants the Earbuds
     
 --  Dev data insertion into users table for dev test   
 SET SESSION sql_mode = 'NO_AUTO_VALUE_ON_ZERO';
