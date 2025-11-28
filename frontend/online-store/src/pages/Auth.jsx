@@ -1,10 +1,13 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import './Auth.css';
+import { api } from '../lib/api'; // ✅ use your API helper
+import useAuthStore from '../store/authStore';
 
 const Auth = () => {
   const navigate = useNavigate();
+  const setUser = useAuthStore(state => state.setUser);
 
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({
@@ -42,7 +45,7 @@ const Auth = () => {
   const isValidEmail = email => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
   const isValidPhone = phone => /^\d{10,15}$/.test(phone.trim());
 
-  // Email verification flow
+  // Email verification flow (mock)
   const handleEmailVerification = () => {
     if (!isValidEmail(formData.email)) {
       setError('Enter a valid email before verification.');
@@ -54,7 +57,7 @@ const Auth = () => {
     toast('📧 Mock code sent to your email.');
   };
 
-  // Phone verification flow
+  // Phone verification flow (mock)
   const handlePhoneVerification = () => {
     if (!isValidPhone(formData.phone)) {
       setError('Enter a valid phone number before verification.');
@@ -87,9 +90,12 @@ const Auth = () => {
     }
   };
 
-  // Register logic
-  const handleRegister = e => {
+  // -----------------------------
+  // REGISTER → backend /users/register
+  // -----------------------------
+  const handleRegister = async e => {
     e.preventDefault();
+    setError('');
 
     if (!emailVerified || !phoneVerified) {
       setError('Please verify your email and phone first.');
@@ -101,39 +107,55 @@ const Auth = () => {
       return;
     }
 
-    const users = JSON.parse(localStorage.getItem('users')) || [];
-    const exists = users.some(u => u.email === formData.email);
-    if (exists) {
-      setError('An account with this email already exists.');
-      return;
+    try {
+      // Backend expects full_name, email, password
+      await api.post('/users/register', {
+        full_name: formData.fullName,
+        email: formData.email,
+        password: formData.password,
+      });
+
+      toast.success('🎉 Account created successfully! You can now log in.');
+
+      // Switch to login tab and keep email prefilled
+      setIsLogin(true);
+      setFormData(prev => ({
+        ...prev,
+        password: '',
+        confirmPassword: '',
+      }));
+      setError('');
+    } catch (err) {
+      setError(err.message || 'Registration failed. Please try again.');
     }
-
-    const newUser = {
-      fullName: formData.fullName,
-      email: formData.email,
-      phone: formData.phone,
-      password: formData.password,
-    };
-
-    localStorage.setItem('users', JSON.stringify([...users, newUser]));
-    localStorage.setItem('loggedInUser', JSON.stringify(newUser));
-
-    toast.success('🎉 Account created successfully! Welcome!');
-    navigate('/'); // ✅ redirect to homepage
   };
 
-  // Login logic
-  const handleLogin = e => {
+  // -----------------------------
+  // LOGIN → backend /users/login
+  // -----------------------------
+  const handleLogin = async e => {
     e.preventDefault();
-    const users = JSON.parse(localStorage.getItem('users')) || [];
-    const user = users.find(u => u.email === formData.email && u.password === formData.password);
+    setError('');
 
-    if (user) {
-      localStorage.setItem('loggedInUser', JSON.stringify(user));
+    try {
+      // Backend login: sets JWT cookie + returns message
+      await api.post('/users/login', {
+        email: formData.email,
+        password: formData.password,
+      });
+
+      try {
+        const profile = await api.get('/users/profile');
+        setUser(profile);
+      } catch (e) {
+        // if profile fails, we still at least logged in, but admin guard might not work
+        console.error('Profile fetch after login failed', e);
+      }
+
       toast.success('✅ Welcome back!');
-      navigate('/'); // ✅ redirect to homepage
-    } else {
-      setError('Invalid email or password.');
+      navigate('/'); // redirect to homepage
+    } catch (err) {
+      setError(err.message || 'Invalid email or password.');
     }
   };
 
@@ -182,7 +204,6 @@ const Auth = () => {
               required
             />
 
-            {/* ✅ Forgot Password Link */}
             <p className="forgot-password-link" onClick={() => navigate('/forgot-password')}>
               Forgot your password?
             </p>

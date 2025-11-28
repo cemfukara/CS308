@@ -24,3 +24,11 @@ export const getProductsByCategory = categoryId => getAllProducts({ category: ca
 export const getProductsById = productId => api.get(`/products/${productId}`);
 
 export const deleteProduct = productId => api.del(`/products/${productId}`);
+
+export const createProduct = payload => {
+  return api.post('/products', payload);
+};
+
+export const updateProduct = (productId, payload) => {
+  return api.put(`/products/${productId}`, payload);
+};

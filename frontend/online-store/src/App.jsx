@@ -1,5 +1,10 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
+import { useEffect } from 'react';
+
+import RequirePM from './components/RequirePM';
+import RequireAuth from './components/RequireAuth';
+import useAuthStore from './store/authStore';
 
 // Layout
 import Navbar from './components/Navbar';
@@ -33,11 +38,21 @@ import OrderDetails from './pages/Account/OrderDetails';
 //Admin
 import AdminLayout from './pages/Admin/AdminLayout.jsx';
 import AdminProducts from './pages/Admin/AdminProducts.jsx';
+import AdminProductEdit from './pages/Admin/AdminProductEdit.jsx';
+import AdminProductNew from './pages/Admin/AdminProductNew.jsx';
+import AdminStock from './pages/Admin/AdminStock.jsx';
+import AdminCategories from './pages/Admin/AdminCategories.jsx';
 
 function AppContent() {
   const location = useLocation();
   const isAdminRoute = location.pathname.startsWith('/admin');
 
+  const fetchProfile = useAuthStore(state => state.fetchProfile);
+
+  // Fetch logged-in user on app start
+  useEffect(() => {
+    fetchProfile();
+  }, []);
   return (
     <>
       {/* Global toast container */}
@@ -62,7 +77,14 @@ function AppContent() {
         <Route path="/checkout/confirmation" element={<Confirmation />} />
 
         {/* Account routes (nested under /account) */}
-        <Route path="/account" element={<AccountLayout />}>
+        <Route
+          path="/account"
+          element={
+            <RequireAuth>
+              <AccountLayout />
+            </RequireAuth>
+          }
+        >
           <Route index element={<Navigate to="profile" replace />} />
           <Route path="profile" element={<ProfileInfo />} />
           <Route path="password" element={<ChangePassword />} />
@@ -75,9 +97,19 @@ function AppContent() {
         </Route>
 
         {/* Admin routes */}
-        <Route path="/admin" element={<AdminLayout />}>
+        <Route
+          path="/admin"
+          element={
+            <RequirePM>
+              <AdminLayout />
+            </RequirePM>
+          }
+        >
           <Route path="products" element={<AdminProducts />} />
-          {/* later: categories, inventory, deliveries, comments ... */}
+          <Route path="products/new" element={<AdminProductNew />} />
+          <Route path="products/edit/:id" element={<AdminProductEdit />} />
+          <Route path="inventory" element={<AdminStock />} />
+          <Route path="categories" element={<AdminCategories />} />
         </Route>
 
         {/* Fallback */}

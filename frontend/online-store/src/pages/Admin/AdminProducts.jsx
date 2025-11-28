@@ -1,63 +1,10 @@
 import { Link } from 'react-router-dom';
 import styles from './AdminProducts.module.css';
 import { getAllProducts, deleteProduct } from '../../lib/productsApi';
-import { useState, useEffect, useRef, useCallback } from 'react';
-
-function Dropdown({ label, value, onChange, options }) {
-  const [open, setOpen] = useState(false);
-  const dropdownRef = useRef(null);
-
-  const current = options.find(o => o.value === value) || options[0];
-
-  const handleSelect = val => {
-    onChange(val);
-    setOpen(false);
-  };
-
-  // Close when clicking outside
-  useEffect(() => {
-    if (!open) return;
-
-    const handleClick = e => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
-        setOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
-  }, [open]);
-
-  return (
-    <div className={styles.dropdown} ref={dropdownRef}>
-      {label && <span className={styles.dropdownLabel}>{label}</span>}
-
-      <button type="button" className={styles.dropdownTrigger} onClick={() => setOpen(o => !o)}>
-        <span>{current?.label}</span>
-        <span className={styles.dropdownChevron}>▾</span>
-      </button>
-
-      {open && (
-        <div className={styles.dropdownMenu}>
-          {options.map(opt => (
-            <button
-              type="button"
-              key={opt.value}
-              className={
-                opt.value === value
-                  ? `${styles.dropdownItem} ${styles.dropdownItemActive}`
-                  : styles.dropdownItem
-              }
-              onClick={() => handleSelect(opt.value)}
-            >
-              {opt.label}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
+import { getCategories } from '../../lib/categoriesApi';
+import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import Dropdown from '../../components/Dropdown.jsx';
 
 const PAGE_SIZE = 10;
 
@@ -69,19 +16,9 @@ const CATEGORY_COLORS = [
   { bg: '#f3f4f6', color: '#374151', border: '#d1d5db' }, // gray
 ];
 
-const CATEGORY_LABELS = {
-  1: 'Phones',
-  2: 'Computers',
-  3: 'Accessories',
-};
-
-const getCategoryLabel = id => {
-  if (id == null) return '—';
-  return CATEGORY_LABELS[id] || `Category ${id}`;
-};
-
 function AdminProducts() {
   const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
 
   const [loading, setLoading] = useState(true);
@@ -99,6 +36,7 @@ function AdminProducts() {
   const [deleteError, setDeleteError] = useState('');
 
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+  const navigate = useNavigate();
 
   const fetchProducts = useCallback(() => {
     setLoading(true);
@@ -133,6 +71,21 @@ function AdminProducts() {
   useEffect(() => {
     fetchProducts();
   }, [fetchProducts]);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await getCategories();
+        const body = res?.data ?? res;
+        const list = body?.categories ?? body;
+        setCategories(Array.isArray(list) ? list : []);
+      } catch (err) {
+        console.error('Failed to load categories', err);
+      }
+    };
+
+    fetchCategories();
+  }, []);
 
   const handleSearchSubmit = e => {
     e.preventDefault();
@@ -218,6 +171,15 @@ function AdminProducts() {
     return () => window.removeEventListener('keydown', onKey);
   }, [deleteOpen, closeDeleteModal]);
 
+  const getCategoryLabel = id => {
+    if (!id) return 'No category';
+
+    const cat = categories.find(c => c.category_id === id || c.category_id === Number(id));
+    if (!cat) return `Category #${id}`;
+
+    return cat.name || `Category #${id}`;
+  };
+
   return (
     <div className={styles.wrapper}>
       <nav className={styles.breadcrumbs}>
@@ -229,8 +191,16 @@ function AdminProducts() {
       </nav>
       <div className={styles.titleRow}>
         <h1 className={styles.title}>Product Management</h1>
-
         {loading && <span className={styles.loadingPill}>Updating…</span>}
+        <div className={styles.titleActions}>
+          <button
+            type="button"
+            className={styles.editBtn}
+            onClick={() => navigate('/admin/products/new')}
+          >
+            + Add Product
+          </button>
+        </div>
       </div>
 
       <form className={styles.controlsRow} onSubmit={handleSearchSubmit}>
@@ -324,9 +294,13 @@ function AdminProducts() {
               {products.map(p => (
                 <tr
                   key={p.product_id}
-                  className={
-                    p.quantity_in_stock === 0 ? `${styles.tr} ${styles.outOfStock}` : styles.tr
-                  }
+                  className={`${styles.tr} ${
+                    p.quantity_in_stock === 0
+                      ? styles.outOfStock
+                      : p.quantity_in_stock < 10
+                        ? styles.lowStock
+                        : ''
+                  }`}
                 >
                   <td className={styles.td}>{p.product_id}</td>
 
@@ -354,14 +328,20 @@ function AdminProducts() {
                   <td className={styles.td}>{p.price}</td>
                   <td className={styles.td}>{p.list_price}</td>
                   <td className={styles.td}>
-                    {p.discount_ratio != null ? `${Number(p.discount_ratio).toFixed(2)}%` : '0.00%'}
+                    {p.discount_ratio != null ? `${Number(p.discount_ratio).toFixed(0)}%` : '0%'}
                   </td>
                   <td className={styles.td}>{p.quantity_in_stock}</td>
                   <td className={styles.td}>{p.warranty_status}</td>
                   <td className={styles.td}>{p.distributor_info}</td>
                   <td className={styles.td}>
                     <div className={styles.actionButtons}>
-                      <button className={styles.editBtn}>Edit</button>
+                      <button
+                        className={styles.editBtn}
+                        type="button"
+                        onClick={() => navigate(`/admin/products/edit/${p.product_id}`)}
+                      >
+                        Edit
+                      </button>
                       <button
                         className={styles.deleteBtn}
                         type="button"

@@ -1,16 +1,24 @@
 // This middleware verifies JWT tokens and authenticates users before accessing protected routes.
 
 import jwt from 'jsonwebtoken';
+import { findById } from '../../models/User.js';
 
-export const isAuthenticated = (req, res, next) => {
+// This function decodes the valid JWT token from cookies and passes its contents to req.user
+// IMPORTANT: This function does not checks for user roles, only decodes the token. Must used with authorizeRoles([-allowed roles-]) for role checks.
+export const isAuthenticated = async (req, res, next) => {
   if (
     process.env.AUTH_DISABLED === 'true' &&
     process.env.NODE_ENV == 'development'
   ) {
+    let dev = await findById(0); // fetch dev user info
     req.user = {
       user_id: 0,
-      email: 'dev@test.local',
-      role: 'dev',
+      first_name: dev.first_name,
+      last_name: dev.last_name,
+      email: dev.email,
+      address: dev.address,
+      tax_id: dev.tax_id,
+      role: dev.role,
     };
     return next();
   }
