@@ -1,12 +1,11 @@
 // Helper function to generate JWT tokens for user authentication.
 import jwt from 'jsonwebtoken';
 
-const ACCESS_TOKEN_SECRET = process.env.JWT_SECRET;
-
-// Usually tokens expire in 1h, but as refresh tokens are not implemented yet, larger expiry is set.
-const ACCESS_TOKEN_EXPIRES_IN = '7d';
-
 export const generateAccessToken = (payload) => {
+  const ACCESS_TOKEN_SECRET = process.env.JWT_SECRET;
+  // Usually access tokens expire in around 10m, but as refresh tokens are not implemented yet, larger expiry is set.
+  const ACCESS_TOKEN_EXPIRES_IN = '1h';
+
   const payloadToBeSent = {
     user_id: payload.user_id,
     email: payload.email,

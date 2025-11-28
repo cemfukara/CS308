@@ -27,10 +27,10 @@ export const createUser = async (firstName, lastName, email, password_hash) => {
 };
 
 // return user info by id
-export const findById = async (userId) => {
+export const findById = async (user_id) => {
   try {
     const [rows] = await db.query(`SELECT * FROM users WHERE user_id = ?`, [
-      userId,
+      user_id,
     ]);
     const user = rows[0] || null;
     if (!user) return null;
@@ -46,7 +46,6 @@ export const findById = async (userId) => {
       ? decrypt(user.address_encrypted)
       : null;
     user.tax_id = user.tax_id_encrypted ? decrypt(user.tax_id_encrypted) : null;
-
     return user;
   } catch (err) {
     throw err; // controller will handle

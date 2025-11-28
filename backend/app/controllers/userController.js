@@ -23,9 +23,9 @@ export const login = async (req, res) => {
 
     // create token
     const token = generateAccessToken({
-      user_id: userId,
+      user_id: user.user_id,
       email,
-      role: req.user.role,
+      role: user.role,
     });
 
     // pass as cookie
@@ -46,7 +46,6 @@ export const login = async (req, res) => {
 // REGISTER controller
 export const register = async (req, res) => {
   const { full_name, email, password } = req.body; //get body
-
   try {
     if (!full_name || !email || !password)
       return res
@@ -180,9 +179,6 @@ export const updateProfile = async (req, res) => {
     }
 
     await updateUserProfile(userId, updateFields);
-
-    // In dev mode, req.user is always same, so even with updated email, token may not be regenerated. Force regenerate.
-    if (process.env.NODE_ENV === 'development') emailChanged = true;
 
     // return new cookie with updated email if email is changed
     if (emailChanged) {
