@@ -19,9 +19,17 @@
 
 ## Authentication
 
-Authentication is done via JWT cookie. Private/Admin routes are checking for a valid JWT cookie, then grant access if role in the cookie matches the required role
+Authentication is done via JWT cookie. Private routes are checking for a valid JWT cookie, then grant access if role in the cookie matches the required role
 
 - To be implemented: Refresh tokens that will used to refresh access tokens
+
+|     Access      |      Role       |            Description             |
+| :-------------: | :-------------: | :--------------------------------: |
+|     Public      |        -        |     Can be accessed by anyone      |
+|     Private     |    customer     | Can be accessed by logged in users |
+| Product Manager | product manager | Can be accessed by product manager |
+|  Sales Manager  |  sales manager  |  Can be accessed by sales manager  |
+|  Support Agent  |  support agent  |  Can be accessed by support agent  |
 
 ### JWT Token Contents
 
@@ -45,12 +53,33 @@ Payload of a JWT cookie consist:
 
 api/admin/
 
-| METHOD |  ENDPOINT  |            DESCRIPTION            |    Access     |     Status      |
-| :----: | :--------: | :-------------------------------: | :-----------: | :-------------: |
-|  GET   |   /users   |          List all users           | Private/Admin | Not Implemented |
-|  GET   | /analytics |    Get sales/revenue analytics    | Private/Admin | Not Implemented |
-| PATCH  | /discounts | Apply or update product discounts | Private/Admin | Not Implemented |
-| DELETE | /users/:id |          Delete an user           | Private/Admin | Not Implemented |
+### Sales Manager
+
+| METHOD |       ENDPOINT       |                 DESCRIPTION                 |    ACCESS     |     STATUS      |
+| :----: | :------------------: | :-----------------------------------------: | :-----------: | :-------------: |
+|  GET   |      /analytics      | Get sales revenue / profit / loss analytics | Sales Manager | Not Implemented |
+|  GET   |      /invoices       |     View invoices in a given date range     | Sales Manager | Not Implemented |
+|  GET   | /invoices/:id/export |            Export invoice as PDF            | Sales Manager | Not Implemented |
+| PATCH  |      /discounts      |      Apply or update product discounts      | Sales Manager | Not Implemented |
+| PATCH  | /refunds/:id/approve |     Approve or decline a refund request     | Sales Manager | Not Implemented |
+
+### Product Manager
+
+| METHOD |        ENDPOINT        |             DESCRIPTION             |     ACCESS      |     STATUS      |
+| :----: | :--------------------: | :---------------------------------: | :-------------: | :-------------: |
+|  GET   |      /deliveries       | View list of orders to be delivered | Product Manager | Not Implemented |
+| PATCH  | /deliveries/:id/status |    Update order delivery status     | Product Manager | Not Implemented |
+| PATCH  | /comments/:id/approve  | Approve or reject product comments  | Product Manager | Not Implemented |
+
+### Support Agent
+
+| METHOD |           ENDPOINT           |                  DESCRIPTION                  |    ACCESS     |     STATUS      |
+| :----: | :--------------------------: | :-------------------------------------------: | :-----------: | :-------------: |
+|  GET   |     /support/chat/queue      |      List active customer chat requests       | Support Agent | Not Implemented |
+|  GET   |  /support/chat/:id/context   | View customer context (orders, cart, profile) | Support Agent | Not Implemented |
+|  POST  |  /support/chat/:id/message   |              Send a chat message              | Support Agent | Not Implemented |
+|  POST  | /support/chat/:id/attachment |        Send a file attachment in chat         | Support Agent | Not Implemented |
+| PATCH  |   /support/chat/:id/claim    |             Claim a chat session              | Support Agent | Not Implemented |
 
 ## User Endpoints
 
@@ -63,7 +92,59 @@ api/users/
 |  GET   | /profile  |  Get logged-in user's profile info   | Private | Finished |
 | PATCH  | /profile  | Update logged-in user's profile info | Private | Finished |
 
-### POST /users/register
+## Product Endpoints
+
+api/products/
+
+| METHOD |  ENDPOINT  |        DESCRIPTION        |     Access      |     Status      |
+| :----: | :--------: | :-----------------------: | :-------------: | :-------------: |
+|  GET   |     /      |     Get all products      |     Public      | Not Implemented |
+|  GET   |    /:id    | Get single product by ID  |     Public      | Not Implemented |
+| PATCH  | /:id/stock | Update stock of a product | ProductManager  | Not Implemented |
+|  POST  |     /      |     Add a new product     | Product Manager | Not Implemented |
+|  PUT   |    /:id    |   Update product by ID    | Product Manager | Not Implemented |
+| DELETE |    /:id    |   Delete product by ID    | Product Manager | Not Implemented |
+
+## Category Endpoints
+
+api/categories
+
+| METHOD |   ENDPOINT    |                   DESCRIPTION                   |     Access     |     Status      |
+| :----: | :-----------: | :---------------------------------------------: | :------------: | :-------------: |
+|  GET   |       /       |           Get all product categories            |     Public     | Not Implemented |
+|  POST  |       /       |              Create a new category              | ProductManager | Not Implemented |
+|  PUT   |     /:id      |         Update category name or details         | ProductManager | Not Implemented |
+| DELETE |     /:id      |                Delete a category                | ProductManager | Not Implemented |
+|  PUT   | /:id/reassign | Reassign products under one category to another | ProductManager | Not Implemented |
+
+## Cart Endpoints
+
+api/cart
+
+| METHOD |      ENDPOINT      |           DESCRIPTION           | Access  |     Status      |
+| :----: | :----------------: | :-----------------------------: | :-----: | :-------------: |
+|  GET   |         /          |     Get user's current cart     | Private | Not Implemented |
+|  POST  |        /add        |   Add product to user's cart    | Private | Not Implemented |
+|  PUT   |      /update       | Update quantity or item in cart | Private | Not Implemented |
+| DELETE | /remove/:productId |    Remove product from cart     | Private | Not Implemented |
+
+## Order Endpoints
+
+api/orders/
+
+| METHOD |  ENDPOINT   |                  DESCRIPTION                   |     Access     |     Status      |
+| :----: | :---------: | :--------------------------------------------: | :------------: | :-------------: |
+|  GET   |      /      |       Get all orders for logged-in user        |    Private     | Not Implemented |
+|  GET   |    /:id     |            Get order details by ID             |    Private     | Not Implemented |
+|  POST  |      /      |         Create a new order (checkout)          |    Private     | Not Implemented |
+| DELETE |    /:id     |                Cancel an order                 |    Private     | Not Implemented |
+| PATCH  | /:id/status | Update order status (e.g., shipped, delivered) | ProductManager | Not Implemented |
+
+# Usages
+
+## User Usage
+
+### POST api/users/register
 
 Registers the user with given credentials
 
@@ -100,7 +181,7 @@ Registers the user with given credentials
   { message: 'Server error' } // http status: 500
   ```
 
-### POST /users/login
+### POST api/users/login
 
 Try to log the user in with given credentials
 
@@ -126,7 +207,7 @@ Try to log the user in with given credentials
   { message: 'Server error' } // http status: 500
   ```
 
-### GET /users/profile
+### GET api/users/profile
 
 Returns user information
 
@@ -159,7 +240,7 @@ Returns user information
   { message: 'Server error' } // http status: 500
   ```
 
-### PATCH /users/profile
+### PATCH api/users/profile
 
 Updates the user info with given fields
 
@@ -188,46 +269,3 @@ Updates the user info with given fields
   OR
   { message: `Invalid field: ${key}` } // Invalid key in request body. http status: 400
   ```
-
-## Product Endpoints
-
-api/products/
-
-| METHOD | ENDPOINT |       DESCRIPTION        |    Access     |     Status      |
-| :----: | :------: | :----------------------: | :-----------: | :-------------: |
-|  GET   |    /     |     Get all products     |    Public     | Not Implemented |
-|  GET   |   /:id   | Get single product by ID |    Public     | Not Implemented |
-|  POST  |    /     |    Add a new product     | Private/Admin | Not Implemented |
-|  PUT   |   /:id   |   Update product by ID   | Private/Admin | Not Implemented |
-| DELETE |   /:id   |   Delete product by ID   | Private/Admin | Not Implemented |
-
-## Cart Endpoints
-
-api/cart
-
-| METHOD |      ENDPOINT      |           DESCRIPTION           | Access  |     Status      |
-| :----: | :----------------: | :-----------------------------: | :-----: | :-------------: |
-|  GET   |         /          |     Get user's current cart     | Private | Not Implemented |
-|  POST  |        /add        |   Add product to user's cart    | Private | Not Implemented |
-|  PUT   |      /update       | Update quantity or item in cart | Private | Not Implemented |
-| DELETE | /remove/:productId |    Remove product from cart     | Private | Not Implemented |
-
-## Order Endpoints
-
-api/orders/
-
-| METHOD |  ENDPOINT   |                  DESCRIPTION                   |    Access     |     Status      |
-| :----: | :---------: | :--------------------------------------------: | :-----------: | :-------------: |
-|  GET   |      /      |       Get all orders for logged-in user        |    Private    | Not Implemented |
-|  GET   |    /:id     |            Get order details by ID             |    Private    | Not Implemented |
-|  POST  |      /      |         Create a new order (checkout)          |    Private    | Not Implemented |
-| PATCH  | /:id/status | Update order status (e.g., shipped, delivered) | Private/Admin | Not Implemented |
-| DELETE |    /:id     |                Cancel an order                 |    Private    | Not Implemented |
-
-# Future Expansions
-
-`/api/chat`: WebSocket-based live support system (Socket.IO)
-
-`/api/reviews`:Product reviews & ratings
-
-- Manager approval system for reviews
