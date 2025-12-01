@@ -6,7 +6,7 @@ import {
   getProfile,
   updateProfile,
 } from '../app/controllers/userController.js';
-import { isAuthenticated } from '../app/middlewares/authMiddleware.js';
+import { authenticate } from '../app/middlewares/authMiddleware.js';
 
 const router = express.Router();
 
@@ -29,13 +29,13 @@ router.post('/login', login);
  * @desc    Get logged-in user's profile info
  * @access  Private
  */
-router.get('/profile', isAuthenticated, getProfile);
+router.get('/profile', authenticate, getProfile);
 
 /**
  * @route   PUT /api/users/profile
  * @desc    Update logged-in user's profile info
  * @access  Private
  */
-router.patch('/profile', isAuthenticated, updateProfile);
+router.patch('/profile', authenticate, updateProfile);
 
 export default router;

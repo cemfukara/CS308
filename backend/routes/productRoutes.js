@@ -2,14 +2,14 @@
 // Defines product-related routes (/api/products, /api/products/:id).
 import express from 'express';
 import {
-    fetchProducts,
-    fetchProductDetails,
-    addProduct,
-    updateProductDetails,
-    removeProduct,
+  fetchProducts,
+  fetchProductDetails,
+  addProduct,
+  updateProductDetails,
+  removeProduct,
 } from '../app/controllers/productController.js';
 
-import { isAuthenticated, isAdmin } from '../app/middlewares/authMiddleware.js'; // auth middlewares
+import { authenticate, isAdmin } from '../app/middlewares/authMiddleware.js'; // auth middlewares
 import { validateProductInput } from '../app/middlewares/validationMiddleware.js';
 
 const router = express.Router();
@@ -38,7 +38,7 @@ router.get('/:id', fetchProductDetails); // Use the new controller function
  * @access  Private/Admin
  */
 // APPLY isAuthenticated and isAdmin middleware
-router.post('/', isAuthenticated, isAdmin, validateProductInput, addProduct);
+router.post('/', authenticate, isAdmin, validateProductInput, addProduct);
 
 /**
  * @route   PUT /api/products/:id
@@ -47,11 +47,11 @@ router.post('/', isAuthenticated, isAdmin, validateProductInput, addProduct);
  */
 // Added validation middleware here
 router.put(
-    '/:id',
-    isAuthenticated,
-    isAdmin,
-    validateProductInput,
-    updateProductDetails
+  '/:id',
+  authenticate,
+  isAdmin,
+  validateProductInput,
+  updateProductDetails
 );
 
 /**
@@ -59,6 +59,8 @@ router.put(
  * @desc    Delete product by ID
  * @access  Private/Admin
  */
-router.delete('/:id', isAuthenticated, isAdmin, removeProduct);
+router.delete('/:id', authenticate, isAdmin, removeProduct);
 
 export default router;
+
+// TODO: check is isAdmin usage necessary

@@ -5,7 +5,7 @@ import { findById } from '../../models/User.js';
 
 // This function decodes the valid JWT token from cookies and passes its contents to req.user
 // IMPORTANT: This function does not checks for user roles, only decodes the token. Must used with authorizeRoles([-allowed roles-]) for role checks.
-export const isAuthenticated = async (req, res, next) => {
+export const authenticate = async (req, res, next) => {
   if (
     process.env.AUTH_DISABLED === 'true' &&
     process.env.NODE_ENV == 'development'
@@ -36,7 +36,9 @@ export const isAuthenticated = async (req, res, next) => {
   }
 };
 
-// check auth for specified roles. "allowedRoles" could be "admin", "user", "product_manager" etc.
+// check auth for specified roles. "allowedRoles" could be are "customer", "product manager", "sales manager", and "support agent"
+// But this functions only checks that if the user's role in the JWT token (supplied by authenticate) matches the requested roles.
+// The function does not check the validity (is the role is one of the possible role) of the allowedRoles and user's role.
 export const authorizeRoles = (allowedRoles = []) => {
   return (req, res, next) => {
     const user = req.user;

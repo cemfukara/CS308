@@ -8,6 +8,7 @@ import orderRoutes from './orderRoutes.js';
 import productRoutes from './productRoutes.js';
 import userRoutes from './userRoutes.js';
 import categoryRoutes from './categoryRoutes.js';
+import wishlistRoutes from './wishlistRoutes.js';
 
 export {
   adminRoutes,
@@ -16,4 +17,5 @@ export {
   productRoutes,
   userRoutes,
   categoryRoutes,
+  wishlistRoutes,
 };

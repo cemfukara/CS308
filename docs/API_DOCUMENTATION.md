@@ -23,13 +23,14 @@ Authentication is done via JWT cookie. Private routes are checking for a valid J
 
 - To be implemented: Refresh tokens that will used to refresh access tokens
 
-|     Access      |      Role       |            Description             |
-| :-------------: | :-------------: | :--------------------------------: |
-|     Public      |        -        |     Can be accessed by anyone      |
-|     Private     |    customer     | Can be accessed by logged in users |
-| Product Manager | product manager | Can be accessed by product manager |
-|  Sales Manager  |  sales manager  |  Can be accessed by sales manager  |
-|  Support Agent  |  support agent  |  Can be accessed by support agent  |
+|     Access      |      Role       |                     Description                      |
+| :-------------: | :-------------: | :--------------------------------------------------: |
+|     Public      |        -        |              Can be accessed by anyone               |
+|     Private     |    customer     |          Can be accessed by logged in users          |
+| Product Manager | product manager |          Can be accessed by product manager          |
+|  Sales Manager  |  sales manager  |           Can be accessed by sales manager           |
+|  Support Agent  |  support agent  |           Can be accessed by support agent           |
+|        -        |       dev       | "dev" role can access to any route (in dev env only) |
 
 ### JWT Token Contents
 
@@ -109,13 +110,13 @@ api/products/
 
 api/categories
 
-| METHOD |   ENDPOINT    |                   DESCRIPTION                   |     Access     |     Status      |
-| :----: | :-----------: | :---------------------------------------------: | :------------: | :-------------: |
-|  GET   |       /       |           Get all product categories            |     Public     | Not Implemented |
-|  POST  |       /       |              Create a new category              | ProductManager | Not Implemented |
-|  PUT   |     /:id      |         Update category name or details         | ProductManager | Not Implemented |
-| DELETE |     /:id      |                Delete a category                | ProductManager | Not Implemented |
-|  PUT   | /:id/reassign | Reassign products under one category to another | ProductManager | Not Implemented |
+| METHOD |   ENDPOINT    |                   DESCRIPTION                   |     Access     |  Status  |
+| :----: | :-----------: | :---------------------------------------------: | :------------: | :------: |
+|  GET   |       /       |           Get all product categories            |     Public     | Finished |
+|  POST  |       /       |              Create a new category              | ProductManager | Finished |
+|  PUT   |     /:id      |         Update category name or details         | ProductManager | Finished |
+| DELETE |     /:id      |                Delete a category                | ProductManager | Finished |
+|  PUT   | /:id/reassign | Reassign products under one category to another | ProductManager | Finished |
 
 ## Cart Endpoints
 
@@ -139,6 +140,17 @@ api/orders/
 |  POST  |      /      |         Create a new order (checkout)          |    Private     | Not Implemented |
 | DELETE |    /:id     |                Cancel an order                 |    Private     | Not Implemented |
 | PATCH  | /:id/status | Update order status (e.g., shipped, delivered) | ProductManager | Not Implemented |
+
+## Wishlist Endpoints
+
+api/wishlist/
+
+| METHOD | ENDPOINT |                DESCRIPTION                 | Access  |  Status  |
+| :----: | :------: | :----------------------------------------: | :-----: | :------: |
+|  GET   |    /     | Get all wishlist items for logged-in user  | Private | Finished |
+|  POST  |    /     | Adds item (in req body) to user's wishlist | Private | Finished |
+| DELETE |   /:id   |           Delete a wishlist item           | Private | Finished |
+| DELETE |    /     |           Clears user's wishlist           | Private | Finished |
 
 # Usages
 
@@ -174,11 +186,11 @@ Registers the user with given credentials
 
 - Error:
   ```
-  {message: 'Email and password required'} // http status: 400
+  { "message": 'Email and password required'} // http status: 400
   OR
-  {message: 'Email already registered'} // http status: 409
+  { "message": 'Email already registered'} // http status: 409
   OR
-  { message: 'Server error' } // http status: 500
+  { "message": 'Server error' } // http status: 500
   ```
 
 ### POST api/users/login
@@ -197,14 +209,14 @@ Try to log the user in with given credentials
 - Response Body (+ JWT cookie):
 
   ```
-  {message: 'Login successful'} // http status: 201
+  {"message": 'Login successful'} // http status: 201
   ```
 
 - Error:
   ```
-  { message: 'Invalid credentials' } // http status: 401
+  { "message": 'Invalid credentials' } // http status: 401
   OR
-  { message: 'Server error' } // http status: 500
+  { "message": 'Server error' } // http status: 500
   ```
 
 ### GET api/users/profile
@@ -235,9 +247,9 @@ Returns user information
 
 - Error:
   ```
-  { message: 'User not found' } // http status: 404
+  { "message": 'User not found' } // http status: 404
   OR
-  { message: 'Server error' } // http status: 500
+  { "message": 'Server error' } // http status: 500
   ```
 
 ### PATCH api/users/profile
@@ -257,15 +269,126 @@ Updates the user info with given fields
   ```
 - Response Body (+ new JWT cookie if email is updated):
   ```
-  { message: 'Profile updated successfully' } // http status: 200
+  { "message": 'Profile updated successfully' } // http status: 200
   ```
 - Error:
   ```
-  { message: 'Server error' } // http status: 500
+  { "message": 'Server error' } // http status: 500
   OR
-  { message: 'No valid fields to update.' } // http status: 400
+  { "message": 'No valid fields to update.' } // http status: 400
   OR
-  { message: 'Invalid email format.' } // http status: 400
+  { "message": 'Invalid email format.' } // http status: 400
   OR
-  { message: `Invalid field: ${key}` } // Invalid key in request body. http status: 400
+  { "message": `Invalid field: ${key}` } // Invalid key in request body. http status: 400
+  ```
+
+## Wishlist Usage
+
+### GET api/wishlist
+
+Get all items in user's wishlist
+
+- Request body (+ JWT cookie):
+
+  ```
+  // Empty, authentication done via JWT cookie
+  ```
+
+- Response body:
+
+  ```
+  {
+      "wishlist": [product_details] // Empty array if whistles is empty
+  } // http status: 200
+  ```
+
+- Error:
+  ```
+  { "message": 'Server error' } // http status: 500
+  ```
+
+### POST api/wishlist/
+
+Add an item to user's wishlist
+
+- Request body (+ JWT cookie):
+
+  ```
+  {"product_id":product_id}
+  ```
+
+- Response body:
+
+  ```
+  {
+      "message": 'Product added to wishlist',
+      "wishlist": {
+        "id": wishlist_id, // Auto incremented at db
+        product_id,
+      }
+  } // http status: 201
+  ```
+
+- Error:
+  ```
+  { "message": 'Invalid product_id' } // http status: 400
+  OR
+  { "message": 'Product not found' } // http status: 404
+  OR
+  { "message": 'Product already in wishlist' } // http status: 409
+  OR
+  { "message": 'Server error' } // http status: 500
+  ```
+
+### DELETE api/wishlist/:id
+
+Deletes the item specified in the parameter
+
+- Request body (+ JWT cookie):
+
+  ```
+  // Empty, authentication done via JWT cookie
+  ```
+
+- Response body:
+
+  ```
+  {
+   " message" : `product_id:${product_id} is removed from wishlist`
+  } // http status: 200
+  ```
+
+- Error:
+  ```
+  { "message": 'Invalid product_id' } // http status: 400
+  OR
+  { "message": 'Item not found in wishlist' } // http status: 404
+  OR
+  {" message": 'Server error' } // http status: 500
+  ```
+
+### DELETE api/wishlist/
+
+Clears user's wishlist
+
+- Request body (+ JWT cookie):
+
+  ```
+  // Empty, authentication done via JWT cookie
+  ```
+
+- Response body:
+
+  ```
+  {
+      "message": 'Wishlist cleared successfully',
+      "deleted": deletedCount, // Deleted item count
+  } // http status: 200
+  ```
+
+- Error:
+  ```
+  { "message": 'Wishlist already empty', } // http status: 200
+  OR
+  {" message": 'Server error' } // http status: 500
   ```

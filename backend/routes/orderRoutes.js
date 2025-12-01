@@ -1,11 +1,11 @@
 // Defines routes for order handling (/api/orders, /api/orders/:id).
 import express from 'express';
 import {
-    getOrders,
-    getOrderDetails,
-    checkoutOrder,
+  getOrders,
+  getOrderDetails,
+  checkoutOrder,
 } from '../app/controllers/orderController.js';
-import { isAuthenticated } from '../app/middlewares/authMiddleware.js';
+import { authenticate } from '../app/middlewares/authMiddleware.js';
 
 const router = express.Router();
 
@@ -14,7 +14,7 @@ const router = express.Router();
  * @desc    Get all orders for logged-in user (except carts)
  * @access  Private
  */
-router.get('/', isAuthenticated, getOrders);
+router.get('/', authenticate, getOrders);
 
 /**
  * @route   GET /api/orders/:id
@@ -43,7 +43,9 @@ router.patch('/:id/status', checkoutOrder); // same controller can be used
  * @access  Private
  */
 router.delete('/:id', (req, res) => {
-    res.status(501).json({ message: 'Cancel order not implemented yet' });
+  res.status(501).json({ message: 'Cancel order not implemented yet' });
 });
 
 export default router;
+// TODO check routes, implement authenticate etc. when necessary
+// TODO implement order routes for manager roles

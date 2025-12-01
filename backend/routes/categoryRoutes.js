@@ -7,6 +7,7 @@ import {
   deleteCategory,
   reassignAndDeleteCategory,
 } from '../app/controllers/categoryController.js';
+import { authenticate } from '../app/middlewares/authMiddleware.js';
 
 const router = express.Router();
 
@@ -14,14 +15,14 @@ const router = express.Router();
 router.get('/', getAllCategories);
 
 // POST /api/categories
-router.post('/', createCategory);
+router.post('/', authenticate, createCategory);
 
 // PUT /api/categories/:id
-router.put('/:id', updateCategory);
+router.put('/:id', authenticate, updateCategory);
 
 // DELETE /api/categories/:id
-router.delete('/:id', deleteCategory);
+router.delete('/:id', authenticate, deleteCategory);
 
 // PUT /api/categories/:id/reassign
-router.put('/:id/reassign', reassignAndDeleteCategory);
+router.put('/:id/reassign', authenticate, reassignAndDeleteCategory);
 export default router;

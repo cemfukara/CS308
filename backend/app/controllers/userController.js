@@ -1,6 +1,5 @@
 // This file contains business logic for user-related operations (login, register, etc.).
 
-import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { encrypt } from '../../utils/encrypter.js';
 import { generateAccessToken } from '../../utils/generateToken.js';

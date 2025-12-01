@@ -1,12 +1,12 @@
 // routes/cartRoutes.js
 import express from 'express';
 import {
-    getCart,
-    addItemToCart,
-    deleteCartItem,
-    clearUserCart,
+  getCart,
+  addItemToCart,
+  deleteCartItem,
+  clearUserCart,
 } from '../app/controllers/cartController.js';
-import { isAuthenticated } from '../app/middlewares/authMiddleware.js';
+import { authenticate } from '../app/middlewares/authMiddleware.js';
 
 const router = express.Router();
 
@@ -15,14 +15,14 @@ const router = express.Router();
  * @desc    Get user's current cart
  * @access  Private
  */
-router.get('/', isAuthenticated, getCart);
+router.get('/', authenticate, getCart);
 
 /**
  * @route   POST /api/cart/add
  * @desc    Add product to cart
  * @access  Private
  */
-router.post('/add', isAuthenticated, addItemToCart);
+router.post('/add', authenticate, addItemToCart);
 
 /**
  * @route   PUT /api/cart/update
@@ -30,9 +30,9 @@ router.post('/add', isAuthenticated, addItemToCart);
  * @access  Private
  */
 router.put('/update', (req, res) => {
-    res.status(501).json({
-        message: 'Update cart quantity not implemented yet',
-    });
+  res.status(501).json({
+    message: 'Update cart quantity not implemented yet',
+  });
 });
 
 /**
@@ -47,6 +47,6 @@ router.delete('/remove/:orderItemId', deleteCartItem);
  * @desc    Clear all items from cart
  * @access  Private
  */
-router.delete('/clear', isAuthenticated, clearUserCart);
+router.delete('/clear', authenticate, clearUserCart);
 
 export default router;
