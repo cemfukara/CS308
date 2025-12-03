@@ -6,6 +6,7 @@ import {
   getOrders,
   getOrderDetails,
   updateOrderStatusController,
+  createOrderController,
 } from '../app/controllers/orderController.js';
 import { authenticate } from '../app/middlewares/authMiddleware.js';
 
@@ -42,5 +43,12 @@ router.put('/:id/status', authenticate, updateOrderStatusController);
 router.delete('/:id', authenticate, (req, res) => {
   res.status(501).json({ message: 'Cancel order not implemented yet' });
 });
+
+/**
+ * @route   POST /api/orders
+ * @desc    Create a new order from cart items
+ * @access  Private
+ */
+router.post('/', authenticate, createOrderController);
 
 export default router;

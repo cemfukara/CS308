@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import useCartStore from '../../store/cartStore';
 import './OrderDetails.css';
+import { getOrderById } from '../../lib/ordersApi';
 
 const OrderDetails = () => {
   const { id } = useParams();
@@ -11,15 +12,37 @@ const OrderDetails = () => {
   const { addToCart } = useCartStore();
 
   useEffect(() => {
-    const storedOrders = JSON.parse(localStorage.getItem('orders')) || [];
-    const found = storedOrders.find(o => String(o.id) === String(id));
-    setOrder(found || null);
+    let mounted = true;
+
+    (async () => {
+      try {
+        const res = await getOrderById(id);
+        if (!mounted) return;
+        const ord = res.order ?? null;
+        const items = res.items ?? [];
+        setOrder({ ...ord, items });
+      } catch (err) {
+        console.error(err);
+        if (!mounted) return;
+        setOrder(null);
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
   }, [id]);
 
   const handleRepurchase = item => {
-    addToCart(item);
+    const cartItem = {
+      product_id: item.product_id,
+      name: item.name,
+      model: item.model,
+      price: Number(item.price_at_purchase || 0),
+      quantity: 1,
+    };
 
-    const imageUrl = new URL(`../../assets/${item.image}`, import.meta.url).href;
+    addToCart(cartItem);
 
     toast.custom(t => (
       <div
@@ -35,17 +58,6 @@ const OrderDetails = () => {
           boxShadow: '0 5px 20px rgba(0,0,0,0.25)',
         }}
       >
-        <img
-          src={imageUrl}
-          alt={item.name}
-          style={{
-            width: '65px',
-            height: '65px',
-            borderRadius: '8px',
-            objectFit: 'cover',
-            border: '1px solid #ccc',
-          }}
-        />
         <div style={{ flex: 1 }}>
           <h3 style={{ fontWeight: '700', fontSize: '1rem' }}>{item.name}</h3>
           <p style={{ color: '#00FF7F', fontWeight: '600' }}>Added to cart</p>
@@ -75,7 +87,7 @@ const OrderDetails = () => {
             color: '#00FF7F',
           }}
         >
-          ${item.price.toFixed(2)}
+          {Number(item.price_at_purchase || 0).toFixed(2)} TL
         </p>
       </div>
     ));
@@ -92,14 +104,17 @@ const OrderDetails = () => {
     );
   }
 
-  const subtotal = order.originalTotal || order.total;
-  const discount = order.discount || (order.originalTotal ? order.originalTotal - order.total : 0);
-  const delivery = order.deliveryCost || 0;
-  const total = order.total;
+  const subtotal =
+    order.items?.reduce(
+      (sum, it) => sum + Number(it.price_at_purchase || 0) * (it.quantity || 1),
+      0
+    ) || 0;
+  const total = Number(order.total_price || subtotal);
+  const discount = subtotal - total;
+  const delivery = 0;
   const deliveryAddress =
-    order.deliveryAddress || '123 Main Street, Istanbul, Türkiye (default delivery)';
-  const invoiceAddress =
-    order.invoiceAddress || '456 Billing Avenue, Istanbul, Türkiye (default invoice)';
+    order.shipping_address || '123 Main Street, Istanbul, Türkiye (default delivery)';
+  const invoiceAddress = 'Invoice address same as delivery (placeholder)';
 
   return (
     <div className="order-details-page">
@@ -111,13 +126,13 @@ const OrderDetails = () => {
         <h2>Order Details</h2>
 
         <div className="order-items">
-          {order.items.map((item, i) => {
-            const imageUrl = new URL(`../../assets/${item.image}`, import.meta.url).href;
+          {order.items.map(item => {
+            const lineTotal = Number(item.price_at_purchase || 0) * (item.quantity || 1);
 
             return (
-              <div className="order-item-row" key={i}>
+              <div className="order-item-row" key={item.order_item_id}>
                 <div className="item-left">
-                  <img src={imageUrl} alt={item.name} className="item-img" />
+                  {/* no image in DB yet → just text */}
                   <div className="item-info">
                     <h3>{item.name}</h3>
                     <p className="item-desc">Model: {item.model || 'Not specified'}</p>
@@ -129,9 +144,7 @@ const OrderDetails = () => {
                 </div>
 
                 <div className="item-price">
-                  <span className="price-current">
-                    {(item.price * item.quantity).toFixed(2)} TL
-                  </span>
+                  <span className="price-current">{lineTotal.toFixed(2)} TL</span>
                 </div>
               </div>
             );

@@ -1,19 +1,36 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Orders.css';
+import { getOrders } from '../../lib/ordersApi';
 
 const Orders = () => {
   const [orders, setOrders] = useState([]);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const storedOrders = JSON.parse(localStorage.getItem('orders')) || [];
-    setOrders(storedOrders);
+    let mounted = true;
+
+    (async () => {
+      try {
+        const res = await getOrders();
+        const list = res?.orders ?? res;
+        if (!mounted) return;
+        setOrders(Array.isArray(list) ? list : []);
+      } catch (err) {
+        console.error(err);
+        if (!mounted) return;
+        setOrders([]);
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const displayOrders = orders.map(order => ({
     ...order,
-    status: order.status || 'Processing',
+    status: order.status || 'processing',
   }));
 
   return (
@@ -25,29 +42,23 @@ const Orders = () => {
       ) : (
         <div className="orders-list">
           {displayOrders.map(order => (
-            <div className="order-card" key={order.id}>
+            <div className="order-card" key={order.order_id}>
               <div className="order-summary">
                 <div>
-                  <h3>Order #{order.id}</h3>
+                  <h3>Order #{order.order_id}</h3>
                   <p>
                     Date:{' '}
-                    {order.createdAt
-                      ? new Date(order.createdAt).toLocaleString()
-                      : order.date || '—'}
+                    {order.order_date || order.created_at
+                      ? new Date(order.order_date || order.created_at).toLocaleString()
+                      : '—'}
                   </p>
-                  <p>
-                    Total: $
-                    {(typeof order.total === 'number'
-                      ? order.total
-                      : Number(order.total || 0)
-                    ).toFixed(2)}
-                  </p>
+                  <p>Total: $ {Number(order.total_price || 0).toFixed(2)}</p>
                 </div>
                 <div className="order-actions">
                   <span className={`status ${order.status.toLowerCase()}`}>{order.status}</span>
                   <button
                     className="details-btn"
-                    onClick={() => navigate(`/account/orders/${order.id}`)}
+                    onClick={() => navigate(`/account/orders/${order.order_id}`)}
                   >
                     See Details
                   </button>

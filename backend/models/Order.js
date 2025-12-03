@@ -2,7 +2,7 @@
 // Data access helpers for orders & order items.
 
 import { db } from '../app/config/db.js';
-import { decrypt } from '../utils/encrypter.js';
+import { decrypt, encrypt } from '../utils/encrypter.js';
 
 // Helper to map a DB row into a safer JS object (decrypts shipping address)
 function mapOrderRow(row) {
@@ -116,4 +116,87 @@ export async function updateOrderStatus(orderId, newStatus) {
     `,
     [newStatus, newStatus, orderId]
   );
+}
+
+// ------------------------------------------------------
+// Get a single order with metadata (for details page)
+// ------------------------------------------------------
+export async function getOrderById(orderId) {
+  const [rows] = await db.query(
+    `
+      SELECT
+        o.order_id,
+        o.user_id,
+        o.status,
+        o.total_price,
+        o.shipping_address_encrypted,
+        o.created_at,
+        o.order_date,
+        u.email AS customer_email,
+        NULL AS item_count
+      FROM orders o
+      JOIN users u ON u.user_id = o.user_id
+      WHERE o.order_id = ?
+    `,
+    [orderId]
+  );
+
+  if (!rows.length) return null;
+  return mapOrderRow(rows[0]);
+}
+
+// ------------------------------------------------------
+// Create a new order + order_items (and update stock)
+// ------------------------------------------------------
+export async function createOrder({
+  userId,
+  items,
+  shippingAddress,
+  totalPrice,
+}) {
+  // items: [{ product_id, quantity, price }]
+  const encryptedAddress = shippingAddress ? encrypt(shippingAddress) : null;
+
+  // 1) Insert into orders
+  const [orderResult] = await db.query(
+    `
+      INSERT INTO orders (user_id, status, total_price, shipping_address_encrypted, order_date)
+      VALUES (?, 'processing', ?, ?, NOW())
+    `,
+    [userId, totalPrice, encryptedAddress]
+  );
+
+  const orderId = orderResult.insertId;
+
+  // 2) Insert order_items if any
+  if (items.length > 0) {
+    const values = items.map((it) => [
+      orderId,
+      it.product_id,
+      it.quantity || 1,
+      it.price ?? 0,
+    ]);
+
+    await db.query(
+      `
+        INSERT INTO order_items (order_id, product_id, quantity, price_at_purchase)
+        VALUES ?
+      `,
+      [values]
+    );
+
+    // 3) (Optional) Decrease stock for each product
+    for (const it of items) {
+      await db.query(
+        `
+          UPDATE products
+             SET quantity_in_stock = GREATEST(quantity_in_stock - ?, 0)
+           WHERE product_id = ?
+        `,
+        [it.quantity || 1, it.product_id]
+      );
+    }
+  }
+
+  return { order_id: orderId };
 }

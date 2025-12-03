@@ -42,8 +42,9 @@ import AdminProductEdit from './pages/Admin/AdminProductEdit.jsx';
 import AdminProductNew from './pages/Admin/AdminProductNew.jsx';
 import AdminStock from './pages/Admin/AdminStock.jsx';
 import AdminCategories from './pages/Admin/AdminCategories.jsx';
+import AdminDeliveries from './pages/Admin/AdminDeliveries.jsx';
 
-function AppContent() {
+export function AppContent() {
   const location = useLocation();
   const isAdminRoute = location.pathname.startsWith('/admin');
 
@@ -110,6 +111,7 @@ function AppContent() {
           <Route path="products/edit/:id" element={<AdminProductEdit />} />
           <Route path="inventory" element={<AdminStock />} />
           <Route path="categories" element={<AdminCategories />} />
+          <Route path="deliveries" element={<AdminDeliveries />} />
         </Route>
 
         {/* Fallback */}

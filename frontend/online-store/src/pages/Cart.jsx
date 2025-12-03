@@ -1,54 +1,30 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import useCartStore from '../store/cartStore';
+import useAuthStore from '../store/authStore';
 import { toast } from 'react-hot-toast';
 import './Cart.css';
 
 const Cart = () => {
   const { cart, updateQuantity, removeFromCart, clearCart } = useCartStore();
   const navigate = useNavigate();
+  const user = useAuthStore(state => state.user);
 
   // 🧮 Calculate total cost
   const total = cart.reduce((sum, item) => sum + Number(item.price || 0) * item.quantity, 0);
 
   // 🧾 Handle checkout — login check, save order, clear cart
   const handleCheckout = () => {
-    const user = JSON.parse(localStorage.getItem('loggedInUser'));
-
-    // ✅ Require login before checkout
     if (!user) {
-      toast.error('Please log in before placing an order.');
+      toast.error('Please log in to proceed to checkout.');
       navigate('/auth');
       return;
     }
-
     if (cart.length === 0) {
-      toast.error('Your cart is empty!');
+      toast.error('Your cart is empty.');
       return;
     }
     navigate('/checkout');
-    /*
-    // ✅ Create new order object
-    const newOrder = {
-      id: Date.now(),
-      date: new Date().toLocaleDateString(),
-      items: cart,
-      total,
-      status: 'processing',
-    };
-
-    // ✅ Save order to localStorage
-    const orders = JSON.parse(localStorage.getItem('orders')) || [];
-    orders.push(newOrder);
-    localStorage.setItem('orders', JSON.stringify(orders));
-
-    // ✅ Clear cart and confirm success
-    clearCart();
-    toast.success('✅ Order placed successfully!');
-
-    // ✅ Redirect to Order History
-    navigate('/account/orders');
-    */
   };
 
   return (

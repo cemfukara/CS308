@@ -6,6 +6,8 @@ import {
   getAllOrders,
   getOrderItems,
   updateOrderStatus,
+  createOrder,
+  getOrderById,
 } from '../../models/Order.js';
 
 const MANAGER_ROLES = ['product manager', 'dev', 'sales manager'];
@@ -41,11 +43,20 @@ export async function getOrderDetails(req, res) {
   try {
     const orderId = req.params.id;
 
-    const items = await getOrderItems(orderId);
+    const [order, items] = await Promise.all([
+      getOrderById(orderId),
+      getOrderItems(orderId),
+    ]);
+
+    if (!order) {
+      return res
+        .status(404)
+        .json({ success: false, message: 'Order not found' });
+    }
 
     res.status(200).json({
       success: true,
-      order_id: orderId,
+      order,
       items,
     });
   } catch (err) {
@@ -80,6 +91,59 @@ export async function updateOrderStatusController(req, res) {
     });
   } catch (err) {
     console.error('Error updating order status:', err);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+}
+
+// ==========================================================
+// POST /api/orders
+//  - Create new order from cart items
+// ==========================================================
+export async function createOrderController(req, res) {
+  try {
+    const userId = req.user.user_id;
+    const { items, address, payment } = req.body;
+
+    if (!Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Order must contain at least one item',
+      });
+    }
+
+    if (!address) {
+      return res.status(400).json({
+        success: false,
+        message: 'Shipping address is required',
+      });
+    }
+
+    const normalizedItems = items.map((it) => ({
+      product_id: it.product_id,
+      quantity: it.quantity || 1,
+      price: Number(it.price) || 0,
+    }));
+
+    const totalPrice = normalizedItems.reduce(
+      (sum, it) => sum + it.price * it.quantity,
+      0
+    );
+
+    const { order_id } = await createOrder({
+      userId,
+      items: normalizedItems,
+      shippingAddress: address,
+      totalPrice,
+    });
+
+    res.status(201).json({
+      success: true,
+      order_id,
+      total_price: totalPrice,
+      payment: payment || null,
+    });
+  } catch (err) {
+    console.error('Error creating order:', err);
     res.status(500).json({ success: false, message: 'Server error' });
   }
 }

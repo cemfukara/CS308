@@ -4,6 +4,8 @@ import styles from './Payment.module.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCcVisa, faCcMastercard } from '@fortawesome/free-brands-svg-icons';
 import useCartStore from '../../store/cartStore';
+import { createOrder } from '../../lib/ordersApi';
+import { toast } from 'react-hot-toast';
 
 const Payment = () => {
   const navigate = useNavigate();
@@ -79,51 +81,68 @@ const Payment = () => {
 
   const canPay = paymentMethod === 'cod' || isCardValid;
 
-  const handlePay = () => {
+  const handlePay = async () => {
     if (!canPay) return;
     setIsPaying(true);
-    const digits = getCardDigits();
-    const payInfo =
-      paymentMethod === 'cod'
-        ? { method: 'Cash on Delivery' }
-        : {
-            method: 'Credit Card',
-            cardName: cardName.trim(),
-            last4: digits.slice(-4),
-            cardType: getCardType(),
-          };
-    localStorage.setItem('payInfo', JSON.stringify(payInfo));
 
-    const items = cart.map(item => ({
-      id: item.id,
-      name: item.name,
-      price: Number(item.price) || 0,
-      quantity: item.quantity || 1,
-      currency: item.currency || '$',
-      image: item.image || null,
-    }));
+    try {
+      const digits = getCardDigits();
+      const payInfo =
+        paymentMethod === 'cod'
+          ? { method: 'Cash on Delivery' }
+          : {
+              method: 'Credit Card',
+              cardName: cardName.trim(),
+              last4: digits.slice(-4),
+              cardType: getCardType(),
+            };
 
-    const total = items.reduce((sum, it) => sum + it.price * it.quantity, 0);
+      // Save for Confirmation screen
+      localStorage.setItem('payInfo', JSON.stringify(payInfo));
 
-    const order = {
-      id: `ORD-${Date.now()}`,
-      createdAt: new Date().toISOString(),
-      address,
-      payment: payInfo,
-      items,
-      total,
-    };
+      // Build items from cart (include product_id for backend)
+      const items = cart.map(item => ({
+        product_id: item.product_id,
+        name: item.name,
+        price: Number(item.price) || 0,
+        quantity: item.quantity || 1,
+        currency: item.currency || '$',
+        image: item.image || null,
+      }));
 
-    localStorage.setItem('recentOrder', JSON.stringify(order));
+      const total = items.reduce((sum, it) => sum + it.price * it.quantity, 0);
 
-    const rawOrders = localStorage.getItem('orders');
-    const oldOrders = rawOrders ? JSON.parse(rawOrders) : [];
-    localStorage.setItem('orders', JSON.stringify([...oldOrders, order]));
+      // 🔗 Call backend via ordersApi
+      const res = await createOrder({
+        address,
+        payment: payInfo,
+        items: items.map(it => ({
+          product_id: it.product_id,
+          quantity: it.quantity,
+          price: it.price,
+        })),
+      });
 
-    setTimeout(() => {
-      setIsPaying(false);
+      const orderId = res.order_id ?? res.order?.order_id ?? `TEMP-${Date.now()}`;
+
+      // Lightweight recentOrder for Confirmation.jsx
+      const recentOrder = {
+        id: orderId,
+        createdAt: new Date().toISOString(),
+        address,
+        payment: payInfo,
+        items,
+        total,
+      };
+
+      localStorage.setItem('recentOrder', JSON.stringify(recentOrder));
       navigate('/checkout/confirmation');
-    }, 1000);
+    } catch (err) {
+      console.error(err);
+      toast.error(err.message || 'Failed to place order.');
+    } finally {
+      setIsPaying(false);
+    }
   };
 
   if (!address) {
