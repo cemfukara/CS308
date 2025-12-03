@@ -1,0 +1,74 @@
+.wrapper {
+  padding: 30px;
+}
+
+.title {
+  font-size: 32px;
+  font-weight: 700;
+  margin-bottom: 25px;
+  color: #111827;
+}
+
+.controls {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.discountInput {
+  padding: 10px 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 16px;
+  width: 200px;
+}
+
+.applyBtn {
+  background: #1e3a8a;
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.tableWrapper {
+  overflow-x: auto;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.thead {
+  background: #f9fafb;
+}
+
+.th,
+.td {
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 15px;
+}
+
+.categoryBadge {
+  padding: 2px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  border: 1px solid;
+  font-weight: 500;
+}
+
+.rowEven {
+  background: #ffffff;
+}
+
+.rowOdd {
+  background: #f8fafc;
+}

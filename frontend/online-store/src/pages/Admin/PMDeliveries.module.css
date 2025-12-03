@@ -1,0 +1,159 @@
+.pageContainer {
+  padding: 24px;
+  margin: 20px;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 6px 14px rgba(0,0,0,0.06);
+}
+
+/* Breadcrumb */
+.breadcrumb {
+  font-size: 14px;
+  color: #6b7280;
+  margin-bottom: 6px;
+}
+
+.sep {
+  margin: 0 6px;
+}
+
+.title {
+  font-size: 26px;
+  font-weight: 600;
+  margin-bottom: 18px;
+}
+
+/* Bulk Bar */
+.bulkBar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.bulkSelect {
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+}
+
+.applyBtn {
+  background: #2563eb;
+  padding: 8px 14px;
+  border-radius: 6px;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+.applyBtn:hover {
+  background: #1d4ed8;
+}
+
+/* Table */
+.tableWrapper {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th {
+  background: #f3f4f6;
+  padding: 10px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.table td {
+  padding: 10px;
+  border-top: 1px solid #eee;
+}
+
+/* Status colors */
+.processing {
+  color: #d97706;
+  font-weight: 600;
+}
+
+.inTransit {
+  color: #2563eb;
+  font-weight: 600;
+}
+
+.delivered {
+  color: #16a34a;
+  font-weight: 600;
+}
+
+/* View button */
+.viewBtn {
+  background: #2563eb;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+}
+
+.viewBtn:hover {
+  background: #1d4ed8;
+}
+
+/* Modal */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 50;
+}
+
+.modal {
+  background: white;
+  padding: 24px;
+  width: 420px;
+  border-radius: 12px;
+  box-shadow: 0 4px 18px rgba(0,0,0,0.2);
+}
+
+.checkboxRow {
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.modalActions {
+  margin-top: 18px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.saveBtn {
+  background: #16a34a;
+  color: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+}
+
+.saveBtn:hover {
+  background: #15803d;
+}
+
+.closeBtn {
+  background: #9ca3af;
+  color: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+}
+
+.closeBtn:hover {
+  background: #6b7280;
+}
