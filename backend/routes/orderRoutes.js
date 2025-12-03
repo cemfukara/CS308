@@ -1,9 +1,11 @@
+// backend/routes/orderRoutes.js
 // Defines routes for order handling (/api/orders, /api/orders/:id).
+
 import express from 'express';
 import {
   getOrders,
   getOrderDetails,
-  checkoutOrder,
+  updateOrderStatusController,
 } from '../app/controllers/orderController.js';
 import { authenticate } from '../app/middlewares/authMiddleware.js';
 
@@ -11,41 +13,34 @@ const router = express.Router();
 
 /**
  * @route   GET /api/orders
- * @desc    Get all orders for logged-in user (except carts)
+ * @desc    Get orders:
+ *          - customer → own orders
+ *          - PM/dev/sales manager → all non-cart orders (deliveries)
  * @access  Private
  */
 router.get('/', authenticate, getOrders);
 
 /**
  * @route   GET /api/orders/:id
- * @desc    Get order details by ID (items inside)
+ * @desc    Get order details (items inside)
  * @access  Private
  */
-router.get('/:id', getOrderDetails);
+router.get('/:id', authenticate, getOrderDetails);
 
 /**
- * @route   POST /api/orders
- * @desc    Checkout current cart → create order / update status
+ * @route   PUT /api/orders/:id/status
+ * @desc    Update order status (processing, in-transit, delivered, cancelled)
  * @access  Private
  */
-router.post('/', checkoutOrder);
-
-/**
- * @route   PATCH /api/orders/:id/status
- * @desc    Update order status (e.g., shipped, delivered)
- * @access  Private/Admin
- */
-router.patch('/:id/status', checkoutOrder); // same controller can be used
+router.put('/:id/status', authenticate, updateOrderStatusController);
 
 /**
  * @route   DELETE /api/orders/:id
  * @desc    Cancel an order (future implementation)
  * @access  Private
  */
-router.delete('/:id', (req, res) => {
+router.delete('/:id', authenticate, (req, res) => {
   res.status(501).json({ message: 'Cancel order not implemented yet' });
 });
 
 export default router;
-// TODO check routes, implement authenticate etc. when necessary
-// TODO implement order routes for manager roles
