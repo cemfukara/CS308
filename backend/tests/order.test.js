@@ -8,7 +8,7 @@ import {
 
 // 1. Mock the entire models module to isolate the Controller
 // The path MUST match the path in your controller file (e.g., "../models/order.js")
-import * as OrderModel from "../models/order.js";
+import * as OrderModel from "../models/Order.js";
 jest.mock("../models/order.js");
 
 // 2. Setup a minimal Express App for testing controllers
