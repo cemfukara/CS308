@@ -1,6 +1,6 @@
 import { db } from '../app/config/db.js';
 
-async function notifyWishlistUsers(productId, message) {
+export async function notifyWishlistUsers(productId, message) {
     // Get users who have this in wishlist
     const [users] = await db.pool.query(`
         SELECT user_id 
@@ -19,5 +19,3 @@ async function notifyWishlistUsers(productId, message) {
 
     return users.length;
 }
-
-module.exports = { notifyWishlistUsers };

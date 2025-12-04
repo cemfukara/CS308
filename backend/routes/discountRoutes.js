@@ -1,8 +1,10 @@
-const express = require('express');
+import express from 'express';
+import { setDiscount } from '../app/controllers/discountController.js';
+
 const router = express.Router();
-const controller = require('../controllers/discountController');
 
-// POST /api/discount
-router.post('/', controller.applyDiscount);
+// Sales Manager: Apply discount to a product
+// POST /api/discount/apply
+router.post('/apply', setDiscount);
 
-module.exports = router;
+export default router;

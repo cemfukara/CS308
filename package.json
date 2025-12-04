@@ -25,5 +25,9 @@
   "homepage": "https://github.com/cemfukara/CS308#readme",
   "devDependencies": {
     "concurrently": "^9.2.1"
+  },
+  "dependencies": {
+    "fund": "^1.0.0",
+    "pdfkit": "^0.17.2"
   }
 }

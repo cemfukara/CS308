@@ -9,6 +9,8 @@ import productRoutes from './productRoutes.js';
 import userRoutes from './userRoutes.js';
 import categoryRoutes from './categoryRoutes.js';
 import wishlistRoutes from './wishlistRoutes.js';
+import invoiceRoutes from './invoiceRoutes.js';
+import discountRoutes from './discountRoutes.js';
 
 export {
   adminRoutes,
@@ -18,4 +20,6 @@ export {
   userRoutes,
   categoryRoutes,
   wishlistRoutes,
+  invoiceRoutes,
+  discountRoutes
 };

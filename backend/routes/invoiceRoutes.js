@@ -1,25 +1,27 @@
-const express = require('express');
+import express from 'express';
+import {
+  getInvoicesByDateRange,
+  generateInvoicePDF,
+  getRevenueProfit,
+  getRevenueProfitChart
+} from '../app/controllers/invoiceController.js';
+
 const router = express.Router();
-const controller = require('../controllers/invoiceController');
 
-// View invoices in date range
-// Example: GET /api/invoices/range?start=2025-01-01&end=2025-01-31
-router.get('/range', controller.getInvoicesByDateRange);
+// View invoices in a date range
+// GET /api/invoices/range?start=2025-01-01&end=2025-01-31
+router.get('/range', getInvoicesByDateRange);
 
-// Download/Print single invoice as PDF
-// Example: GET /api/invoices/123/pdf
-router.get('/:orderId/pdf', controller.generateInvoicePDF);
+// Download single invoice as PDF
+// GET /api/invoices/:orderId/pdf
+router.get('/:orderId/pdf', generateInvoicePDF);
 
-// Get revenue/cost/profit totals between dates
-// Example: GET /api/invoices/revenue?start=2025-01-01&end=2025-01-31
-router.get('/revenue', controller.getRevenueProfit);
+// Revenue / cost / profit aggregate
+// GET /api/invoices/revenue?start=2025-01-01&end=2025-01-31
+router.get('/revenue', getRevenueProfit);
 
-// Get daily chart data between dates
-// Example: GET /api/invoices/chart?start=2025-01-01&end=2025-01-31
-router.get('/chart', controller.getRevenueProfitChart);
+// Daily chart data
+// GET /api/invoices/chart?start=2025-01-01&end=2025-01-31
+router.get('/chart', getRevenueProfitChart);
 
-//Get pdf
-//
-router.get('/:orderId/pdf', invoiceController.getInvoicePdf);
-
-module.exports = router;
+export default router;
