@@ -68,8 +68,8 @@ api/admin/
 
 | METHOD |        ENDPOINT        |             DESCRIPTION             |     ACCESS      |     STATUS      |
 | :----: | :--------------------: | :---------------------------------: | :-------------: | :-------------: |
-|  GET   |      /deliveries       | View list of orders to be delivered | Product Manager | Not Implemented |
-| PATCH  | /deliveries/:id/status |    Update order delivery status     | Product Manager | Not Implemented |
+|  GET   |      /deliveries       | View list of orders to be delivered | Product Manager |    Finished     |
+| PATCH  | /deliveries/:id/status |    Update order delivery status     | Product Manager |    Finished     |
 | PATCH  | /comments/:id/approve  | Approve or reject product comments  | Product Manager | Not Implemented |
 
 ### Support Agent
@@ -101,7 +101,7 @@ api/products/
 | :----: | :--------: | :-----------------------: | :-------------: | :-------------: |
 |  GET   |     /      |     Get all products      |     Public      | Not Implemented |
 |  GET   |    /:id    | Get single product by ID  |     Public      | Not Implemented |
-| PATCH  | /:id/stock | Update stock of a product | ProductManager  | Not Implemented |
+| PATCH  | /:id/stock | Update stock of a product | Product Manager | Not Implemented |
 |  POST  |     /      |     Add a new product     | Product Manager | Not Implemented |
 |  PUT   |    /:id    |   Update product by ID    | Product Manager | Not Implemented |
 | DELETE |    /:id    |   Delete product by ID    | Product Manager | Not Implemented |
@@ -389,6 +389,96 @@ Clears user's wishlist
 - Error:
   ```
   { "message": 'Wishlist already empty', } // http status: 200
+  OR
+  {" message": 'Server error' } // http status: 500
+  ```
+
+## Product Manager Usage
+
+### GET /api/product-manager/deliveries
+
+Gets all orders with "processing" status
+
+- Request body (+ JWT cookie):
+
+  ```
+  // Empty, authentication done via JWT cookie
+  ```
+
+- Response body:
+
+  ```
+  {
+    // If not any order with "processing" status, then an empty array will shown
+    "deliveries": [
+
+      // one object for each order_id
+      {
+        "order_id": 3,
+        "status": "processing",
+        "total_price": "899.50",
+
+        // PIIs, they will be decrypted
+        "shipping_address": null,
+        "user": {
+          "first_name": null,
+          "last_name": null,
+          "address": null,
+          "tax_id": null
+        },
+
+        // All products an their quantities
+        "products": [
+          {
+            "id": 5,
+            "name": "Zenith Z-Book 14",
+            "quantity": 1
+          }
+        ]
+      }
+    ]
+  } // http status: 200
+  ```
+
+- Error:
+  ```
+  {" message": 'Server error' } // http status: 500
+  ```
+
+### PATCH /api/product-manager/deliveries/:id/status
+
+Change status of an order
+
+- Request body (+ JWT cookie):
+
+  ```
+  // Authentication done via JWT cookie
+
+  {"status":"in-transit"}
+
+  /* Possible status values:
+    "processing",
+    "in-transit",
+    "delivered",
+    "cancelled",
+
+    updating status to "cart" is not allowed
+  */
+  ```
+
+- Response body:
+
+  ```
+  {"message":"Delivery status updated"} // http status: 200
+  ```
+
+- Error:
+  ```
+  {"message":"Invalid status value"} // http status: 400
+  OR
+  {"message":"Invalid order id"} // http status: 400
+  OR
+  {"message":"Order not found"} // http status: 404
   OR
   {" message": 'Server error' } // http status: 500
   ```
