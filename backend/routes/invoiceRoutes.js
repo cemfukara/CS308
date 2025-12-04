@@ -3,7 +3,7 @@ import {
   getInvoicesByDateRange,
   generateInvoicePDF,
   getRevenueProfit,
-  getRevenueProfitChart
+  getRevenueProfitChartController
 } from '../app/controllers/invoiceController.js';
 
 const router = express.Router();
@@ -22,6 +22,6 @@ router.get('/revenue', getRevenueProfit);
 
 // Daily chart data
 // GET /api/invoices/chart?start=2025-01-01&end=2025-01-31
-router.get('/chart', getRevenueProfitChart);
+router.get('/chart', getRevenueProfitChartController);
 
 export default router;

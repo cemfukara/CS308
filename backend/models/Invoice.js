@@ -1,4 +1,4 @@
-import db from '../db.js'; // MUST have .js extension when using ESM
+import { db } from '../app/config/db.js'; // MUST have .js extension when using ESM
 
 // Helper: run a query and return [rows, fields]
 async function query(sql, params = []) {

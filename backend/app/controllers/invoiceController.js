@@ -134,10 +134,10 @@ export async function getRevenueProfit(req, res, next) {
 // -----------------------------------------------
 // GET /api/invoices/chart?start=YYYY-MM-DD&end=YYYY-MM-DD
 // -----------------------------------------------
-export async function getRevenueProfitChart(req, res, next) {
+export async function getRevenueProfitChartController(req, res, next) {
   try {
     const { start, end } = parseDateRange(req.query);
-    const rows = await getRevenueProfitChart(start, end);
+    const rows = await getRevenueProfitChartController(start, end);
 
     const chartData = rows.map(r => ({
       day: r.day,

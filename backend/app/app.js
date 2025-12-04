@@ -11,6 +11,8 @@ import {
   userRoutes,
   categoryRoutes,
   wishlistRoutes,
+  invoiceRoutes,
+  discountRoutes,
 } from '../routes/index.js';
 const app = express();
 

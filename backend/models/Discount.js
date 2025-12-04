@@ -1,4 +1,4 @@
-import db from '../db.js';
+import { db } from '../app/config/db.js';
 
 // Helper for DB queries
 async function query(sql, params = []) {
