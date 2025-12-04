@@ -1,4 +1,5 @@
 {
+<<<<<<< Updated upstream
     "name": "backend",
     "version": "1.0.0",
     "description": "Backend for the market web application using Node.js, Express, and MySQL.",
@@ -32,4 +33,48 @@
         "nodemon": "^3.1.4",
         "prettier": "^3.6.2"
     }
+=======
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "Backend for the market web application using Node.js, Express, and MySQL.",
+  "main": "./app/server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node ./app/server.js",
+    "dev": "nodemon ./app/server.js",
+    "format": "prettier --write .",
+    "test": "vitest run --coverage",
+    "test:watch": "vitest"
+  },
+  "keywords": [
+    "express",
+    "mysql",
+    "backend",
+    "market",
+    "nodejs"
+  ],
+  "author": "",
+  "license": "",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.21.2",
+    "express-validator": "^7.3.1",
+    "jsonwebtoken": "^9.0.2",
+    "mysql2": "^3.15.3",
+    "node-mailjet": "^6.0.11",
+    "pdfkit": "^0.17.2",
+    "winston": "^3.18.3"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "^4.0.14",
+    "cross-env": "^10.1.0",
+    "nodemon": "^3.1.4",
+    "prettier": "^3.6.2",
+    "supertest": "^7.1.4",
+    "vitest": "^4.0.14"
+  }
+>>>>>>> Stashed changes
 }
