@@ -1,6 +1,8 @@
 // Defines manager/admin-specific routes (discounts, analytics, etc.).
 // app/routes/adminRoutes.js
 
+// ATTENTION, ROUTE URLS ARE NOT CORRECT. CHANGE THEM BEFORE IMPLEMENTATION
+
 import {
   authenticate,
   authorizeRoles,
