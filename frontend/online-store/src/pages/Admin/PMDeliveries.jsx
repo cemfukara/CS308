@@ -1,180 +1,243 @@
+// src/pages/Admin/PMDeliveries.jsx
+
 import { useEffect, useState } from "react";
+import { api } from "../../lib/api";
 import styles from "./PMDeliveries.module.css";
 
 export default function PMDeliveries() {
   const [deliveries, setDeliveries] = useState([]);
   const [selectedDeliveries, setSelectedDeliveries] = useState([]);
   const [bulkStatus, setBulkStatus] = useState("");
-  const [selected, setSelected] = useState(null); // modal item
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [loadingInvoice, setLoadingInvoice] = useState(false);
+  const [error, setError] = useState("");
+  const [updatingId, setUpdatingId] = useState(null);
+
+  const [hideCompleted, setHideCompleted] = useState(false);
+  const [showOnlyCompleted, setShowOnlyCompleted] = useState(false);
 
   useEffect(() => {
     loadDeliveries();
   }, []);
 
   async function loadDeliveries() {
-    setDeliveries([
-      {
-        delivery_id: 1,
-        order_id: 101,
-        customer: "John Doe",
-        product: "iPhone 14",
-        quantity: 1,
-        total_price: 899.99,
-        address: "Example Street 123, Istanbul",
-        status: "Processing",
-        items: [
-          {
-            name: "iPhone 14",
-            quantity: 1,
-            price_at_purchase: 899.99,
-            cost: 449.99,
-          }
-        ]
-      },
-      {
-        delivery_id: 2,
-        order_id: 102,
-        customer: "Sarah Smith",
-        product: "Laptop X",
-        quantity: 1,
-        total_price: 1499.99,
-        address: "Another Street 55, Ankara",
-        status: "Delivered",
-        items: [
-          {
-            name: "Laptop X",
-            quantity: 1,
-            price_at_purchase: 1499.99,
-            cost: 749.99,
-          }
-        ]
-      }
-    ]);
+    try {
+      setLoading(true);
+      const res = await api.get("/orders");
+      setDeliveries(res.orders ?? []);
+    } catch (err) {
+      console.error(err);
+      setError("Failed to load deliveries.");
+    } finally {
+      setLoading(false);
+    }
   }
 
-  function toggleSelect(id) {
-    setSelectedDeliveries((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+  function toggleSelect(orderId) {
+    setSelectedDeliveries(prev =>
+      prev.includes(orderId)
+        ? prev.filter(id => id !== orderId)
+        : [...prev, orderId]
     );
   }
 
-  function applyBulkStatus() {
+  async function updateStatus(orderId, newStatus) {
+    try {
+      setUpdatingId(orderId);
+      await api.put(`/orders/${orderId}/status`, { status: newStatus });
+
+      setDeliveries(prev =>
+        prev.map(o =>
+          o.order_id === orderId ? { ...o, status: newStatus } : o
+        )
+      );
+    } catch (err) {
+      console.error(err);
+      setError("Failed to update delivery status.");
+    } finally {
+      setUpdatingId(null);
+    }
+  }
+
+  async function applyBulkStatus() {
     if (!bulkStatus || selectedDeliveries.length === 0) return;
-
-    const updated = deliveries.map((d) =>
-      selectedDeliveries.includes(d.delivery_id)
-        ? { ...d, status: bulkStatus }
-        : d
-    );
-
-    setDeliveries(updated);
+    for (const id of selectedDeliveries) {
+      await updateStatus(id, bulkStatus);
+    }
     setSelectedDeliveries([]);
     setBulkStatus("");
   }
 
-  function openModal(delivery) {
-    setSelected({ ...delivery });
+  async function openInvoice(order) {
+    try {
+      setLoadingInvoice(true);
+      const res = await api.get(`/orders/${order.order_id}`);
+      setSelectedOrder({
+        ...res.order,
+        items: res.items ?? []
+      });
+    } catch (err) {
+      console.error(err);
+      setError("Failed to load invoice.");
+    } finally {
+      setLoadingInvoice(false);
+    }
   }
 
-  function closeModal() {
-    setSelected(null);
+  function closeInvoice() {
+    setSelectedOrder(null);
   }
 
-  function saveStatusUpdate() {
-    setDeliveries(prev =>
-      prev.map(d =>
-        d.delivery_id === selected.delivery_id
-          ? { ...selected }
-          : d
-      )
-    );
-    closeModal();
+  function filteredDeliveries() {
+    let list = deliveries;
+
+    if (hideCompleted) {
+      list = list.filter(
+        o => o.status !== "delivered" && o.status !== "cancelled"
+      );
+    }
+
+    if (showOnlyCompleted) {
+      list = list.filter(
+        o => o.status === "delivered" || o.status === "cancelled"
+      );
+    }
+
+    return list;
+  }
+
+  function statusClass(status) {
+    if (status === "delivered") return styles.delivered;
+    if (status === "in-transit") return styles.inTransit;
+    return styles.processing;
   }
 
   return (
     <div className={styles.pageContainer}>
-      {/* Breadcrumb */}
       <div className={styles.breadcrumb}>
         Product Manager <span className={styles.sep}>/</span> Delivery Management
       </div>
 
       <h1 className={styles.title}>Delivery Management</h1>
 
-      {/* Bulk Action Bar */}
+      {loading && <p>Loading…</p>}
+      {error && <p style={{ color: "red" }}>{error}</p>}
+
       <div className={styles.bulkBar}>
         <select
           value={bulkStatus}
-          onChange={(e) => setBulkStatus(e.target.value)}
+          onChange={e => setBulkStatus(e.target.value)}
           className={styles.bulkSelect}
         >
           <option value="">Select Status</option>
-          <option value="Processing">Processing</option>
-          <option value="In-Transit">In-Transit</option>
-          <option value="Delivered">Delivered</option>
+          <option value="processing">Processing</option>
+          <option value="in-transit">In-Transit</option>
+          <option value="delivered">Delivered</option>
+          <option value="cancelled">Cancelled</option>
         </select>
 
         <button className={styles.applyBtn} onClick={applyBulkStatus}>
           Apply to Selected
         </button>
+
+        <button
+          className={styles.hideBtn}
+          onClick={() => {
+            setHideCompleted(!hideCompleted);
+            setShowOnlyCompleted(false);
+          }}
+        >
+          {hideCompleted ? "Show All" : "Hide Completed"}
+        </button>
+
+        <button
+          className={styles.showCompletedBtn}
+          onClick={() => {
+            setShowOnlyCompleted(!showOnlyCompleted);
+            setHideCompleted(false);
+          }}
+        >
+          {showOnlyCompleted ? "Show All" : "Show Completed"}
+        </button>
       </div>
 
-      {/* Table */}
       <div className={styles.tableWrapper}>
         <table className={styles.table}>
           <thead>
             <tr>
-              <th></th>
-              <th>Delivery ID</th>
+              <th />
               <th>Order ID</th>
               <th>Customer</th>
-              <th>Product</th>
-              <th>Qty</th>
-              <th>Total Price</th>
+              <th>Items</th>
               <th>Address</th>
+              <th>Total</th>
+              <th>Date</th>
               <th>Status</th>
-              <th>View</th>
+              <th>Actions</th>
             </tr>
           </thead>
 
           <tbody>
-            {deliveries.map((item) => (
-              <tr key={item.delivery_id}>
+            {filteredDeliveries().map(order => (
+              <tr key={order.order_id}>
                 <td>
                   <input
                     type="checkbox"
-                    checked={selectedDeliveries.includes(item.delivery_id)}
-                    onChange={() => toggleSelect(item.delivery_id)}
+                    checked={selectedDeliveries.includes(order.order_id)}
+                    onChange={() => toggleSelect(order.order_id)}
                   />
                 </td>
-                <td>{item.delivery_id}</td>
-                <td>{item.order_id}</td>
-                <td>{item.customer}</td>
-                <td>{item.product}</td>
-                <td>{item.quantity}</td>
-                <td>${item.total_price.toFixed(2)}</td>
-                <td>{item.address}</td>
+
+                <td>{order.order_id}</td>
+                <td>{order.customer_email}</td>
+                <td>{order.item_count}</td>
+                <td>{order.shipping_address}</td>
+                <td>{Number(order.total_price).toFixed(2)}</td>
 
                 <td>
-                  <span
-                    className={
-                      item.status === "Delivered"
-                        ? styles.delivered
-                        : item.status === "In-Transit"
-                        ? styles.inTransit
-                        : styles.processing
-                    }
-                  >
-                    {item.status}
+                  {order.created_at
+                    ? new Date(order.created_at).toLocaleDateString("en-GB")
+                    : "—"}
+                </td>
+
+                <td>
+                  <span className={statusClass(order.status)}>
+                    {order.status}
                   </span>
                 </td>
 
+                {/* ⭐ HORIZONTAL BUTTONS ADDED HERE */}
                 <td>
-                  <button
-                    className={styles.viewBtn}
-                    onClick={() => openModal(item)}
-                  >
-                    View Full Invoice
-                  </button>
+                  <div className={styles.actionRow}>
+                    <button
+                      className={styles.actionBtn}
+                      onClick={() => openInvoice(order)}
+                    >
+                      View Invoice
+                    </button>
+
+                    <button
+                      className={styles.actionBtn}
+                      disabled={updatingId === order.order_id}
+                      onClick={() =>
+                        updateStatus(
+                          order.order_id,
+                          order.status === "processing"
+                            ? "in-transit"
+                            : order.status === "in-transit"
+                            ? "delivered"
+                            : "delivered"
+                        )
+                      }
+                    >
+                      {order.status === "processing"
+                        ? "Mark In-Transit"
+                        : order.status === "in-transit"
+                        ? "Mark Delivered"
+                        : "Delivered"}
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -182,52 +245,41 @@ export default function PMDeliveries() {
         </table>
       </div>
 
-      {/* Modal */}
-      {selected && (
+      {selectedOrder && (
         <div className={styles.modalOverlay}>
           <div className={styles.modal}>
-            <h2>Invoice #{selected.order_id}</h2>
+            <h2>Invoice #{selectedOrder.order_id}</h2>
 
-            <p><strong>Customer:</strong> {selected.customer}</p>
-            <p><strong>Address:</strong> {selected.address}</p>
+            <p>
+              <strong>Customer:</strong> {selectedOrder.customer_email}
+            </p>
+            <p>
+              <strong>Address:</strong> {selectedOrder.shipping_address}
+            </p>
 
             <h3>Items</h3>
             <ul>
-              {selected.items.map((i, idx) => (
+              {selectedOrder.items.map((i, idx) => (
                 <li key={idx}>
-                  {i.name} — {i.quantity} × ${i.price_at_purchase}
+                  {i.product_name} — {i.quantity} ×{" "}
+                  {Number(i.price_at_purchase).toFixed(2)}
                 </li>
               ))}
             </ul>
 
-            <p><strong>Total Price:</strong> ${selected.total_price.toFixed(2)}</p>
-
-            <label className={styles.checkboxRow}>
-              <input
-                type="checkbox"
-                checked={selected.status === "Delivered"}
-                onChange={(e) =>
-                  setSelected({
-                    ...selected,
-                    status: e.target.checked ? "Delivered" : "Processing"
-                  })
-                }
-              />
-              Mark as Delivered
-            </label>
+            <p>
+              <strong>Total:</strong>{" "}
+              {Number(selectedOrder.total_price).toFixed(2)}
+            </p>
 
             <div className={styles.modalActions}>
-              <button className={styles.saveBtn} onClick={saveStatusUpdate}>
-                Save
-              </button>
-              <button className={styles.closeBtn} onClick={closeModal}>
+              <button className={styles.closeBtn} onClick={closeInvoice}>
                 Close
               </button>
             </div>
           </div>
         </div>
       )}
-
     </div>
   );
 }

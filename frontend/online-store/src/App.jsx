@@ -35,14 +35,21 @@ import Support from './pages/Account/Support';
 import Logout from './pages/Account/Logout';
 import OrderDetails from './pages/Account/OrderDetails';
 
-//Admin
+// Admin
 import AdminLayout from './pages/Admin/AdminLayout.jsx';
 import AdminProducts from './pages/Admin/AdminProducts.jsx';
 import AdminProductEdit from './pages/Admin/AdminProductEdit.jsx';
 import AdminProductNew from './pages/Admin/AdminProductNew.jsx';
 import AdminStock from './pages/Admin/AdminStock.jsx';
 import AdminCategories from './pages/Admin/AdminCategories.jsx';
-import AdminDeliveries from './pages/Admin/AdminDeliveries.jsx';
+import PMDeliveries from "./pages/Admin/PMDeliveries.jsx";
+
+
+// Sales Manager (SM) – note the folder is ./pages/SM/
+import SMLayout from './pages/SM/SMLayout.jsx';
+import SMDiscounts from './pages/SM/SMDiscounts.jsx';
+import SMInvoices from './pages/SM/SMInvoices.jsx';
+import SMRevenue from './pages/SM/SMRevenue.jsx';
 
 export function AppContent() {
   const location = useLocation();
@@ -53,7 +60,8 @@ export function AppContent() {
   // Fetch logged-in user on app start
   useEffect(() => {
     fetchProfile();
-  }, []);
+  }, [fetchProfile]);
+
   return (
     <>
       {/* Global toast container */}
@@ -111,7 +119,21 @@ export function AppContent() {
           <Route path="products/edit/:id" element={<AdminProductEdit />} />
           <Route path="inventory" element={<AdminStock />} />
           <Route path="categories" element={<AdminCategories />} />
-          <Route path="deliveries" element={<AdminDeliveries />} />
+          <Route path="deliveries" element={<PMDeliveries />} />
+        </Route>
+
+        {/* Sales Manager routes */}
+        <Route
+          path="/sm"
+          element={
+            <RequirePM>
+              <SMLayout />
+            </RequirePM>
+          }
+        >
+          <Route path="discounts" element={<SMDiscounts />} />
+          <Route path="invoices" element={<SMInvoices />} />
+          <Route path="revenue" element={<SMRevenue />} />
         </Route>
 
         {/* Fallback */}
