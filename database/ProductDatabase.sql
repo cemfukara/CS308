@@ -160,6 +160,17 @@ CREATE TABLE wishlists (
     CONSTRAINT uq_user_product_wishlist UNIQUE(user_id, product_id)
 );
 
+CREATE TABLE notifications (
+    notification_id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT NOT NULL,
+    product_id INT NOT NULL,
+    message TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    is_read BOOLEAN DEFAULT FALSE,
+    FOREIGN KEY (user_id) REFERENCES users(user_id),
+    FOREIGN KEY (product_id) REFERENCES products(product_id)
+);
+
 -- ===================================================================
 -- DATA INSERTION
 -- ===================================================================

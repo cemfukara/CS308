@@ -168,3 +168,22 @@ export async function deleteProduct(productId) {
 
   return result.affectedRows;
 }
+
+async function applyDiscount(productIds, discount) {
+    const placeholders = productIds.map(() => '?').join(',');
+
+    // Update product prices
+    await db.pool.query(`
+        UPDATE products 
+        SET price = list_price * (1 - ? / 100)
+        WHERE product_id IN (${placeholders})
+    `, [discount, ...productIds]);
+
+    // Get affected products
+    const [rows] = await db.pool.query(`
+        SELECT product_id, name FROM products
+        WHERE product_id IN (${placeholders})
+    `, productIds);
+
+    return rows;
+}

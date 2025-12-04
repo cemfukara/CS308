@@ -1,4 +1,3 @@
-// backend/models/Order.js
 // Data access helpers for orders & order items.
 
 import { db } from '../app/config/db.js';
