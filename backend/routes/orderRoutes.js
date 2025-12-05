@@ -5,7 +5,6 @@ import express from 'express';
 import {
   getOrders,
   getOrderDetails,
-  updateOrderStatusController,
   createOrderController,
 } from '../app/controllers/orderController.js';
 import { authenticate } from '../app/middlewares/authMiddleware.js';
@@ -14,9 +13,7 @@ const router = express.Router();
 
 /**
  * @route   GET /api/orders
- * @desc    Get orders:
- *          - customer → own orders
- *          - PM/dev/sales manager → all non-cart orders (deliveries)
+ * @desc    Get orders customer's orders
  * @access  Private
  */
 router.get('/', authenticate, getOrders);
@@ -27,13 +24,6 @@ router.get('/', authenticate, getOrders);
  * @access  Private
  */
 router.get('/:id', authenticate, getOrderDetails);
-
-/**
- * @route   PUT /api/orders/:id/status
- * @desc    Update order status (processing, in-transit, delivered, cancelled)
- * @access  Private
- */
-router.put('/:id/status', authenticate, updateOrderStatusController);
 
 /**
  * @route   DELETE /api/orders/:id

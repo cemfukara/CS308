@@ -9,7 +9,10 @@ import {
   removeProduct,
 } from '../app/controllers/productController.js';
 
-import { authenticate, isAdmin } from '../app/middlewares/authMiddleware.js'; // auth middlewares
+import {
+  authenticate,
+  authorizeRoles,
+} from '../app/middlewares/authMiddleware.js'; // auth middlewares
 import { validateProductInput } from '../app/middlewares/validationMiddleware.js';
 
 const router = express.Router();
@@ -37,8 +40,14 @@ router.get('/:id', fetchProductDetails); // Use the new controller function
  * @desc    Add a new product
  * @access  Private/Admin
  */
-// APPLY isAuthenticated and isAdmin middleware
-router.post('/', authenticate, isAdmin, validateProductInput, addProduct);
+
+router.post(
+  '/',
+  authenticate,
+  authorizeRoles('product manager'),
+  validateProductInput,
+  addProduct
+);
 
 /**
  * @route   PUT /api/products/:id
@@ -49,7 +58,7 @@ router.post('/', authenticate, isAdmin, validateProductInput, addProduct);
 router.put(
   '/:id',
   authenticate,
-  isAdmin,
+  authorizeRoles('product manager'),
   validateProductInput,
   updateProductDetails
 );
@@ -59,8 +68,11 @@ router.put(
  * @desc    Delete product by ID
  * @access  Private/Admin
  */
-router.delete('/:id', authenticate, isAdmin, removeProduct);
+router.delete(
+  '/:id',
+  authenticate,
+  authorizeRoles('product manager'),
+  removeProduct
+);
 
 export default router;
-
-// TODO: check is isAdmin usage necessary

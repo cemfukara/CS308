@@ -49,34 +49,6 @@ export async function getUserOrders(userId) {
 }
 
 // ------------------------------------------------------
-// Get ALL non-cart orders (for PM / dev / sales manager)
-// ------------------------------------------------------
-export async function getAllOrders() {
-  const [rows] = await db.query(
-    `
-      SELECT
-        o.order_id,
-        o.user_id,
-        o.status,
-        o.total_price,
-        o.shipping_address_encrypted,
-        o.created_at,
-        o.order_date,
-        u.email AS customer_email,
-        COUNT(oi.order_item_id) AS item_count
-      FROM orders o
-      JOIN users u ON u.user_id = o.user_id
-      LEFT JOIN order_items oi ON oi.order_id = o.order_id
-      WHERE o.status != 'cart'
-      GROUP BY o.order_id
-      ORDER BY o.created_at DESC
-    `
-  );
-
-  return rows.map(mapOrderRow);
-}
-
-// ------------------------------------------------------
 // Get items inside a specific order
 // ------------------------------------------------------
 export async function getOrderItems(orderId) {
@@ -96,25 +68,6 @@ export async function getOrderItems(orderId) {
     [orderId]
   );
   return rows;
-}
-
-// ------------------------------------------------------
-// Change order status (processing, in-transit, delivered, cancelled)
-// ------------------------------------------------------
-export async function updateOrderStatus(orderId, newStatus) {
-  return db.query(
-    `
-      UPDATE orders
-         SET status = ?,
-             order_date = CASE
-               WHEN ? IN ('processing', 'in-transit', 'delivered')
-               THEN NOW()
-               ELSE order_date
-             END
-       WHERE order_id = ?
-    `,
-    [newStatus, newStatus, orderId]
-  );
 }
 
 // ------------------------------------------------------

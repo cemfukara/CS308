@@ -11,6 +11,7 @@ import {
   userRoutes,
   categoryRoutes,
   wishlistRoutes,
+  invoiceRoutes,
 } from '../routes/index.js';
 const app = express();
 
@@ -36,6 +37,5 @@ app.use('/api/users', userRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/invoice', invoiceRoutes);
-app.use('/api/discount', discountRoutes);
 
 export default app;
