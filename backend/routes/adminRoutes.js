@@ -13,7 +13,6 @@ import {
 } from '../app/controllers/adminController.js';
 import express from 'express';
 import { setDiscount } from '../app/controllers/discountController.js';
-import { router } from './discountRoutes.js';
 
 const router = express.Router();
 
@@ -31,7 +30,12 @@ router.patch('/sales-manager/products/:id/price', (req, res) => {
 
 // Sales Manager: Apply discount to a product
 // POST /api/discount/apply
-router.post('/apply', authenticate, authorizeRoles("sales manager"), setDiscount);
+router.post(
+  '/apply',
+  authenticate,
+  authorizeRoles('sales manager'),
+  setDiscount
+);
 
 // View invoices in a given date range
 // allow: ["sales_manager"]
