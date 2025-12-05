@@ -24,6 +24,7 @@ vi.mock('bcryptjs', () => {
   };
 });
 import bcrypt from 'bcryptjs';
+import { authorizeRoles } from '../app/middlewares/authMiddleware.js';
 
 // ------------------ Mock encrypter ------------------
 vi.mock('../utils/encrypter.js', () => ({
@@ -33,11 +34,16 @@ vi.mock('../utils/encrypter.js', () => ({
 
 // ------------------ Mock auth middleware ------------------
 vi.mock('../app/middlewares/authMiddleware.js', () => ({
-  isAuthenticated: vi.fn((req, res, next) => {
-    req.user = { user_id: 1, email: 'alimemo@provider.com' };
+  authenticate: vi.fn((req, res, next) => {
+    req.user = { user_id: 1, email: 'alimemo@provider.com', role: 'pm' };
     next();
   }),
-  isAdmin: vi.fn((req, res, next) => next()),
+
+  authorizeRoles: vi.fn((allowedRoles = []) => {
+    return (req, res, next) => {
+      next();
+    };
+  }),
 }));
 
 // ------------------ Tests ------------------
