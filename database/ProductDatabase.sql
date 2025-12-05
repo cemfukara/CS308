@@ -175,7 +175,9 @@ CREATE TABLE product_images (
     FOREIGN KEY (product_id) REFERENCES products(product_id)
 );
 
+-- ==================================================================
 -- 10. NOTIFICATIONS TABLE
+-- ==================================================================
 
 CREATE TABLE notifications (
     notification_id INT PRIMARY KEY AUTO_INCREMENT,
@@ -291,9 +293,8 @@ VALUES
 (2, 6); -- Jane wants the Earbuds
 
 
--- ===================================================================
--- 9. PRODUCT IMAGES TABLE (Resetting data for Items 1-10)
--- ===================================================================
+-- 9. Insert Product Images (Resetting data for Items 1-10)
+-- 
 
 INSERT INTO product_images (product_id, image_url, alt_text, is_primary, display_order)
 VALUES
