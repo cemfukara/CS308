@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import styles from './Payment.module.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCcVisa, faCcMastercard } from '@fortawesome/free-brands-svg-icons';
-import useCartStore from '../../store/cartStore';
-import { createOrder } from '../../lib/ordersApi';
+import useCartStore from '@/store/cartStore';
+import { createOrder } from '@/lib/ordersApi';
 import { toast } from 'react-hot-toast';
 
 const Payment = () => {
@@ -106,7 +106,7 @@ const Payment = () => {
         name: item.name,
         price: Number(item.price) || 0,
         quantity: item.quantity || 1,
-        currency: item.currency || '$',
+        currency: item.currency,
         image: item.image || null,
       }));
 

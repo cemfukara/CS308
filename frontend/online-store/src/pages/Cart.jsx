@@ -4,6 +4,7 @@ import useCartStore from '../store/cartStore';
 import useAuthStore from '../store/authStore';
 import { toast } from 'react-hot-toast';
 import './Cart.css';
+import { formatPrice } from '@/utils/formatPrice';
 
 const Cart = () => {
   const { cart, updateQuantity, removeFromCart, clearCart } = useCartStore();
@@ -49,7 +50,7 @@ const Cart = () => {
 
                 <div className="info">
                   <h3>{item.name}</h3>
-                  <p>${Number(item.price || 0).toFixed(2)}</p>
+                  <p>{formatPrice(item.price, item.currency)}</p>
 
                   <div className="quantity-control">
                     <button
@@ -88,7 +89,7 @@ const Cart = () => {
           </div>
 
           <div className="cart-summary">
-            <h3>Total: ${total.toFixed(2)}</h3>
+            <h3>Total: {formatPrice(total, cart[0]?.currency)}</h3>
             <button className="checkout-btn" onClick={handleCheckout}>
               Proceed to Checkout
             </button>

@@ -1,6 +1,6 @@
 import { NavLink, Outlet, Link } from 'react-router-dom';
 import styles from './AdminLayout.module.css';
-import useAuthStore from '../../store/authStore';
+import useAuthStore from '@/store/authStore';
 
 function capitalize(s) {
   if (s == null || s == undefined) return null;
@@ -16,52 +16,69 @@ export default function AdminLayout() {
           <span className={styles.brandMain}>TechZone</span>
           <span className={styles.brandSub}>Admin</span>
         </div>
-
         <nav className={styles.nav}>
-          <NavLink
-            to="/admin/products"
-            className={({ isActive }) =>
-              isActive ? `${styles.link} ${styles.active}` : styles.link
-            }
-          >
-            Products
-          </NavLink>
+          {user.role === 'product manager' || user.role === 'dev' ? (
+            <>
+              <NavLink
+                to="/admin/pm/products"
+                className={({ isActive }) =>
+                  isActive ? `${styles.link} ${styles.active}` : styles.link
+                }
+              >
+                Products
+              </NavLink>
 
-          <NavLink
-            to="/admin/categories"
-            className={({ isActive }) =>
-              isActive ? `${styles.link} ${styles.active}` : styles.link
-            }
-          >
-            Categories
-          </NavLink>
+              <NavLink
+                to="/admin/pm/categories"
+                className={({ isActive }) =>
+                  isActive ? `${styles.link} ${styles.active}` : styles.link
+                }
+              >
+                Categories
+              </NavLink>
 
-          <NavLink
-            to="/admin/inventory"
-            className={({ isActive }) =>
-              isActive ? `${styles.link} ${styles.active}` : styles.link
-            }
-          >
-            Inventory & Stock
-          </NavLink>
+              <NavLink
+                to="/admin/pm/inventory"
+                className={({ isActive }) =>
+                  isActive ? `${styles.link} ${styles.active}` : styles.link
+                }
+              >
+                Inventory & Stock
+              </NavLink>
 
-          <NavLink
-            to="/admin/deliveries"
-            className={({ isActive }) =>
-              isActive ? `${styles.link} ${styles.active}` : styles.link
-            }
-          >
-            Deliveries
-          </NavLink>
+              <NavLink
+                to="/admin/pm/deliveries"
+                className={({ isActive }) =>
+                  isActive ? `${styles.link} ${styles.active}` : styles.link
+                }
+              >
+                Deliveries
+              </NavLink>
 
-          <NavLink
-            to="/admin/comments"
-            className={({ isActive }) =>
-              isActive ? `${styles.link} ${styles.active}` : styles.link
-            }
-          >
-            Comment Approval
-          </NavLink>
+              <NavLink
+                to="/admin/pm/comments"
+                className={({ isActive }) =>
+                  isActive ? `${styles.link} ${styles.active}` : styles.link
+                }
+              >
+                Comment Approval
+              </NavLink>
+            </>
+          ) : null}
+
+          {user.role === 'sales manager' || user.role === 'dev' ? (
+            <>
+              <NavLink to="/admin/sm/discounts" className={styles.link}>
+                Discount Management
+              </NavLink>
+              <NavLink to="/admin/sm/invoices" className={styles.link}>
+                Invoice Management
+              </NavLink>
+              <NavLink to="/admin/sm/revenue" className={styles.link}>
+                Revenue Dashboard
+              </NavLink>
+            </>
+          ) : null}
         </nav>
 
         <div className={styles.backToStoreWrapper}>

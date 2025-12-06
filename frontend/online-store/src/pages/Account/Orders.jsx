@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Orders.css';
-import { getOrders } from '../../lib/ordersApi';
+import { getOrders } from '@/lib/ordersApi';
+import { formatPrice } from '@/utils/formatPrice';
 
 const Orders = () => {
   const [orders, setOrders] = useState([]);
@@ -52,7 +53,7 @@ const Orders = () => {
                       ? new Date(order.order_date || order.created_at).toLocaleString()
                       : '—'}
                   </p>
-                  <p>Total: $ {Number(order.total_price || 0).toFixed(2)}</p>
+                  <p>Total: {formatPrice(order.total_price, order.currency)}</p>
                 </div>
                 <div className="order-actions">
                   <span className={`status ${order.status.toLowerCase()}`}>{order.status}</span>

@@ -1,17 +1,21 @@
 // src/pages/sm/SMRevenue.jsx
 
-import { useEffect, useState, useMemo } from "react";
-import styles from "./SMRevenue.module.css";
-import { Chart as ChartJS } from "chart.js/auto"; // FIX FOR REACT 19
-import { Line } from "react-chartjs-2";
-import { api } from "../../lib/api";
+import { useEffect, useState, useMemo } from 'react';
+import styles from '../Admin.module.css';
+import { Chart as ChartJS } from 'chart.js/auto'; // FIX FOR REACT 19
+import { Line } from 'react-chartjs-2';
+import { api } from '@/lib/api';
+import { Link } from 'react-router-dom';
+import { DatePicker } from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+import { formatPrice } from '@/utils/formatPrice';
 
 export default function SMRevenue() {
   const [orders, setOrders] = useState([]);
   const [filtered, setFiltered] = useState([]);
 
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+  const [startDate, setStartDate] = useState(null);
+  const [endDate, setEndDate] = useState(null);
 
   const [showRevenueChart, setShowRevenueChart] = useState(false);
   const [showProfitChart, setShowProfitChart] = useState(false);
@@ -29,19 +33,19 @@ export default function SMRevenue() {
 
   const loadOrders = async () => {
     try {
-      const res = await api.get("/orders");
+      const res = await api.get('/orders');
       const list = res?.orders ?? [];
 
       // For each order, fetch its items
       const ordersWithItems = await Promise.all(
-        list.map(async (o) => {
+        list.map(async o => {
           const details = await api.get(`/orders/${o.order_id}`);
 
           return {
             order_id: o.order_id,
             order_date: new Date(o.created_at), // FIXED DATE
             total_price: Number(o.total_price),
-            items: details.items.map((it) => ({
+            items: details.items.map(it => ({
               quantity: it.quantity,
               price_at_purchase: Number(it.price_at_purchase),
               product_cost: Number(it.price_at_purchase) * 0.5, // Default cost = 50%
@@ -52,7 +56,7 @@ export default function SMRevenue() {
 
       setOrders(ordersWithItems);
     } catch (err) {
-      console.error("Error loading revenue data:", err);
+      console.error('Error loading revenue data:', err);
     }
   };
 
@@ -60,10 +64,29 @@ export default function SMRevenue() {
   // DATE FILTERING
   // --------------------------------------------------------
   const filterOrders = () => {
-    const result = orders.filter((o) => {
-      const dateStr = o.order_date.toISOString().slice(0, 10); // "YYYY-MM-DD"
-      const afterStart = startDate ? dateStr >= startDate : true;
-      const beforeEnd = endDate ? dateStr <= endDate : true;
+    const result = orders.filter(o => {
+      if (!o.order_date) return false;
+
+      const orderDate = o.order_date;
+      const orderDay = new Date(orderDate.getFullYear(), orderDate.getMonth(), orderDate.getDate());
+
+      let afterStart = true;
+      let beforeEnd = true;
+
+      if (startDate) {
+        const startDay = new Date(
+          startDate.getFullYear(),
+          startDate.getMonth(),
+          startDate.getDate()
+        );
+        afterStart = orderDay >= startDay; // inclusive
+      }
+
+      if (endDate) {
+        const endDay = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+        beforeEnd = orderDay <= endDay; // inclusive
+      }
+
       return afterStart && beforeEnd;
     });
 
@@ -76,12 +99,7 @@ export default function SMRevenue() {
   const totalRevenue = filtered.reduce((sum, o) => sum + o.total_price, 0);
 
   const totalCost = filtered.reduce(
-    (sum, o) =>
-      sum +
-      o.items.reduce(
-        (s, item) => s + item.product_cost * item.quantity,
-        0
-      ),
+    (sum, o) => sum + o.items.reduce((s, item) => s + item.product_cost * item.quantity, 0),
     0
   );
 
@@ -92,15 +110,13 @@ export default function SMRevenue() {
   // --------------------------------------------------------
   const revenueChartData = useMemo(
     () => ({
-      labels: filtered.map((o) =>
-        o.order_date.toLocaleDateString("en-GB")
-      ),
+      labels: filtered.map(o => o.order_date.toLocaleDateString('en-GB')),
       datasets: [
         {
-          label: "Revenue",
-          data: filtered.map((o) => o.total_price),
-          borderColor: "#2563eb",
-          backgroundColor: "rgba(37, 99, 235, 0.3)",
+          label: 'Revenue',
+          data: filtered.map(o => o.total_price),
+          borderColor: '#2563eb',
+          backgroundColor: 'rgba(37, 99, 235, 0.3)',
           tension: 0.3,
           borderWidth: 3,
           pointRadius: 4,
@@ -112,21 +128,16 @@ export default function SMRevenue() {
 
   const profitChartData = useMemo(
     () => ({
-      labels: filtered.map((o) =>
-        o.order_date.toLocaleDateString("en-GB")
-      ),
+      labels: filtered.map(o => o.order_date.toLocaleDateString('en-GB')),
       datasets: [
         {
-          label: "Profit",
-          data: filtered.map((o) => {
-            const cost = o.items.reduce(
-              (s, it) => s + it.product_cost * it.quantity,
-              0
-            );
+          label: 'Profit',
+          data: filtered.map(o => {
+            const cost = o.items.reduce((s, it) => s + it.product_cost * it.quantity, 0);
             return o.total_price - cost;
           }),
-          borderColor: "#16a34a",
-          backgroundColor: "rgba(22, 163, 74, 0.2)",
+          borderColor: '#16a34a',
+          backgroundColor: 'rgba(22, 163, 74, 0.2)',
           tension: 0.3,
           borderWidth: 3,
           pointRadius: 4,
@@ -137,32 +148,42 @@ export default function SMRevenue() {
   );
 
   return (
-    <div className={styles.pageContainer}>
-      <div className={styles.breadcrumb}>
-        Sales Manager <span className={styles.separator}>/</span> Revenue Dashboard
+    <div className={styles.wrapper}>
+      <div className={styles.breadcrumbs}>
+        <Link to="/admin" className={styles.crumbLink}>
+          Admin
+        </Link>
+        <span className={styles.crumbSeparator}>/</span>
+        <span className={styles.crumbCurrent}>Revenue Dashboard</span>
       </div>
 
-      <h1 className={styles.title}>Revenue Dashboard</h1>
+      <div className={styles.titleRow}>
+        <h1 className={styles.title}>Revenue Dashboard</h1>
+      </div>
 
       {/* FILTERS */}
       <div className={styles.controlsRow}>
         <div className={styles.filterGroup}>
-          <label className={styles.filterLabel}>From:</label>
-          <input
-            type="date"
-            value={startDate}
-            className={styles.searchInput}
-            onChange={(e) => setStartDate(e.target.value)}
+          <label className={styles.label}>From:</label>
+          <DatePicker
+            selected={startDate}
+            onChange={date => setStartDate(date)}
+            className={styles.datePickerInput}
+            wrapperClassName={styles.datePickerInput}
+            dateFormat="dd/MM/yyyy"
+            placeholderText="dd/mm/yyyy"
           />
         </div>
 
         <div className={styles.filterGroup}>
-          <label className={styles.filterLabel}>To:</label>
-          <input
-            type="date"
-            value={endDate}
-            className={styles.searchInput}
-            onChange={(e) => setEndDate(e.target.value)}
+          <label className={styles.label}>To:</label>
+          <DatePicker
+            selected={endDate}
+            onChange={date => setEndDate(date)}
+            className={styles.datePickerInput}
+            wrapperClassName={styles.datePickerInput}
+            dateFormat="dd/MM/yyyy"
+            placeholderText="dd/mm/yyyy"
           />
         </div>
       </div>
@@ -171,17 +192,17 @@ export default function SMRevenue() {
       <div className={styles.cards}>
         <div className={styles.card}>
           <h3>Total Revenue</h3>
-          <p className={styles.number}>${totalRevenue.toFixed(2)}</p>
+          <p className={styles.number}>{formatPrice(totalRevenue, filtered[0]?.currency)}</p>
         </div>
 
         <div className={styles.card}>
           <h3>Total Cost</h3>
-          <p className={styles.number}>${totalCost.toFixed(2)}</p>
+          <p className={styles.number}>{formatPrice(totalCost, filtered[0]?.currency)}</p>
         </div>
 
         <div className={styles.card}>
           <h3>Total Profit</h3>
-          <p className={styles.number}>${totalProfit.toFixed(2)}</p>
+          <p className={styles.number}>{formatPrice(totalProfit, filtered[0]?.currency)}</p>
         </div>
       </div>
 
@@ -194,7 +215,7 @@ export default function SMRevenue() {
             setShowProfitChart(false);
           }}
         >
-          {showRevenueChart ? "Hide Revenue Chart" : "View Revenue Chart"}
+          {showRevenueChart ? 'Hide Revenue Chart' : 'View Revenue Chart'}
         </button>
 
         <button
@@ -204,7 +225,7 @@ export default function SMRevenue() {
             setShowRevenueChart(false);
           }}
         >
-          {showProfitChart ? "Hide Profit Chart" : "View Profit Chart"}
+          {showProfitChart ? 'Hide Profit Chart' : 'View Profit Chart'}
         </button>
       </div>
 
@@ -231,29 +252,26 @@ export default function SMRevenue() {
       {/* TABLE */}
       <div className={styles.tableWrapper}>
         <table className={styles.table}>
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Total Revenue</th>
-              <th>Total Cost</th>
-              <th>Profit</th>
+          <thead className={styles.thead}>
+            <tr className={styles.tr}>
+              <th className={styles.th}>Date</th>
+              <th className={styles.th}>Total Revenue</th>
+              <th className={styles.th}>Total Cost</th>
+              <th className={styles.th}>Profit</th>
             </tr>
           </thead>
 
-          <tbody>
-            {filtered.map((o) => {
-              const cost = o.items.reduce(
-                (s, it) => s + it.product_cost * it.quantity,
-                0
-              );
+          <tbody className={styles.tbody}>
+            {filtered.map(o => {
+              const cost = o.items.reduce((s, it) => s + it.product_cost * it.quantity, 0);
               const profit = o.total_price - cost;
 
               return (
-                <tr key={o.order_id}>
-                  <td>{o.order_date.toLocaleDateString("en-GB")}</td>
-                  <td>${o.total_price.toFixed(2)}</td>
-                  <td>${cost.toFixed(2)}</td>
-                  <td>${profit.toFixed(2)}</td>
+                <tr key={o.order_id} className={styles.tr}>
+                  <td className={styles.td}>{o.order_date.toLocaleDateString('en-GB')}</td>
+                  <td className={styles.td}>{formatPrice(o.total_price, o.currency)}</td>
+                  <td className={styles.td}>{formatPrice(cost, o.currency)}</td>
+                  <td className={styles.td}>{formatPrice(profit, o.currency)}</td>
                 </tr>
               );
             })}

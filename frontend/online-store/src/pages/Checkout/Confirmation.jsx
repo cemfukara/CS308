@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCheckCircle } from '@fortawesome/free-solid-svg-icons';
 import styles from './Confirmation.module.css';
-import useCartStore from '../../store/cartStore';
+import useCartStore from '@/store/cartStore';
+import { formatPrice } from '@/utils/formatPrice';
 
 const Confirmation = () => {
   const navigate = useNavigate();
@@ -118,8 +119,7 @@ const Confirmation = () => {
                       <span className={styles.itemMeta}>Quantity: {item.quantity || 1}</span>
                     </div>
                     <span className={styles.itemPrice}>
-                      {item.currency}
-                      {((Number(item.price) || 0) * (item.quantity || 1)).toFixed(2)}
+                      {formatPrice(Number(item.price) * (item.quantity || 1), item.currency)}
                     </span>
                   </li>
                 ))}
@@ -127,10 +127,7 @@ const Confirmation = () => {
 
               <div className={styles.totalRow}>
                 <span>Total</span>
-                <span className={styles.totalValue}>
-                  {items[0].currency || '$'}
-                  {total.toFixed(2)}
-                </span>
+                <span className={styles.totalValue}>{formatPrice(total, items[0]?.currency)}</span>
               </div>
             </>
           )}

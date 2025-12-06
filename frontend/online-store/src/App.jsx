@@ -2,8 +2,8 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'r
 import { Toaster } from 'react-hot-toast';
 import { useEffect } from 'react';
 
-import RequirePM from './components/RequirePM';
-import RequireAuth from './components/RequireAuth';
+import RequireAdmin from './components/Auth/RequireAdmin.jsx';
+import RequireAuth from './components/Auth/RequireAuth.jsx';
 import useAuthStore from './store/authStore';
 
 // Layout
@@ -35,21 +35,19 @@ import Support from './pages/Account/Support';
 import Logout from './pages/Account/Logout';
 import OrderDetails from './pages/Account/OrderDetails';
 
-// Admin
+// Product Manager (PM) – note the folder is ./pages/Admin/PM/
 import AdminLayout from './pages/Admin/AdminLayout.jsx';
-import AdminProducts from './pages/Admin/AdminProducts.jsx';
-import AdminProductEdit from './pages/Admin/AdminProductEdit.jsx';
-import AdminProductNew from './pages/Admin/AdminProductNew.jsx';
-import AdminStock from './pages/Admin/AdminStock.jsx';
-import AdminCategories from './pages/Admin/AdminCategories.jsx';
-import PMDeliveries from "./pages/Admin/PMDeliveries.jsx";
+import AdminProducts from './pages/Admin/PM/AdminProducts.jsx';
+import AdminProductEdit from './pages/Admin/PM/AdminProductEdit.jsx';
+import AdminProductNew from './pages/Admin/PM/AdminProductNew.jsx';
+import AdminStock from './pages/Admin/PM/AdminStock.jsx';
+import AdminCategories from './pages/Admin/PM/AdminCategories.jsx';
+import PMDeliveries from './pages/Admin/PM/PMDeliveries.jsx';
 
-
-// Sales Manager (SM) – note the folder is ./pages/SM/
-import SMLayout from './pages/SM/SMLayout.jsx';
-import SMDiscounts from './pages/SM/SMDiscounts.jsx';
-import SMInvoices from './pages/SM/SMInvoices.jsx';
-import SMRevenue from './pages/SM/SMRevenue.jsx';
+// Sales Manager (SM) – note the folder is ./pages/Admin/SM/
+import SMDiscounts from './pages/Admin/SM/SMDiscounts.jsx';
+import SMInvoices from './pages/Admin/SM/SMInvoices.jsx';
+import SMRevenue from './pages/Admin/SM/SMRevenue.jsx';
 
 export function AppContent() {
   const location = useLocation();
@@ -105,35 +103,24 @@ export function AppContent() {
           <Route path="logout" element={<Logout />} />
         </Route>
 
-        {/* Admin routes */}
+        {/* Product Manager routes */}
         <Route
           path="/admin"
           element={
-            <RequirePM>
+            <RequireAdmin>
               <AdminLayout />
-            </RequirePM>
+            </RequireAdmin>
           }
         >
-          <Route path="products" element={<AdminProducts />} />
-          <Route path="products/new" element={<AdminProductNew />} />
-          <Route path="products/edit/:id" element={<AdminProductEdit />} />
-          <Route path="inventory" element={<AdminStock />} />
-          <Route path="categories" element={<AdminCategories />} />
-          <Route path="deliveries" element={<PMDeliveries />} />
-        </Route>
-
-        {/* Sales Manager routes */}
-        <Route
-          path="/sm"
-          element={
-            <RequirePM>
-              <SMLayout />
-            </RequirePM>
-          }
-        >
-          <Route path="discounts" element={<SMDiscounts />} />
-          <Route path="invoices" element={<SMInvoices />} />
-          <Route path="revenue" element={<SMRevenue />} />
+          <Route path="pm/products" element={<AdminProducts />} />
+          <Route path="pm/products/new" element={<AdminProductNew />} />
+          <Route path="pm/products/edit/:id" element={<AdminProductEdit />} />
+          <Route path="pm/inventory" element={<AdminStock />} />
+          <Route path="pm/categories" element={<AdminCategories />} />
+          <Route path="pm/deliveries" element={<PMDeliveries />} />
+          <Route path="sm/discounts" element={<SMDiscounts />} />
+          <Route path="sm/invoices" element={<SMInvoices />} />
+          <Route path="sm/revenue" element={<SMRevenue />} />
         </Route>
 
         {/* Fallback */}

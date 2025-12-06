@@ -1,7 +1,8 @@
-import ProductDisplay from '../components/ProductDisplay/ProductDisplay';
+import ProductDisplay from '@/components/ProductDisplay/ProductDisplay';
 import './Products.css';
 import { useEffect, useState } from 'react';
-import { getAllProducts } from '../lib/productsApi';
+import { getAllProducts } from '@/lib/productsApi';
+import { formatPrice } from '@/utils/formatPrice';
 
 function Products() {
   const [products, setProducts] = useState([]);
@@ -29,16 +30,16 @@ function Products() {
   return (
     <div className="products-page">
       {products.map(product => {
-        const imagePath = product.image
-          ? new URL(`../assets/${product.image}`, import.meta.url).href
-          : new URL(`../assets/placeholder.jpg`, import.meta.url).href;
+        const primaryImage =
+          product.product_images?.find(img => img.is_primary)?.image_url ||
+          product.product_images?.[0]?.image_url ||
+          new URL(`../assets/placeholder.jpg`, import.meta.url).href;
         return (
           <ProductDisplay
             key={product.product_id || product.serial_number || product.name}
-            image={imagePath}
+            image={primaryImage}
             name={product.name}
-            currency={product.currency || '$'}
-            price={product.price}
+            price={formatPrice(product.price, product.currency)}
             serialNo={product.serial_number}
             productId={product.product_id}
             model={product.model}

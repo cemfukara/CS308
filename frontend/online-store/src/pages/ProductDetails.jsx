@@ -7,6 +7,7 @@ import './ProductDetails.css';
 import useCartStore from '../store/cartStore';
 import toast from 'react-hot-toast';
 import { getProductsById } from '../lib/productsApi';
+import { formatPrice } from '@/utils/formatPrice';
 
 function ProductDetails() {
   const { id: idParam = '' } = useParams();
@@ -43,7 +44,7 @@ function ProductDetails() {
         const normalized = {
           ...data,
           serialNo: data.serialNo ?? data.serial_number ?? data.product_id ?? serialNo,
-          currency: data.currency ?? '$',
+          currency: data.currency,
           quantity: data.quantity ?? 1,
           quantity_in_stock: data.quantity_in_stock ?? 0,
         };
@@ -88,11 +89,13 @@ function ProductDetails() {
   }
   const inStock = (product.quantity_in_stock ?? 0) > 0; //Check if product is out of stock
 
-  //Create image path
-  const imagePath = product.image
-    ? new URL(`../assets/${product.image}`, import.meta.url).href
-    : new URL(`../assets/placeholder.jpg`, import.meta.url).href;
-
+  //Create images
+  const product_images = product.product_images;
+  const primaryImage =
+    product_images?.find(img => img.is_primary)?.image_url ||
+    product_images?.[0]?.image_url ||
+    new URL(`../assets/placeholder.jpg`, import.meta.url).href;
+  const imagePath = primaryImage;
   // ✅ Check favorites to set liked state
   const handleAddToFavorites = () => {
     let favorites = JSON.parse(localStorage.getItem('favorites')) || [];
@@ -133,7 +136,7 @@ function ProductDetails() {
             padding: '14px 18px',
             boxShadow: '0 0 12px #241111bf',
             animation: t.visible ? 'fadeIn 0.3s ease' : 'fadeOut 0.3s ease forwards',
-            width: '320px',
+            width: '340px',
           }}
         >
           <img
@@ -184,12 +187,11 @@ function ProductDetails() {
               flex: 0.5,
               fontSize: 32,
               fontWeight: 'bold',
-              fontFamily: 'Exo 2',
+              fontFamily: "'Exo 2', sans-serif",
               color: '#00e676',
             }}
           >
-            {product.currency}
-            {Number(product.price || 0).toFixed(2)}
+            {formatPrice(product.price, product.currency)}
           </p>
         </div>
       ),
@@ -234,10 +236,7 @@ function ProductDetails() {
           </div>
         </div>
 
-        <h1>
-          {product.currency}
-          {Number(product.price || 0).toFixed(2)}
-        </h1>
+        <h1>{formatPrice(product.price, product.currency)}</h1>
         <p className={inStock ? 'stock-ok' : 'stock-bad'}>
           {inStock ? `In stock: ${product.quantity_in_stock}` : 'Currently out of stock'}
         </p>

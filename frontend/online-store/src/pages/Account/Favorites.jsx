@@ -4,7 +4,8 @@ import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCartPlus } from '@fortawesome/free-solid-svg-icons';
 import toast from 'react-hot-toast';
-import useCartStore from '../../store/cartStore';
+import useCartStore from '@/store/cartStore';
+import { formatPrice } from '@/utils/formatPrice';
 
 const Favorites = () => {
   const [favorites, setFavorites] = useState([]);
@@ -43,17 +44,14 @@ const Favorites = () => {
       <h2 className="favorites-title">My Favorites ❤️</h2>
       <div className="favorites-grid">
         {favorites.map(product => {
-          const imageUrl = new URL(`../../assets/${product.image}`, import.meta.url).href;
+          const imageUrl = new URL(`@/assets/${product.image}`, import.meta.url).href;
 
           return (
             <div className="favorite-card" key={product.serialNo}>
               <Link to={`/products/${product.name}-${product.serialNo}`} className="favorite-link">
                 <img src={imageUrl} alt={product.name} />
                 <h3>{product.name}</h3>
-                <p>
-                  {product.currency}
-                  {product.price.toFixed(2)}
-                </p>
+                <p>{formatPrice(product.price, product.currency)}</p>
               </Link>
 
               <div className="favorite-btn-group">
