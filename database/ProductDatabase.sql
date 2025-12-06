@@ -26,6 +26,7 @@ CREATE TABLE products (
     list_price DECIMAL(10, 2),
     warranty_status VARCHAR(255),
     distributor_info VARCHAR(255),
+    currency VARCHAR(10) NOT NULL DEFAULT 'TL',
     
     -- Generated column for discount percentage
     discount_ratio DECIMAL(5, 2) AS (
