@@ -160,6 +160,25 @@ CREATE TABLE wishlists (
     CONSTRAINT uq_user_product_wishlist UNIQUE(user_id, product_id)
 );
 
+
+-- ===================================================================
+-- 9. PRODUCT IMAGES TABLE
+-- ===================================================================
+CREATE TABLE product_images (
+    image_id INT PRIMARY KEY AUTO_INCREMENT,
+    product_id INT NOT NULL,
+    image_url VARCHAR(2048) NOT NULL,
+    alt_text VARCHAR(255),
+    is_primary BOOLEAN DEFAULT false,
+    display_order INT DEFAULT 0,
+    
+    FOREIGN KEY (product_id) REFERENCES products(product_id)
+);
+
+-- ==================================================================
+-- 10. NOTIFICATIONS TABLE
+-- ==================================================================
+
 CREATE TABLE notifications (
     notification_id INT PRIMARY KEY AUTO_INCREMENT,
     user_id INT NOT NULL,
@@ -185,18 +204,37 @@ VALUES
     ('Accessories', 'Chargers, cases, and other peripherals.');
 
 -- 2. Insert products
-INSERT INTO products (category_id, name, model, serial_number, description, quantity_in_stock, price, list_price, warranty_status, distributor_info)
+INSERT INTO products (product_id, category_id, name, model, serial_number, description, quantity_in_stock, price, list_price, warranty_status, distributor_info) 
 VALUES
-    (1, 'Photon X1', 'P-X1-256', 'SN-PX1-987A', 'The latest flagship smartphone with AI camera.', 50, 999.99, 999.99, '1 Year Manufacturer', 'Photon Devices'),
-    (1, 'Galaxy S23 Ultra', 'G-S23-U', 'SN-GS23U-123B', 'Premium smartphone with S-Pen.', 35, 1199.99, 1199.99, '2 Years', 'Samsung Electronics'),
-    (1, 'Photon X1 Lite', 'P-X1-LITE', 'SN-PX1L-159I', 'Budget-friendly smartphone.', 0, 349.00, 349.00, '1 Year', 'Photon Devices'),
-    (2, 'AeroBook Pro 16', 'ABP-16-M3', 'SN-ABP16-456C', 'Powerful 16-inch laptop for professionals.', 20, 2399.00, 2499.00, '2 Years Extended', 'Aero Computers'),
-    (2, 'Zenith Z-Book 14', 'Z-ZBK-14G', 'SN-ZBK14-789D', 'Ultralight laptop for travel.', 40, 899.50, 950.00, '1 Year', 'Zenith Tech'),
-    (3, 'QuietZone Pro Buds', 'QZ-PRO-2', 'SN-QZPB2-321E', 'Active noise-cancelling wireless earbuds.', 75, 199.99, 249.99, '1 Year', 'AudioPhile Inc.'),
-    (3, 'SoundWave Max Speaker', 'SWM-BT5', 'SN-SWM5-654F', 'Portable Bluetooth speaker with deep bass.', 60, 129.00, 129.00, '1 Year', 'SoundWave'),
-    (3, 'StudioMax Headphones', 'SM-HD-X2', 'SN-SMHD2-753J', 'Over-ear studio monitor headphones.', 25, 299.00, 349.00, '3 Years', 'AudioPhile Inc.'),
-    (4, 'RapidCharge 100W Brick', 'RC-100W', 'SN-RC100-987G', 'GaN fast charger for laptops and phones.', 150, 49.99, 59.99, '6 Months', 'VoltTech'),
-    (4, 'AeroBook Pro Case', 'ABP-CS-16', 'SN-ABPCS-654H', 'Protective hardshell case for AeroBook 16.', 90, 39.99, 39.99, 'N/A', 'Aero Computers');
+-- 1. iPhone 17 Pro Max
+(1, 1, 'iPhone 17 Pro Max', 'FUT-IP17-PM', 'SN-IP17-PM-BL', 'Future generation design, A19 Pro chip, 10x Telephoto camera.', 50, 89999.00, 89999.00, '2 Years Apple Turkey', 'Apple Inc.'),
+
+-- 2. Samsung Galaxy S25 Ultra
+(2, 1, 'Samsung Galaxy S25 Ultra', 'SM-S938B', 'SN-S25U-AI-512', 'Snapdragon 8 Gen 4, 200MP AI Camera, Titanium Frame.', 40, 69999.00, 74999.00, '2 Years Samsung Turkey', 'Samsung Electronics'),
+
+-- 3. Xiaomi 15T Pro
+(3, 1, 'Xiaomi 15T Pro', '2507FPN8EG', 'SN-MI15T-256', 'Leica Summilux lens, 144Hz CrystalRes AMOLED, MediaTek Dimensity 9400, 120W HyperCharge.', 60, 39999.00, 44999.00, '2 Years Xiaomi Turkey', 'Xiaomi Turkey'),
+
+-- 4. Lenovo Yoga Slim 7 Core Ultra 5
+(4, 2, 'Lenovo Yoga Slim 7 Core Ultra 5', '83CV0019TR', 'SN-YOGA7-CU5', 'Intel Core Ultra 5 125H, 14-inch WUXGA OLED, 16GB RAM, AI Engine, Ultra-thin chassis.', 25, 42999.00, 46999.00, '2 Years Lenovo Turkey', 'Lenovo Turkey'),
+
+-- 5. MSI Katana 17
+(5, 2, 'MSI Katana 17', 'B13VFK-1036XTR', 'SN-MSI-KAT17', 'Intel Core i7-13620H, RTX 4060 8GB, 17.3-inch FHD 144Hz, Gaming Performance.', 30, 54999.00, 59999.00, '2 Years MSI Turkey', 'MSI Turkey'),
+
+-- 6. JBL Tune 570BT
+(6, 3, 'JBL Tune 570BT', 'JBLT570BTBLK', 'SN-JBL-570-BL', 'Wireless On-Ear Headphones, Pure Bass Sound, 40H Battery Life, Multi-point Connection.', 80, 1799.00, 1999.00, '2 Years JBL Turkey', 'JBL Turkey'),
+
+-- 7. Apple AirPods Max
+(7, 3, 'Apple AirPods Max', 'MGYH3AM/A', 'SN-APM-MAX-001', 'High-fidelity audio, Active Noise Cancellation with Transparency mode, Spatial Audio, Space Grey.', 15, 22999.00, 24999.00, '2 Years Apple Turkey', 'Apple Inc.'),
+
+-- 8. JBL Go 4 Bluetooth Speaker
+(8, 3, 'JBL Go 4 Bluetooth Speaker', 'JBLGO4BLK', 'SN-JBL-GO4-BL', 'Ultra-portable, waterproof and dustproof (IP67), 7 hours of playtime, JBL Pro Sound.', 100, 1499.00, 1699.00, '2 Years JBL Turkey', 'JBL Turkey'),
+
+-- 9. BASEUS 5000mAh 20W PicoGo
+(9, 4, 'BASEUS 5000mAh 20W PicoGo', 'PICO-GO-5K', 'SN-BAS-PICO-5K', 'Qi2 Magnetic Wireless Charging, 20W Fast Charging, Compact Design, Strong Magnets.', 150, 1299.00, 1499.00, '2 Years Baseus Turkey', 'Baseus Turkey'),
+
+-- 10. Apple 20W USB-C Fast Charger (NEW - Category 4: Accessories)
+(10, 4, 'Apple 20W USB-C Fast Charger', 'MHJE3TU/A', 'SN-APP-20W-CHG', 'Apple 20W USB-C Power Adapter offers fast, efficient charging at home, in the office, or on the go.', 200, 729.00, 799.00, '2 Years Apple Turkey', 'Apple Inc.');
 
 -- 3. Insert users
 -- (Note: '..._encrypted' fields are placeholders for your app's encrypted binary data)
@@ -253,6 +291,70 @@ VALUES
 (1, 4), -- John wants the AeroBook Pro
 (1, 7), -- John also wants the Speaker
 (2, 6); -- Jane wants the Earbuds
+
+
+-- 9. Insert Product Images (Resetting data for Items 1-10)
+-- 
+
+INSERT INTO product_images (product_id, image_url, alt_text, is_primary, display_order)
+VALUES
+    -- 1. iPhone 17 Pro Max
+    (1, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/apple/thumb/153503-1_large.jpg', 'iPhone 17 Pro Max Front', true, 1),
+    (1, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/apple/thumb/153503-2_large.jpg', 'iPhone 17 Pro Max Back', false, 2),
+    (1, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/apple/thumb/153503-3_large.jpg', 'iPhone 17 Pro Max Side', false, 3),
+    (1, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/apple/thumb/153503-4_large.jpg', 'iPhone 17 Pro Max Detail', false, 4),
+
+    -- 2. Samsung Galaxy S25 Ultra
+    (2, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/samsung/thumb/1-193_large.jpg', 'Samsung Galaxy S25 Ultra Front', true, 1),
+    (2, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/samsung/thumb/2-187_large.jpg', 'Samsung Galaxy S25 Ultra Back', false, 2),
+    (2, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/samsung/thumb/3-187_large.jpg', 'Samsung Galaxy S25 Ultra Stylus', false, 3),
+    (2, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/samsung/thumb/4-151_large.jpg', 'Samsung Galaxy S25 Ultra Side', false, 4),
+
+    -- 3. Xiaomi 15T Pro
+    (3, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/xiaomi/thumb/153457-1_large.jpg', 'Xiaomi 15T Pro Front', true, 1),
+    (3, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/xiaomi/thumb/153457-2_large.jpg', 'Xiaomi 15T Pro Back', false, 2),
+    (3, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/xiaomi/thumb/153457-3_large.jpg', 'Xiaomi 15T Pro Camera', false, 3),
+    (3, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/xiaomi/thumb/153457-4_large.jpg', 'Xiaomi 15T Pro Side', false, 4),
+
+    -- 4. Lenovo Yoga Slim 7 Core Ultra 5
+    (4, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/lenovo/thumb/152336-1_large.jpg', 'Lenovo Yoga Slim 7 Front', true, 1),
+    (4, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/lenovo/thumb/152336-2_large.jpg', 'Lenovo Yoga Slim 7 Keyboard', false, 2),
+    (4, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/lenovo/thumb/152336-3_large.jpg', 'Lenovo Yoga Slim 7 Side', false, 3),
+    (4, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/lenovo/thumb/152336-4_large.jpg', 'Lenovo Yoga Slim 7 Closed', false, 4),
+
+    -- 5. MSI Katana 17
+    (5, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/msi/thumb/152400-1-1_large.jpg', 'MSI Katana 17 Front', true, 1),
+    (5, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/msi/thumb/152400-2-1_large.jpg', 'MSI Katana 17 Open', false, 2),
+    (5, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/msi/thumb/152400-3-1_large.jpg', 'MSI Katana 17 Side', false, 3),
+    (5, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/msi/thumb/152400-5-1_large.jpg', 'MSI Katana 17 Back', false, 4),
+
+    -- 6. JBL Tune 570BT
+    (6, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/jbl/thumb/142350-1_large.jpg', 'JBL Tune 570BT Folded', true, 1),
+    (6, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/jbl/thumb/142350-2_large.jpg', 'JBL Tune 570BT Side', false, 2),
+    (6, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/jbl/thumb/142350-3_large.jpg', 'JBL Tune 570BT Angled', false, 3),
+    (6, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/jbl/thumb/142350-4_large.jpg', 'JBL Tune 570BT Front', false, 4),
+
+    -- 7. Apple AirPods Max
+    (7, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/apple/thumb/1-351_large.jpg', 'Apple AirPods Max Front', true, 1),
+    (7, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/apple/thumb/2-350_large.jpg', 'Apple AirPods Max Side', false, 2),
+    (7, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/apple/thumb/3-350_large.jpg', 'Apple AirPods Max Case', false, 3),
+
+    -- 8. JBL Go 4
+    (8, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/jbl/thumb/145617-1_large.jpg', 'JBL Go 4 Front', true, 1),
+    (8, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/jbl/thumb/145617-2_large.jpg', 'JBL Go 4 Side', false, 2),
+    (8, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/jbl/thumb/145617-3_large.jpg', 'JBL Go 4 Angled', false, 3),
+    (8, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/jbl/thumb/145617-4_large.jpg', 'JBL Go 4 Back', false, 4),
+
+    -- 9. BASEUS PicoGo Powerbank
+    (9, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/baseus/thumb/151371-1_large.jpg', 'Baseus PicoGo Front', true, 1),
+    (9, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/baseus/thumb/151371-2_large.jpg', 'Baseus PicoGo Side', false, 2),
+    (9, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/baseus/thumb/151371-3_large.jpg', 'Baseus PicoGo Magnetic', false, 3),
+    (9, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/baseus/thumb/151371-4_large.jpg', 'Baseus PicoGo Angled', false, 4),
+
+    -- 10. Apple 20W USB-C Fast Charger (NEW)
+    (10, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/apple/thumb/150372-1_large.jpg', 'Apple 20W Charger Front', true, 1),
+    (10, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/apple/thumb/150372-2_large.jpg', 'Apple 20W Charger Prongs', false, 2),
+    (10, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/apple/thumb/150372-3_large.jpg', 'Apple 20W Charger Box', false, 3);
     
 --  Dev data insertion into users table for dev test   
 SET SESSION sql_mode = 'NO_AUTO_VALUE_ON_ZERO';
