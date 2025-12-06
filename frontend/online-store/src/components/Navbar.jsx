@@ -87,8 +87,10 @@ const Navbar = () => {
               </Link>
 
               {/* 🛠 Admin link only for PM / dev */}
-              {user.role === 'product manager' || user.role === 'dev' ? (
-                <Link to="/admin/products" onClick={() => setShowDropdown(false)}>
+              {user.role === 'product manager' ||
+              user.role === 'dev' ||
+              user.role === 'sales manager' ? (
+                <Link to="/admin" onClick={() => setShowDropdown(false)}>
                   Admin Panel
                 </Link>
               ) : null}

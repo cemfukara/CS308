@@ -65,6 +65,7 @@ export async function getAllProducts({
             warranty_status,
             distributor_info,
             discount_ratio,
+            currency,
             (list_price - price) AS discount_amount
         FROM products
         ${whereClause}
@@ -75,6 +76,43 @@ export async function getAllProducts({
   queryParams.push(Number(limit), offset);
 
   const [rows] = await db.query(productQuery, queryParams);
+
+  // ---- Attach product_images ----
+  const productIds = rows.map((p) => p.product_id);
+
+  if (productIds.length > 0) {
+    const [imageRows] = await db.query(
+      `
+        SELECT
+          image_id,
+          product_id,
+          image_url,
+          is_primary,
+          display_order
+        FROM product_images
+        WHERE product_id IN (?)
+        ORDER BY is_primary DESC, display_order ASC, image_id ASC
+      `,
+      [productIds]
+    );
+
+    const imagesByProduct = {};
+    for (const img of imageRows) {
+      if (!imagesByProduct[img.product_id]) {
+        imagesByProduct[img.product_id] = [];
+      }
+      imagesByProduct[img.product_id].push(img);
+    }
+
+    for (const p of rows) {
+      p.product_images = imagesByProduct[p.product_id] || [];
+    }
+  } else {
+    // no products → still return a consistent shape
+    for (const p of rows) {
+      p.product_images = [];
+    }
+  }
 
   return {
     products: rows,
@@ -90,7 +128,26 @@ export async function getProductById(productId) {
     productId,
   ]);
 
-  return rows[0];
+  const product = rows[0];
+  if (!product) return null;
+
+  const [imageRows] = await db.query(
+    `
+      SELECT
+        image_id,
+        product_id,
+        image_url,
+        is_primary,
+        display_order
+      FROM product_images
+      WHERE product_id = ?
+      ORDER BY is_primary DESC, display_order ASC, image_id ASC
+    `,
+    [productId]
+  );
+
+  product.product_images = imageRows || [];
+  return product;
 }
 
 // CREATE PRODUCT (matches your SQL columns)
@@ -170,20 +227,26 @@ export async function deleteProduct(productId) {
 }
 
 async function applyDiscount(productIds, discount) {
-    const placeholders = productIds.map(() => '?').join(',');
+  const placeholders = productIds.map(() => '?').join(',');
 
-    // Update product prices
-    await db.pool.query(`
-        UPDATE products 
+  // Update product prices
+  await db.pool.query(
+    `
+        UPDATE products
         SET price = list_price * (1 - ? / 100)
         WHERE product_id IN (${placeholders})
-    `, [discount, ...productIds]);
+    `,
+    [discount, ...productIds]
+  );
 
-    // Get affected products
-    const [rows] = await db.pool.query(`
+  // Get affected products
+  const [rows] = await db.pool.query(
+    `
         SELECT product_id, name FROM products
         WHERE product_id IN (${placeholders})
-    `, productIds);
+    `,
+    productIds
+  );
 
-    return rows;
+  return rows;
 }

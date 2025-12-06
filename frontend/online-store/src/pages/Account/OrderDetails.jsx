@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import useCartStore from '../../store/cartStore';
+import useCartStore from '@/store/cartStore';
 import './OrderDetails.css';
-import { getOrderById } from '../../lib/ordersApi';
+import { getOrderById } from '@/lib/ordersApi';
+import { formatPrice } from '@/utils/formatPrice';
 
 const OrderDetails = () => {
   const { id } = useParams();
@@ -87,7 +88,7 @@ const OrderDetails = () => {
             color: '#00FF7F',
           }}
         >
-          {Number(item.price_at_purchase || 0).toFixed(2)} TL
+          {formatPrice(Number(item.price_at_purchase || 0), order.currency)}
         </p>
       </div>
     ));
@@ -144,7 +145,7 @@ const OrderDetails = () => {
                 </div>
 
                 <div className="item-price">
-                  <span className="price-current">{lineTotal.toFixed(2)} TL</span>
+                  <span className="price-current">{formatPrice(lineTotal, order.currency)}</span>
                 </div>
               </div>
             );
@@ -156,19 +157,19 @@ const OrderDetails = () => {
           <div className="summary-column">
             <div className="summary-item">
               <span>Subtotal</span>
-              <span>{subtotal.toFixed(2)} TL</span>
+              <span>{formatPrice(subtotal, order.currency)}</span>
             </div>
             <div className="summary-item">
               <span>Discount</span>
-              <span>- {discount.toFixed(2)} TL</span>
+              <span>- {formatPrice(discount, order.currency)}</span>
             </div>
             <div className="summary-item">
               <span>Delivery</span>
-              <span>{delivery > 0 ? `${delivery.toFixed(2)} TL` : 'Free'}</span>
+              <span>{delivery > 0 ? `${formatPrice(delivery, order.currency)}` : 'Free'}</span>
             </div>
             <div className="summary-item total">
               <strong>Total Paid</strong>
-              <strong className="total-price">{total.toFixed(2)} TL</strong>
+              <strong className="total-price">{formatPrice(total, order.currency)}</strong>
             </div>
           </div>
         </div>

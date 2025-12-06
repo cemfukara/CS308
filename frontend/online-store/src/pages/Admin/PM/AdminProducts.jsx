@@ -1,10 +1,11 @@
 import { Link } from 'react-router-dom';
-import styles from './AdminProducts.module.css';
-import { getAllProducts, deleteProduct } from '../../lib/productsApi';
-import { getCategories } from '../../lib/categoriesApi';
+import styles from '../Admin.module.css';
+import { getAllProducts, deleteProduct } from '@/lib/productsApi.js';
+import { getCategories } from '@/lib/categoriesApi.js';
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Dropdown from '../../components/Dropdown.jsx';
+import Dropdown from '@/components/Dropdown.jsx';
+import { formatPrice } from '@/utils/formatPrice.js';
 
 const PAGE_SIZE = 10;
 
@@ -196,7 +197,7 @@ function AdminProducts() {
           <button
             type="button"
             className={styles.editBtn}
-            onClick={() => navigate('/admin/products/new')}
+            onClick={() => navigate('/admin/pm/products/new')}
           >
             + Add Product
           </button>
@@ -325,8 +326,8 @@ function AdminProducts() {
                   <td className={styles.td}>{p.name}</td>
                   <td className={styles.td}>{p.model}</td>
                   <td className={styles.td}>{p.serial_number}</td>
-                  <td className={styles.td}>{p.price}</td>
-                  <td className={styles.td}>{p.list_price}</td>
+                  <td className={styles.td}>{formatPrice(p.price, p.currency)}</td>
+                  <td className={styles.td}>{formatPrice(p.list_price, p.currency)}</td>
                   <td className={styles.td}>
                     {p.discount_ratio != null ? `${Number(p.discount_ratio).toFixed(0)}%` : '0%'}
                   </td>
@@ -338,7 +339,7 @@ function AdminProducts() {
                       <button
                         className={styles.editBtn}
                         type="button"
-                        onClick={() => navigate(`/admin/products/edit/${p.product_id}`)}
+                        onClick={() => navigate(`/admin/pm/products/edit/${p.product_id}`)}
                       >
                         Edit
                       </button>

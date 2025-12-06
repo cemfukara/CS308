@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { getProductsById, updateProduct } from '../../lib/productsApi';
-import { getCategories } from '../../lib/categoriesApi';
-import styles from './AdminProducts.module.css';
-import Dropdown from '../../components/Dropdown.jsx';
+import { getProductsById, updateProduct } from '@/lib/productsApi.js';
+import { getCategories } from '@/lib/categoriesApi.js';
+import styles from '../Admin.module.css';
+import Dropdown from '@/components/Dropdown.jsx';
 function AdminProductEdit() {
   const navigate = useNavigate();
   const { id } = useParams(); // product_id from URL

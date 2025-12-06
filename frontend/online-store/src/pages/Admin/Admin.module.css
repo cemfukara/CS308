@@ -1,3 +1,6 @@
+body {
+  font-family: 'Exo 2', sans-serif;
+}
 .wrapper {
   max-width: 1200px;
   margin: 40px auto 60px;
@@ -813,4 +816,244 @@
   opacity: 0.6;
   cursor: wait;
   box-shadow: none;
+}
+
+/* ===== Extra styles specific to Deliveries page ===== */
+
+.errorBanner {
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #fef2f2;
+  color: #b91c1c;
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+/* left/right control groups inside controlsRow */
+.leftGroup {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.rightControls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* label above bulk select */
+.sortLabel {
+  font-size: 11px;
+  font-weight: 600;
+  color: #9ca3af;
+}
+
+/* bulk status select */
+.bulkSelect {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  font-size: 14px;
+  min-width: 150px;
+  background: #ffffff;
+}
+
+/* hide/show buttons on the right */
+.hideButton {
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  background: #f9fafb;
+  font-size: 13px;
+  cursor: pointer;
+  color: #374151;
+  transition:
+    background 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.1s ease;
+}
+
+.hideButton:hover {
+  background: #e5e7eb;
+  box-shadow: 0 2px 6px rgba(148, 163, 184, 0.35);
+  transform: translateY(-1px);
+}
+
+/* status badge styles */
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  border: 1px solid transparent;
+}
+
+.status_processing {
+  background: #eef2ff;
+  color: #3730a3;
+  border-color: #c7d2fe;
+}
+
+.status_inTransit {
+  background: #fff7ed;
+  color: #9a3412;
+  border-color: #fed7aa;
+}
+
+.status_delivered {
+  background: #ecfdf5;
+  color: #065f46;
+  border-color: #bbf7d0;
+}
+
+.status_cancelled {
+  background: #fef2f2;
+  color: #b91c1c;
+  border-color: #fecaca;
+}
+
+/* list inside invoice modal */
+.modalList {
+  list-style: disc;
+  padding-left: 20px;
+  margin: 8px 0 12px;
+}
+
+.datePickerInput {
+  width: 100%;
+  min-width: 140px;
+  box-sizing: border-box;
+}
+
+.datePickerInput input {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  font-size: 14px;
+  background: #ffffff;
+}
+
+.datePickerInput input:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.25);
+}
+
+.filterGroup {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.statusBadge {
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.statusBadge:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Make react-datepicker popup float above the admin table */
+:global(.react-datepicker-popper) {
+  z-index: 9999 !important;
+}
+
+:global(.react-datepicker) {
+  z-index: 9999 !important;
+}
+:global(.react-datepicker__header) {
+  background-color: #2563eb;
+  border-bottom: none;
+}
+:global(.react-datepicker__current-month),
+:global(.react-datepicker__day-name) {
+  color: #ffffff;
+}
+:global(.react-datepicker__day--selected),
+:global(.react-datepicker__day--selected:hover) {
+  background-color: #1d4ed8;
+  border-radius: 50%;
+  color: #ffffff;
+}
+:global(.react-datepicker__day--keyboard-selected) {
+  background-color: #93c5fd;
+  border-radius: 50%;
+  color: #1e3a8a;
+}
+
+/* ===== Revenue dashboard cards & charts ===== */
+
+.cards {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.card {
+  flex: 1;
+  min-width: 240px;
+  background: #ffffff;
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid #eee;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  transition: 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.12);
+}
+
+.card h3 {
+  margin-bottom: 10px;
+  color: #444;
+}
+
+.number {
+  font-size: 26px;
+  font-weight: 700;
+  color: #2563eb;
+}
+
+.chartButtonsRow {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.chartButton {
+  padding: 10px 18px;
+  background-color: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.chartButton:hover {
+  background-color: #1d4ed8;
+  transform: translateY(-2px);
+}
+
+.chartWrapper {
+  background: #fff;
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid #eee;
+  margin-bottom: 32px;
+}
+
+.chartFixed {
+  width: 100%;
+  height: 300px;
 }

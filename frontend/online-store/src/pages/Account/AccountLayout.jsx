@@ -1,6 +1,6 @@
 import React from 'react';
 import { Outlet } from 'react-router-dom';
-import AccountSidebar from '../../components/AccountSidebar'; // ✅ FIXED PATH
+import AccountSidebar from '@/components/AccountSidebar'; // ✅ FIXED PATH
 import './AccountLayout.css';
 
 const AccountLayout = () => {

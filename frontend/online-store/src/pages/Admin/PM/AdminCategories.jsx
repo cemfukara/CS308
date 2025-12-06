@@ -5,10 +5,10 @@ import {
   createCategory,
   updateCategory,
   deleteCategory,
-} from '../../lib/categoriesApi';
-import { api } from '../../lib/api.js';
-import styles from './AdminProducts.module.css';
-import Dropdown from '../../components/Dropdown.jsx';
+} from '@/lib/categoriesApi.js';
+import { api } from '@/lib/api.js';
+import styles from '../Admin.module.css';
+import Dropdown from '@/components/Dropdown.jsx';
 
 function AdminCategories() {
   const [categories, setCategories] = useState([]);
@@ -151,7 +151,7 @@ function AdminCategories() {
           Admin
         </Link>
         <span className={styles.crumbSeparator}>/</span>
-        <span className={styles.crumbCurrent}>Categories</span>
+        <span className={styles.crumbCurrent}>Category Management</span>
       </div>
 
       {/* Title */}

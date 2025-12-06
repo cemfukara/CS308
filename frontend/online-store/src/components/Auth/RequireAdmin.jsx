@@ -1,7 +1,7 @@
 import { Navigate, useLocation } from 'react-router-dom';
-import useAuthStore from '../store/authStore';
+import useAuthStore from '@/store/authStore';
 
-export default function RequirePM({ children }) {
+export default function RequireAdmin({ children }) {
   const { user, loading } = useAuthStore();
   const location = useLocation();
 
@@ -14,7 +14,7 @@ export default function RequirePM({ children }) {
   }
 
   // Logged in but not PM or dev → kick to home
-  if (user.role !== 'product manager' && user.role !== 'dev') {
+  if (user.role !== 'product manager' && user.role !== 'dev' && user.role !== 'sales manager') {
     return <Navigate to="/" replace />;
   }
 

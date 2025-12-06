@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { createProduct } from '../../lib/productsApi';
-import { getCategories } from '../../lib/categoriesApi';
-import styles from './AdminProducts.module.css';
-import Dropdown from '../../components/Dropdown.jsx';
+import { createProduct } from '@/lib/productsApi.js';
+import { getCategories } from '@/lib/categoriesApi.js';
+import styles from '../Admin.module.css';
+import Dropdown from '@/components/Dropdown.jsx';
 
 function AdminProductNew() {
   const navigate = useNavigate();

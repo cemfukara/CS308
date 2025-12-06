@@ -1,8 +1,8 @@
 // src/pages/admin/AdminStock.jsx
 import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { getAllProducts } from '../../lib/productsApi';
-import styles from './AdminProducts.module.css';
+import { getAllProducts } from '@/lib/productsApi';
+import styles from '../Admin.module.css';
 
 const LOW_STOCK_THRESHOLD = 10;
 
