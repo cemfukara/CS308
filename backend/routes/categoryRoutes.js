@@ -14,15 +14,4 @@ const router = express.Router();
 // GET /api/categories
 router.get('/', getAllCategories);
 
-// POST /api/categories
-router.post('/', authenticate, createCategory);
-
-// PUT /api/categories/:id
-router.put('/:id', authenticate, updateCategory);
-
-// DELETE /api/categories/:id
-router.delete('/:id', authenticate, deleteCategory);
-
-// PUT /api/categories/:id/reassign
-router.put('/:id/reassign', authenticate, reassignAndDeleteCategory);
 export default router;

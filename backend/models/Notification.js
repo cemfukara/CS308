@@ -1,21 +1,27 @@
 import { db } from '../app/config/db.js';
 
-export async function notifyWishlistUsers(productId, message) {
-    // Get users who have this in wishlist
-    const [users] = await db.pool.query(`
-        SELECT user_id 
-        FROM wishlists
-        WHERE product_id = ?
-    `, [productId]);
+// Helper for DB queries
+async function query(sql, params = []) {
+  const [rows] = await db.execute(sql, params);
+  return rows;
+}
 
-    if (users.length === 0) return 0;
+/**
+ * Insert notifications for all users.
+ */
+export async function notifyUsers(userIds, productId, discountPercent) {
+  if (!userIds.length) return;
 
-    const values = users.map(u => [u.user_id, productId, message]);
+  const values = userIds.map((uid) => [
+    uid.user_id,
+    productId,
+    `The product you wishlisted just dropped to ${discountPercent}% off!`,
+  ]);
 
-    await db.pool.query(`
-        INSERT INTO notifications (user_id, product_id, message)
-        VALUES ?
-    `, [values]);
+  const sql = `
+    INSERT INTO notifications (user_id, product_id, message)
+    VALUES ?
+  `;
 
-    return users.length;
+  await db.query(sql, [values]);
 }

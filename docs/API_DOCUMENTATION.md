@@ -50,29 +50,44 @@ Payload of a JWT cookie consist:
 
 # API Endpoints
 
-## Admin Routes
+## Sales Manager Endpoints
 
-api/admin/
+|               METHOD               |                      ENDPOINT                       |                 DESCRIPTION                 |    ACCESS     |     STATUS      |
+| :--------------------------------: | :-------------------------------------------------: | :-----------------------------------------: | :-----------: | :-------------: |
+|                GET                 |                     /analytics                      | Get sales revenue / profit / loss analytics | Sales Manager | Not Implemented |
+|                GET                 |                      /invoices                      |     View invoices in a given date range     | Sales Manager | Not Implemented |
+|                GET                 |                /invoices/:id/export                 |            Export invoice as PDF            | Sales Manager | Not Implemented |
+| [PATCH](#patch-productsiddiscount) | [/products/:id/discount](#patch-productsiddiscount) |      Apply or update product discounts      | Sales Manager |    Finished     |
+|               PATCH                |                /refunds/:id/approve                 |     Approve or decline a refund request     | Sales Manager | Not Implemented |
 
-### Sales Manager
+## Product Manager Endpoints
 
-| METHOD |       ENDPOINT       |                 DESCRIPTION                 |    ACCESS     |     STATUS      |
-| :----: | :------------------: | :-----------------------------------------: | :-----------: | :-------------: |
-|  GET   |      /analytics      | Get sales revenue / profit / loss analytics | Sales Manager | Not Implemented |
-|  GET   |      /invoices       |     View invoices in a given date range     | Sales Manager | Not Implemented |
-|  GET   | /invoices/:id/export |            Export invoice as PDF            | Sales Manager | Not Implemented |
-| PATCH  |      /discounts      |      Apply or update product discounts      | Sales Manager | Not Implemented |
-| PATCH  | /refunds/:id/approve |     Approve or decline a refund request     | Sales Manager | Not Implemented |
+### Delivery Management
 
-### Product Manager
+|                METHOD                 |                        ENDPOINT                        |             DESCRIPTION             |     ACCESS      |  STATUS  |
+| :-----------------------------------: | :----------------------------------------------------: | :---------------------------------: | :-------------: | :------: |
+|       [GET](#get-apideliveries)       |           [/deliveries](#get-apideliveries)            | View list of orders to be delivered | Product Manager | Finished |
+| [PATCH](#patch-apideliveriesidstatus) | [/deliveries/:id/status](#patch-apideliveriesidstatus) |    Update order delivery status     | Product Manager | Finished |
 
-| METHOD |        ENDPOINT        |             DESCRIPTION             |     ACCESS      |     STATUS      |
-| :----: | :--------------------: | :---------------------------------: | :-------------: | :-------------: |
-|  GET   |      /deliveries       | View list of orders to be delivered | Product Manager |    Finished     |
-| PATCH  | /deliveries/:id/status |    Update order delivery status     | Product Manager |    Finished     |
-| PATCH  | /comments/:id/approve  | Approve or reject product comments  | Product Manager | Not Implemented |
+### Product Management
 
-### Support Agent
+|             METHOD              |                 ENDPOINT                  |            DESCRIPTION             |     ACCESS      |     STATUS      |
+| :-----------------------------: | :---------------------------------------: | :--------------------------------: | :-------------: | :-------------: |
+|    [POST](#post-apiproducts)    |      [/products/](#post-apiproducts)      |         Add a new product          | Product Manager |    Finished     |
+|    [PUT](#put-apiproductsid)    |    [/products/:id](#put-apiproductsid)    |        Update product by ID        | Product Manager |    Finished     |
+|              PATCH              | /products/:id/comments/:commentId/approve | Approve or reject product comments | Product Manager | Not Implemented |
+| [DELETE](#delete-apiproductsid) |  [/products/:id](#delete-apiproductsid)   |        Delete product by ID        | Product Manager |    Finished     |
+
+### Category Management
+
+|               METHOD                |                         ENDPOINT                         |                   DESCRIPTION                   |     ACCESS      |  STATUS  |
+| :---------------------------------: | :------------------------------------------------------: | :---------------------------------------------: | :-------------: | :------: |
+|     [POST](#post-apicategories)     |           [/categories/](#post-apicategories)            |              Create a new category              | Product Manager | Finished |
+|     [PUT](#put-apicategoriesid)     |         [/categories/:id](#put-apicategoriesid)          |         Update category name or details         | Product Manager | Finished |
+| [PUT](#put-apicategoriesidreassign) | [/categories/:id/reassign](#put-apicategoriesidreassign) | Reassign products under one category to another | Product Manager | Finished |
+|  [DELETE](#delete-apicategoriesid)  |        [/categories/:id](#delete-apicategoriesid)        |                Delete a category                | Product Manager | Finished |
+
+## Support Agent Endpoints
 
 | METHOD |           ENDPOINT           |                  DESCRIPTION                  |    ACCESS     |     STATUS      |
 | :----: | :--------------------------: | :-------------------------------------------: | :-----------: | :-------------: |
@@ -86,73 +101,428 @@ api/admin/
 
 api/users/
 
-| METHOD | ENDPOINT  |             DESCRIPTION              | Access  |  Status  |
-| :----: | :-------: | :----------------------------------: | :-----: | :------: |
-|  POST  | /register |         Register a new user          | Public  | Finished |
-|  POST  |  /login   |  Authenticate user and return token  | Public  | Finished |
-|  GET   | /profile  |  Get logged-in user's profile info   | Private | Finished |
-| PATCH  | /profile  | Update logged-in user's profile info | Private | Finished |
+|             METHOD              |              ENDPOINT               |             DESCRIPTION              | Access  |  Status  |
+| :-----------------------------: | :---------------------------------: | :----------------------------------: | :-----: | :------: |
+| [POST](#post-apiusersregister)  | [/register](#post-apiusersregister) |         Register a new user          | Public  | Finished |
+|   [POST](#post-apiuserslogin)   |    [/login](#post-apiuserslogin)    |  Authenticate user and return token  | Public  | Finished |
+|   [GET](#get-apiusersprofile)   |  [/profile](#get-apiusersprofile)   |  Get logged-in user's profile info   | Private | Finished |
+| [PATCH](#patch-apiusersprofile) | [/profile](#patch-apiusersprofile)  | Update logged-in user's profile info | Private | Finished |
 
 ## Product Endpoints
 
 api/products/
 
-| METHOD |  ENDPOINT  |        DESCRIPTION        |     Access      |     Status      |
-| :----: | :--------: | :-----------------------: | :-------------: | :-------------: |
-|  GET   |     /      |     Get all products      |     Public      | Not Implemented |
-|  GET   |    /:id    | Get single product by ID  |     Public      | Not Implemented |
-| PATCH  | /:id/stock | Update stock of a product | Product Manager | Not Implemented |
-|  POST  |     /      |     Add a new product     | Product Manager | Not Implemented |
-|  PUT   |    /:id    |   Update product by ID    | Product Manager | Not Implemented |
-| DELETE |    /:id    |   Delete product by ID    | Product Manager | Not Implemented |
+|          METHOD           |          ENDPOINT          |       DESCRIPTION        | Access |  Status  |
+| :-----------------------: | :------------------------: | :----------------------: | :----: | :------: |
+|  [GET](#get-apiproducts)  |   [/](#get-apiproducts)    |     Get all products     | Public | Finished |
+| [GET](#get-apiproductsid) | [/:id](#get-apiproductsid) | Get single product by ID | Public | Finished |
 
 ## Category Endpoints
 
 api/categories
 
-| METHOD |   ENDPOINT    |                   DESCRIPTION                   |     Access     |  Status  |
-| :----: | :-----------: | :---------------------------------------------: | :------------: | :------: |
-|  GET   |       /       |           Get all product categories            |     Public     | Finished |
-|  POST  |       /       |              Create a new category              | ProductManager | Finished |
-|  PUT   |     /:id      |         Update category name or details         | ProductManager | Finished |
-| DELETE |     /:id      |                Delete a category                | ProductManager | Finished |
-|  PUT   | /:id/reassign | Reassign products under one category to another | ProductManager | Finished |
+|          METHOD           |        ENDPOINT         |        DESCRIPTION         | Access |  Status  |
+| :-----------------------: | :---------------------: | :------------------------: | :----: | :------: |
+| [GET](#get-apicategories) | [/](#get-apicategories) | Get all product categories | Public | Finished |
 
 ## Cart Endpoints
 
 api/cart
 
-| METHOD |      ENDPOINT      |           DESCRIPTION           | Access  |     Status      |
-| :----: | :----------------: | :-----------------------------: | :-----: | :-------------: |
-|  GET   |         /          |     Get user's current cart     | Private | Not Implemented |
-|  POST  |        /add        |   Add product to user's cart    | Private | Not Implemented |
-|  PUT   |      /update       | Update quantity or item in cart | Private | Not Implemented |
-| DELETE | /remove/:productId |    Remove product from cart     | Private | Not Implemented |
+|                 METHOD                  |                      ENDPOINT                      |           DESCRIPTION           | Access  |     Status      |
+| :-------------------------------------: | :------------------------------------------------: | :-----------------------------: | :-----: | :-------------: |
+|           [GET](#get-apicart)           |                 [/](#get-apicart)                  |     Get user's current cart     | Private |    Finished     |
+|       [POST](#post-apicartitems)        |            [/items](#post-apicartitems)            |   Add product to user's cart    | Private |    Finished     |
+|                   PUT                   |                [/items/:productId]                 | Update quantity or item in cart | Private | Not Implemented |
+| [DELETE](#delete-apicartitemsproductid) | [/items/:productId](#delete-apicartitemsproductid) |    Remove product from cart     | Private |    Finished     |
+|     [DELETE](#delete-apicartitems)      |           [/items](#delete-apicartitems)           |        Clear entire cart        | Private |    Finished     |
 
 ## Order Endpoints
 
 api/orders/
 
-| METHOD |  ENDPOINT   |                  DESCRIPTION                   |     Access     |     Status      |
-| :----: | :---------: | :--------------------------------------------: | :------------: | :-------------: |
-|  GET   |      /      |       Get all orders for logged-in user        |    Private     | Not Implemented |
-|  GET   |    /:id     |            Get order details by ID             |    Private     | Not Implemented |
-|  POST  |      /      |         Create a new order (checkout)          |    Private     | Not Implemented |
-| DELETE |    /:id     |                Cancel an order                 |    Private     | Not Implemented |
-| PATCH  | /:id/status | Update order status (e.g., shipped, delivered) | ProductManager | Not Implemented |
+|         METHOD          |         ENDPOINT         |                DESCRIPTION                 | Access  |     Status      |
+| :---------------------: | :----------------------: | :----------------------------------------: | :-----: | :-------------: |
+|  [GET](#get-apiorders)  |   [/](#get-apiorders)    | Get all non cart orders for logged-in user | Private |    Finished     |
+| [GET](#get-apiordersid) | [/:id](#get-apiordersid) |          Get order details by ID           | Private |    Finished     |
+|          POST           |            /             |       Create a new order (checkout)        | Private |   In Progress   |
+|         DELETE          |           /:id           |              Cancel an order               | Private | Not Implemented |
 
 ## Wishlist Endpoints
 
 api/wishlist/
 
-| METHOD | ENDPOINT |                DESCRIPTION                 | Access  |  Status  |
-| :----: | :------: | :----------------------------------------: | :-----: | :------: |
-|  GET   |    /     | Get all wishlist items for logged-in user  | Private | Finished |
-|  POST  |    /     | Adds item (in req body) to user's wishlist | Private | Finished |
-| DELETE |   /:id   |           Delete a wishlist item           | Private | Finished |
-| DELETE |    /     |           Clears user's wishlist           | Private | Finished |
+|                METHOD                |                ENDPOINT                 |                DESCRIPTION                | Access  |  Status  |
+| :----------------------------------: | :-------------------------------------: | :---------------------------------------: | :-----: | :------: |
+|       [GET](#get-apiwishlist)        |          [/](#get-apiwishlist)          | Get all wishlist items for logged-in user | Private | Finished |
+|    [POST](#post-apiwishlistitems)    |    [/items](#post-apiwishlistitems)     |       Adds item to user's wishlist        | Private | Finished |
+| [DELETE](#delete-apiwishlistitemsid) | [items/:id](#delete-apiwishlistitemsid) |          Delete a wishlist item           | Private | Finished |
+|  [DELETE](#delete-apiwishlistitems)  |   [/items](#delete-apiwishlistitems)    |          Clears user's wishlist           | Private | Finished |
 
 # Usages
+
+## Sales Manager Usage
+
+## Product Manager Usage
+
+### PATCH /products/:id/discount
+
+Applies discount to given product
+
+- Request Body:
+
+  ```
+  {
+    "productId":int_id,
+    "discountRate":int_rate
+  }
+  ```
+
+- Response Body:
+
+  ```
+  { "message":"Discount applied & users notified",
+  "product":
+    {
+      "product_id":1,
+      "category_id":1,
+      "name":"iPhone 17 Pro Max",
+      "model":"FUT-IP17-PM",
+      "serial_number":"SN-IP17-PM-BL",
+      "description":"Future generation design, A19 Pro chip, 10x Telephoto camera.",
+      "quantity_in_stock":50,
+      "price":"89999.00",
+      "list_price":"89999.00",
+      "warranty_status":"2 Years Apple Turkey",
+      "distributor_info":"Apple Inc.",
+      "discount_ratio":"0.00"
+    },
+    "notifiedUsers":1
+  }
+  ```
+
+- Error:
+  ```
+  { "message": "productId and discountRate are required" } // http status: 400
+  OR
+  { "message": 'Server error' } // http status: 500
+  ```
+
+### GET api/deliveries
+
+Returns all the orders except for ones with status "cart"
+
+- Request Body:
+
+  ```
+  // Empty
+  ```
+
+- Response Body:
+
+  ```
+  {
+    "orders": [
+      {
+        "order_id": 1,
+        "user_id": 1,
+        "status": "delivered",
+        "total_price": "1199.99",
+        "created_at": "2025-12-05T21:14:00.000Z",
+        "order_date": "2025-11-28T21:14:00.000Z",
+        "customer_email": "john.doe@example.com",
+        "item_count": 1,
+        "shipping_address": null
+      },
+      {
+        "order_id": 3,
+        "user_id": 2,
+        "status": "processing",
+        "total_price": "899.50",
+        "created_at": "2025-12-05T21:14:00.000Z",
+        "order_date": "2025-12-04T21:14:00.000Z",
+        "customer_email": "jane.smith@example.com",
+        "item_count": 1,
+        "shipping_address": null
+      }
+    ]
+  }
+  ```
+
+- Error:
+  ```
+  { "message": 'Server error' } // http status: 500
+  ```
+
+### PATCH api/deliveries/:id/status
+
+Updates the status of a product
+
+- Request Body:
+
+  ```
+  {
+    "status":"processing"
+  }
+  ```
+
+- Response Body:
+
+  ```
+  {
+    "message":"Delivery status updated"
+  }
+  ```
+
+- Error:
+  ```
+  {"message":"Invalid status value"}
+  OR
+  {"message":"Order not found"}
+  OR
+  { "message": "Server error"} // http status: 500
+  ```
+
+### POST api/products/
+
+Creates a new product with given values
+
+- Request Body:
+
+  ```
+  {
+    // required fields
+    "name":"string",  // min:3, max:255
+    "price":int,
+    "quantity_in_stock":int,
+    "category_id":int,
+
+    // can be null fields
+    "description":string, // max: 5k
+    "popularity":int //min: 0
+  }
+  ```
+
+- Response Body:
+
+  ```
+  {
+    "message":"Product created successfully","id": auto_incremented_id
+  }
+  ```
+
+- Error:
+  ```
+  {
+    "status": "error",
+    "message": "Validation failed.",
+    "errors":
+    [
+      // an array including error fields and error reasons
+      // ex:
+      {
+        "field":"name",
+        "message":"Product name is required."
+      },
+      {
+        "field":"name",
+        "message":"Name must be between 3 and 255 characters."
+      }
+    ]
+  }
+  OR
+  {"error": "Internal server error"}
+  ```
+
+### PUT api/products/:id
+
+Updates the details of given product
+
+- Request Body:
+
+  ```
+  {
+    // required fields
+    "name":"string",  // min:3, max:255
+    "price":int,
+    "quantity_in_stock":int,
+    "category_id":int,
+
+    // can be null fields
+    "description":string, // max: 5k
+    "popularity":int //min: 0
+  }
+  ```
+
+- Response Body:
+
+  ```
+  {
+    "message":"Product updated successfully"
+  }
+  ```
+
+- Error:
+  ```
+  {
+    "status": "error",
+    "message": "Validation failed.",
+    "errors":
+    [
+      // an array including error fields and error reasons
+      // ex:
+      {
+        "field":"name",
+        "message":"Product name is required."
+      },
+      {
+        "field":"name",
+        "message":"Name must be between 3 and 255 characters."
+      }
+    ]
+  }
+  OR
+  {"message":"Product not found"}
+  OR
+  {"error": "Internal server error"}
+  ```
+
+### DELETE api/products/:id
+
+Deletes the given product
+
+- Request Body:
+
+  ```
+  // Empty
+  ```
+
+- Response Body:
+
+  ```
+  {
+    "message":"Product deleted successfully"
+  }
+  ```
+
+- Error:
+  ```
+  {"message":"Product not found"}
+  OR
+  {"error": "Internal server error"}
+  ```
+
+### POST api/categories/
+
+Creates a category with given category name
+
+- Request Body:
+
+  ```
+  {"name":"category_name"}
+  ```
+
+- Response Body:
+
+  ```
+  {
+    "category_id":5,"name":"category_name"
+  }
+  ```
+
+- Error:
+  ```
+  {"error":"Category name is required."}
+  OR
+  {"error":"A category with this name already exists."}
+  OR
+  {"error": "Failed to create category."}
+  ```
+
+### PUT api/categories/:id
+
+Updates a category with given category name
+
+- Request Body:
+
+  ```
+  {"name":"category_name"}
+  ```
+
+- Response Body:
+
+  ```
+  {
+    "message":"Category updated successfully."
+  }
+  ```
+
+- Error:
+  ```
+  {"error":"Category name is required."}
+  OR
+  "message":"Products reassigned and category deleted."
+  OR
+  {"error": "Failed to update category."}
+  ```
+
+### PUT api/categories/:id/reassign
+
+Reassigns products from the category in URL parameter to target category defined in the body. Also deletes the category in the URL parameter
+
+- Request Body:
+
+  ```
+  {"targetCategoryId":int_id}
+  ```
+
+- Response Body:
+
+  ```
+  {
+    "message":"Products reassigned and category deleted."
+  }
+  ```
+
+- Error:
+  ```
+  {"error":"Target category is required."}
+  OR
+  {"error":"Target category does not exist."}
+  OR
+  {"error": "Failed to reassign and delete category."}
+  ```
+
+### DELETE api/categories/:id
+
+Deletes the given category. The category must be empty
+
+- Request Body:
+
+  ```
+  // Empty
+  ```
+
+- Response Body:
+
+  ```
+  {
+    "message":"Category deleted successfully."
+  }
+  ```
+
+- Error:
+  ```
+  {"error":"Category not found."}
+  OR
+  {"error":"Cannot delete category: there are products assigned to this category."}
+  OR
+  {"error": "Failed to delete category."}
+  ```
+
+## Support Agent Usage
+
+TBD
 
 ## User Usage
 
@@ -282,6 +652,360 @@ Updates the user info with given fields
   { "message": `Invalid field: ${key}` } // Invalid key in request body. http status: 400
   ```
 
+## Product Usage
+
+### GET api/products/
+
+Get the info of given product
+
+- Request Body:
+
+  ```
+  {
+    // Optional parameters
+    // example values are default values
+    limit = 10,
+    page = 1,
+    sortBy = 'product_id',
+    sortOrder = 'ASC',
+    search = '',
+    category = null,
+  }
+  ```
+
+- Response Body:
+
+  ```
+  // An array of all requested products
+  // Ex:
+  {
+    products:
+    [
+      {
+        "product_id":1,
+        "category_id":1,
+        "name":"iPhone 17 Pro Max",
+        "model":"FUT-IP17-PM",
+        "serial_number":"SN-IP17-PM-BL",
+        "description":"Future generation design, A19 Pro chip, 10x Telephoto camera.",
+        "quantity_in_stock":50,
+        "price":"89999.00",
+        "list_price":"89999.00",
+        "warranty_status":"2 Years Apple Turkey",
+        "distributor_info":"Apple Inc.",
+        "discount_ratio":"0.00",
+        "product_images":
+        [
+          {
+            "image_id":1,
+            "product_id":1,
+            "image_url":"https://cdn.vatanbilgisayar.com/Upload/PRODUCT/apple/thumb/153503-1_large.jpg",
+            "is_primary":1,
+            "display_order":1
+          },
+          {
+            "image_id":2,
+            "product_id":1,
+            "image_url":"https://cdn.vatanbilgisayar.com/Upload/PRODUCT/apple/thumb/153503-2_large.jpg",
+            "is_primary":0,
+            "display_order":2
+          },
+        ]
+      }
+      // may be more products
+    ]
+  }
+  ```
+
+- Error:
+  ```
+  {"error": "Internal server error"}
+  ```
+
+### GET api/products/:id
+
+Get the info of given product
+
+- Request Body:
+
+  ```
+  // Empty
+  ```
+
+- Response Body:
+
+  ```
+  // Ex:
+  {
+    "product_id":1,
+    "category_id":1,
+    "name":"iPhone 17 Pro Max",
+    "model":"FUT-IP17-PM",
+    "serial_number":"SN-IP17-PM-BL",
+    "description":"Future generation design, A19 Pro chip, 10x Telephoto camera.",
+    "quantity_in_stock":50,
+    "price":"89999.00",
+    "list_price":"89999.00",
+    "warranty_status":"2 Years Apple Turkey",
+    "distributor_info":"Apple Inc.",
+    "discount_ratio":"0.00",
+    "product_images":
+    [
+      {
+        "image_id":1,
+        "product_id":1,
+        "image_url":"https://cdn.vatanbilgisayar.com/Upload/PRODUCT/apple/thumb/153503-1_large.jpg",
+        "is_primary":1,
+        "display_order":1
+      },
+      {
+        "image_id":2,
+        "product_id":1,
+        "image_url":"https://cdn.vatanbilgisayar.com/Upload/PRODUCT/apple/thumb/153503-2_large.jpg",
+        "is_primary":0,
+        "display_order":2
+      },
+    ]
+  }
+  ```
+
+- Error:
+  ```
+  {"error": "Internal server error"}
+  ```
+
+## Category Usage
+
+### GET api/categories
+
+Get all categories
+
+- Request Body:
+
+  ```
+  // Empty
+  ```
+
+- Response Body:
+
+  ```
+  // Ex:
+  [
+    {
+      "category_id":1,
+      "name":"Smartphones"
+    },
+    {
+      "category_id":2,
+      "name":"Laptops"
+    },
+    {
+      "category_id":3,
+      "name":"Audio"
+    },
+    {
+      "category_id":4,
+      "name":"Accessories"
+    }
+  ]
+  ```
+
+- Error:
+  ```
+  {"error": "Failed to fetch categories"}
+  ```
+
+## Cart Usage
+
+### GET api/cart
+
+Get all item in the user's car
+
+- Request Body:
+
+  ```
+  // Empty
+  ```
+
+- Response Body:
+
+  ```
+  // Ex:
+  {
+    "success":true,
+    "cart":
+    {
+      "order_id":4,
+      "user_id":0,
+      "status":"cart",
+      "total_price":null,
+      "shipping_address_encrypted":null,
+      "created_at":"2025-12-06T13:00:54.000Z",
+      "order_date":null
+    },
+    "items":
+    [
+      {
+          "order_item_id":4,
+          "quantity":1,
+          "price_at_purchase":"89999.00",
+          "name":"iPhone 17 Pro Max",
+          "model":"FUT-IP17-PM",
+          "price":"89999.00"
+      }
+    ]
+  }
+  ```
+
+- Error:
+  ```
+  {"success":false, "message":"Server error"}
+  ```
+
+### POST api/cart/items
+
+Add a item to user's cart. Adding a product existing product again increases products quantity
+
+- Request Body:
+
+  ```
+  {
+    "productId":1
+  }
+  ```
+
+- Response Body:
+
+  ```
+  {
+    "success":true,
+    "message":"Item added to cart"
+  }
+  ```
+
+- Error:
+  ```
+  {"success":false,"message":"productId required"}
+  OR
+  {"success":false, "message":"Server error"}
+  ```
+
+### DELETE api/cart/items/:productId
+
+Deletes given product from user's cart
+
+- Request Body:
+
+  ```
+  // Empty
+  ```
+
+- Response Body:
+
+  ```
+  {
+    "success":true,
+    "message":"Item removed from cart"
+  }
+  ```
+
+- Error:
+  ```
+  {"success":false,"message":"Item not found in your cart"}
+  OR
+  {"success":false,"message":"productId required"}
+  OR
+  {"success":false, "message":"Server error"}
+  ```
+
+### DELETE api/cart/items/
+
+Clears entire cart of the user
+
+- Request Body:
+
+  ```
+  // Empty
+  ```
+
+- Response Body:
+
+  ```
+  { // Returns success even if cart does not exists
+    "success":true,
+    "message":"Cart cleared"
+  }
+  ```
+
+- Error:
+  ```
+  {"success":false, "message":"Server error"}
+  ```
+
+## Order Usage
+
+### GET api/orders/
+
+Get all non-cart orders of the user
+
+- Request Body:
+
+  ```
+  // Empty
+  ```
+
+- Response Body:
+
+  ```
+  { // Returns success even if no orders for logged in user
+    "success":true,
+    "orders":[]
+  }
+  ```
+
+- Error:
+  ```
+  {"success":false, "message":"Server error"}
+  ```
+
+### GET api/orders/:id
+
+Get the order from user's orders with given orderId
+
+- Request Body:
+
+  ```
+  // Empty
+  ```
+
+- Response Body:
+
+  ```
+  {
+    "success":true,
+    "order":
+    {
+      "order_id":4,
+      "user_id":0,
+      "status":"cart",
+      "total_price":599.99,
+      "created_at":"2025-12-06T13:20:25.000Z",
+      "order_date":null,
+      "customer_email":"dev@test.local",
+      "item_count":null,
+      "shipping_address":null
+    },
+    "items":[//details for each item]
+  }
+  ```
+
+- Error:
+  ```
+  {"success":false, "message":"Order not found"}
+  OR
+  {"success":false, "message":"Server error"}
+  ```
+
 ## Wishlist Usage
 
 ### GET api/wishlist
@@ -307,7 +1031,7 @@ Get all items in user's wishlist
   { "message": 'Server error' } // http status: 500
   ```
 
-### POST api/wishlist/
+### POST api/wishlist/items
 
 Add an item to user's wishlist
 
@@ -340,7 +1064,7 @@ Add an item to user's wishlist
   { "message": 'Server error' } // http status: 500
   ```
 
-### DELETE api/wishlist/:id
+### DELETE api/wishlist/items/:id
 
 Deletes the item specified in the parameter
 
@@ -367,7 +1091,7 @@ Deletes the item specified in the parameter
   {" message": 'Server error' } // http status: 500
   ```
 
-### DELETE api/wishlist/
+### DELETE api/wishlist/items
 
 Clears user's wishlist
 
@@ -389,96 +1113,6 @@ Clears user's wishlist
 - Error:
   ```
   { "message": 'Wishlist already empty', } // http status: 200
-  OR
-  {" message": 'Server error' } // http status: 500
-  ```
-
-## Product Manager Usage
-
-### GET /api/product-manager/deliveries
-
-Gets all orders with "processing" status
-
-- Request body (+ JWT cookie):
-
-  ```
-  // Empty, authentication done via JWT cookie
-  ```
-
-- Response body:
-
-  ```
-  {
-    // If not any order with "processing" status, then an empty array will shown
-    "deliveries": [
-
-      // one object for each order_id
-      {
-        "order_id": 3,
-        "status": "processing",
-        "total_price": "899.50",
-
-        // PIIs, they will be decrypted
-        "shipping_address": null,
-        "user": {
-          "first_name": null,
-          "last_name": null,
-          "address": null,
-          "tax_id": null
-        },
-
-        // All products an their quantities
-        "products": [
-          {
-            "id": 5,
-            "name": "Zenith Z-Book 14",
-            "quantity": 1
-          }
-        ]
-      }
-    ]
-  } // http status: 200
-  ```
-
-- Error:
-  ```
-  {" message": 'Server error' } // http status: 500
-  ```
-
-### PATCH /api/product-manager/deliveries/:id/status
-
-Change status of an order
-
-- Request body (+ JWT cookie):
-
-  ```
-  // Authentication done via JWT cookie
-
-  {"status":"in-transit"}
-
-  /* Possible status values:
-    "processing",
-    "in-transit",
-    "delivered",
-    "cancelled",
-
-    updating status to "cart" is not allowed
-  */
-  ```
-
-- Response body:
-
-  ```
-  {"message":"Delivery status updated"} // http status: 200
-  ```
-
-- Error:
-  ```
-  {"message":"Invalid status value"} // http status: 400
-  OR
-  {"message":"Invalid order id"} // http status: 400
-  OR
-  {"message":"Order not found"} // http status: 404
   OR
   {" message": 'Server error' } // http status: 500
   ```

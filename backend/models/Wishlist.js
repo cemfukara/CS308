@@ -37,3 +37,23 @@ export async function clearWishlistByID(user_id) {
   // Number of deleted items
   return result.affectedRows;
 }
+
+/*
+---------------------------------------------------
+---------------Sales Manager Models----------------
+---------------------------------------------------
+*/
+
+// Helper for DB queries
+async function query(sql, params = []) {
+  const [rows] = await db.execute(sql, params);
+  return rows;
+}
+
+/**
+ * Get all users who have this product in their wishlist.
+ */
+export async function getWishlistedUsers(productId) {
+  const sql = `SELECT user_id FROM wishlists WHERE product_id = ?`;
+  return query(sql, [productId]);
+}

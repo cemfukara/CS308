@@ -26,6 +26,13 @@ router.get('/', authenticate, getOrders);
 router.get('/:id', authenticate, getOrderDetails);
 
 /**
+ * @route   POST /api/orders
+ * @desc    Create a new order from cart items
+ * @access  Private
+ */
+router.post('/', authenticate, createOrderController);
+
+/**
  * @route   DELETE /api/orders/:id
  * @desc    Cancel an order (future implementation)
  * @access  Private
@@ -33,12 +40,5 @@ router.get('/:id', authenticate, getOrderDetails);
 router.delete('/:id', authenticate, (req, res) => {
   res.status(501).json({ message: 'Cancel order not implemented yet' });
 });
-
-/**
- * @route   POST /api/orders
- * @desc    Create a new order from cart items
- * @access  Private
- */
-router.post('/', authenticate, createOrderController);
 
 export default router;

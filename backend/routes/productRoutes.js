@@ -9,12 +9,6 @@ import {
   removeProduct,
 } from '../app/controllers/productController.js';
 
-import {
-  authenticate,
-  authorizeRoles,
-} from '../app/middlewares/authMiddleware.js'; // auth middlewares
-import { validateProductInput } from '../app/middlewares/validationMiddleware.js';
-
 const router = express.Router();
 
 // --- PUBLIC ROUTES (Read Access) ---
@@ -41,13 +35,13 @@ router.get('/:id', fetchProductDetails); // Use the new controller function
  * @access  Private/Admin
  */
 
-router.post(
+/*router.post(
   '/',
   authenticate,
   authorizeRoles('product manager'),
   validateProductInput,
   addProduct
-);
+);*/
 
 /**
  * @route   PUT /api/products/:id
@@ -55,24 +49,24 @@ router.post(
  * @access  Private/Admin
  */
 // Added validation middleware here
-router.put(
+/*router.put(
   '/:id',
   authenticate,
   authorizeRoles('product manager'),
   validateProductInput,
   updateProductDetails
-);
+);*/
 
 /**
  * @route   DELETE /api/products/:id
  * @desc    Delete product by ID
  * @access  Private/Admin
  */
-router.delete(
+/*router.delete(
   '/:id',
   authenticate,
   authorizeRoles('product manager'),
   removeProduct
-);
+);*/
 
 export default router;

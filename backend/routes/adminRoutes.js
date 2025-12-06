@@ -1,141 +1,249 @@
-// Defines manager/admin-specific routes (discounts, analytics, etc.).
 // app/routes/adminRoutes.js
+// Defines manager/admin-specific routes (discounts, analytics, etc.)
 
-// ATTENTION, ROUTE URLS ARE NOT CORRECT. CHANGE THEM BEFORE IMPLEMENTATION
+import express from 'express';
 
+// Authentication Import
 import {
   authenticate,
   authorizeRoles,
 } from '../app/middlewares/authMiddleware.js';
+
+// Validation Import
+import { validateProductInput } from '../app/middlewares/validationMiddleware.js';
+
+// Product Controllers
+import {
+  setDiscount,
+  addProduct,
+  updateProductDetails,
+  removeProduct,
+} from '../app/controllers/productController.js';
+
+// Order Controllers
 import {
   getDeliveries,
   updateOrderStatusController,
-} from '../app/controllers/adminController.js';
-import express from 'express';
-import { setDiscount } from '../app/controllers/discountController.js';
+} from '../app/controllers/orderController.js';
+
+// Category Controllers
+import {
+  createCategory,
+  updateCategory,
+  deleteCategory,
+  reassignAndDeleteCategory,
+} from '../app/controllers/categoryController.js';
+
+// Invoice Controllers
+import {
+  getInvoicesByDateRange,
+  generateInvoicePDF,
+  getRevenueProfit,
+  getRevenueProfitChartController,
+} from '../app/controllers/invoiceController.js';
 
 const router = express.Router();
 
-// Routes might have different roles allowed on different levels
+/* ============================================================
+   SALES MANAGER ROUTES
+   ============================================================ */
 
-/*---------------Sales Manager Routes--------------*/
-
-// Set or update product price
-// allow: ["sales_manager"]
-router.patch('/sales-manager/products/:id/price', (req, res) => {
-  res.json({
-    message: 'Set/update product price route is not implemented yet',
-  });
-});
-
-// Sales Manager: Apply discount to a product
-// POST /api/discount/apply
-router.post(
-  '/apply',
+// GET /analytics
+router.get(
+  '/analytics',
   authenticate,
-  authorizeRoles('sales manager'),
+  authorizeRoles('sales_manager'),
+  (req, res) => {
+    res.json({
+      message: 'Get sales analytics is not implemented yet',
+    });
+  }
+);
+
+// GET /invoices
+router.get(
+  '/invoices',
+  authenticate,
+  authorizeRoles('sales_manager'),
+  (req, res) => {
+    res.json({ message: 'View invoices is not implemented yet' });
+  }
+);
+
+// GET /invoices/:id/export
+router.get(
+  '/invoices/:id/export',
+  authenticate,
+  authorizeRoles('sales_manager'),
+  (req, res) => {
+    res.json({ message: 'Export invoice is not implemented yet' });
+  }
+);
+
+// PATCH /products/:id/discount
+router.patch(
+  '/products/:id/discount',
+  authenticate,
+  authorizeRoles('sales_manager'),
   setDiscount
 );
 
-// View invoices in a given date range
-// allow: ["sales_manager"]
-router.get('/sales-manager/invoices', (req, res) => {
-  res.json({ message: 'View invoices route is not implemented yet' });
-});
-
-// Export invoice as PDF
-// allow: ["sales_manager"]
-router.get('/sales-manager/invoices/:id/export', (req, res) => {
-  res.json({ message: 'Invoice export route is not implemented yet' });
-});
-
-// Calculate revenue and profit/loss
-// allow: ["sales_manager"]
-router.get('/sales-manager/analytics/revenue', (req, res) => {
-  res.json({ message: 'Revenue calculation route is not implemented yet' });
-});
-
-// Approve or deny refund
-/* allowance
-  - sales_manager: full (decides approval)
-  - product_manager: restricted (can only act AFTER approval to add stock back)
-  - support_agent: readonly (can only view refund status through order history context)
-*/
-router.patch('/sales-manager/refunds/:id/approve', (req, res) => {
-  res.json({ message: 'Approve refund route is not implemented yet' });
-});
-
-/*---------------Product Manager Routes--------------*/
-
-// Update stock amount
-// allow: ["product_manager"]
-router.patch('/product-manager/products/:id/stock', (req, res) => {
-  res.json({ message: 'Update stock route is not implemented yet' });
-});
-
-// GET /pm/deliveries
-// View deliveries (order list)
-// allow: ["product_manager" (Finished), "support_agent (partial_read)"]
-router.get(
-  '/pm/deliveries',
+// PATCH /refunds/:id/approve
+router.patch(
+  '/refunds/:id/approve',
   authenticate,
-  authorizeRoles('product manager'),
+  authorizeRoles('sales_manager'),
+  (req, res) => {
+    res.json({ message: 'Approve/decline refund is not implemented yet' });
+  }
+);
+
+/* ============================================================
+   PRODUCT MANAGER ROUTES
+   ============================================================ */
+
+/* ---------- Delivery Management ---------- */
+
+// GET /deliveries
+router.get(
+  '/deliveries',
+  authenticate,
+  authorizeRoles('product_manager'),
   getDeliveries
 );
 
-// PATCH /pm/deliveries/:id/status
-// Update delivery status
-// allow: ["product_manager"]
+// PATCH /deliveries/:id/status
 router.patch(
-  '/pm/deliveries/:id/status',
+  '/deliveries/:id/status',
   authenticate,
-  authorizeRoles('product manager'),
+  authorizeRoles('product_manager'),
   updateOrderStatusController
 );
 
-// PATCH /pm/comments/:id/approve
-// Approve/disapprove user comments
-// allow: ["product_manager"]
-router.patch('/pm/comments/:id/approve', (req, res) => {
-  res.json({ message: 'Approve comment route is not implemented yet' });
-});
+/* ---------- Product Management ---------- */
 
-/*---------------Support Agent Routes--------------*/
+// PATCH /products/:id/comments/:commentId/approve
+router.patch(
+  '/products/:id/comments/:commentId/approve',
+  authenticate,
+  authorizeRoles('product_manager'),
+  (req, res) => {
+    res.json({ message: 'Approve/reject comment not implemented yet' });
+  }
+);
 
-// Fetch chat queue
-// allow: ["support_agent"]
-router.get('/support-agent/chat/queue', (req, res) => {
-  res.json({ message: 'Chat queue route is not implemented yet' });
-});
+// POST /products
+router.post(
+  '/products',
+  authenticate,
+  authorizeRoles('product manager'),
+  validateProductInput,
+  addProduct
+);
 
-// Claim chat
-// allow: ["support_agent"]
-router.patch('/support-agent/chat/:id/claim', (req, res) => {
-  res.json({ message: 'Claim chat route is not implemented yet' });
-});
+// PUT /products/:id
+router.put(
+  '/products/:id',
+  authenticate,
+  authorizeRoles('product manager'),
+  validateProductInput,
+  updateProductDetails
+);
 
-// Send a message
-// allow: ["support_agent"]
-router.post('/support-agent/chat/:id/message', (req, res) => {
-  res.json({ message: 'Send chat message route is not implemented yet' });
-});
+// DELETE /products/:id
+router.delete(
+  '/products/:id',
+  authenticate,
+  authorizeRoles('product manager'),
+  removeProduct
+);
 
-// Send attachment
-// allow: ["support_agent"]
-router.post('/support-agent/chat/:id/attachment', (req, res) => {
-  res.json({ message: 'Send attachment route is not implemented yet' });
-});
+/* ---------- Category Management ---------- */
 
-// View customer context for support
-// allow: ["support_agent"]
-/*Support agent CANNOT view:
-    - credit card numbers
-    - full invoices
-    - product cost
-    - revenue/profit data
-    - customer addresses (except shipping city-level metadata)*/
-router.get('/support-agent/chat/:id/context', (req, res) => {
-  res.json({ message: 'Customer context route is not implemented yet' });
-});
+// PUT /categories/:id
+router.put(
+  '/categories/:id',
+  authenticate,
+  authorizeRoles('product_manager'),
+  updateCategory
+);
+
+// PUT /categories/:id/reassign
+router.put(
+  '/categories/:id/reassign',
+  authenticate,
+  authorizeRoles('product_manager'),
+  reassignAndDeleteCategory
+);
+
+// POST /categories
+router.post(
+  '/categories',
+  authenticate,
+  authorizeRoles('product_manager'),
+  createCategory
+);
+
+// DELETE /categories/:id
+router.delete(
+  '/categories/:id',
+  authenticate,
+  authorizeRoles('product_manager'),
+  deleteCategory
+);
+
+/* ============================================================
+   SUPPORT AGENT ROUTES
+   ============================================================ */
+
+// GET /support/chat/queue
+router.get(
+  '/support/chat/queue',
+  authenticate,
+  authorizeRoles('support_agent'),
+  (req, res) => {
+    res.json({ message: 'Chat queue not implemented yet' });
+  }
+);
+
+// GET /support/chat/:id/context
+router.get(
+  '/support/chat/:id/context',
+  authenticate,
+  authorizeRoles('support_agent'),
+  (req, res) => {
+    res.json({ message: 'Chat context not implemented yet' });
+  }
+);
+
+// POST /support/chat/:id/message
+router.post(
+  '/support/chat/:id/message',
+  authenticate,
+  authorizeRoles('support_agent'),
+  (req, res) => {
+    res.json({ message: 'Send message not implemented yet' });
+  }
+);
+
+// POST /support/chat/:id/attachment
+router.post(
+  '/support/chat/:id/attachment',
+  authenticate,
+  authorizeRoles('support_agent'),
+  (req, res) => {
+    res.json({ message: 'Send attachment not implemented yet' });
+  }
+);
+
+// PATCH /support/chat/:id/claim
+router.patch(
+  '/support/chat/:id/claim',
+  authenticate,
+  authorizeRoles('support_agent'),
+  (req, res) => {
+    res.json({ message: 'Claim chat not implemented yet' });
+  }
+);
 
 export default router;

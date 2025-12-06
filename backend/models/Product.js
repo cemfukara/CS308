@@ -150,6 +150,65 @@ export async function getProductById(productId) {
   return product;
 }
 
+/*
+---------------------------------------------------
+---------------Sales Manager Models----------------
+---------------------------------------------------
+*/
+
+// Helper for DB queries
+async function query(sql, params = []) {
+  const [rows] = await db.execute(sql, params);
+  return rows;
+}
+
+/**
+ * Apply discount by updating only the price.
+ * list_price stays the same, discount_ratio is auto-calculated.
+ */
+export async function applyDiscount(productId, discountPercent) {
+  // Get original list_price to calculate new price
+  const [rows] = await db.execute(
+    `SELECT price, list_price FROM products WHERE product_id = ?`,
+    [productId]
+  );
+
+  if (!rows.length) {
+    throw new Error('Product not found');
+  }
+
+  const product = rows[0];
+
+  const { list_price } = product;
+
+  if (!list_price || list_price <= 0) {
+    throw new Error('list_price must be set before applying discount');
+  }
+
+  // Calculate discounted price
+  const newPrice = list_price - list_price * (discountPercent / 100);
+
+  // Update product price
+  const sql = `
+    UPDATE products
+    SET price = ?
+    WHERE product_id = ?
+  `;
+  await query(sql, [newPrice, productId]);
+
+  // Return updated product
+  const updated = await query(`SELECT * FROM products WHERE product_id = ?`, [
+    productId,
+  ]);
+  return updated[0];
+}
+
+/*
+---------------------------------------------------
+---------------Product Manager Models--------------
+---------------------------------------------------
+*/
+
 // CREATE PRODUCT (matches your SQL columns)
 export async function createProduct(productData) {
   const {
@@ -224,29 +283,4 @@ export async function deleteProduct(productId) {
   ]);
 
   return result.affectedRows;
-}
-
-async function applyDiscount(productIds, discount) {
-  const placeholders = productIds.map(() => '?').join(',');
-
-  // Update product prices
-  await db.pool.query(
-    `
-        UPDATE products
-        SET price = list_price * (1 - ? / 100)
-        WHERE product_id IN (${placeholders})
-    `,
-    [discount, ...productIds]
-  );
-
-  // Get affected products
-  const [rows] = await db.pool.query(
-    `
-        SELECT product_id, name FROM products
-        WHERE product_id IN (${placeholders})
-    `,
-    productIds
-  );
-
-  return rows;
 }
