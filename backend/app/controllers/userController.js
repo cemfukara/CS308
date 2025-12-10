@@ -119,8 +119,8 @@ export const getProfile = async (req, res) => {
 export const updateProfile = async (req, res) => {
   try {
     const userId = req.user.user_id;
+    if (!userId) return res.status(401).json({ message: 'Unauthorized' });
 
-    // Validate allowed fields to prevent uncontrolled updates
     const allowedFields = [
       'first_name',
       'last_name',
@@ -128,67 +128,60 @@ export const updateProfile = async (req, res) => {
       'tax_id',
       'email',
     ];
-    for (const key in req.body) {
-      if (!allowedFields.includes(key)) {
-        return res.status(400).json({ message: `Invalid field: ${key}` });
-      }
-    }
 
-    const { first_name, last_name, address, tax_id, email } = req.body;
+    // Check for invalid fields
+    const invalidFields = Object.keys(req.body).filter(
+      (key) => !allowedFields.includes(key)
+    );
+    if (invalidFields.length > 0) {
+      return res
+        .status(400)
+        .json({ message: `Invalid field: ${invalidFields[0]}` });
+    }
 
     const updateFields = {};
 
-    updateFields.first_name_encrypted =
-      first_name !== undefined && first_name !== null
-        ? encrypt(first_name)
-        : null;
-    updateFields.last_name_encrypted =
-      last_name !== undefined && last_name !== null ? encrypt(last_name) : null;
-
-    if (address !== undefined) {
-      updateFields.address_encrypted = address ? encrypt(address) : null;
-    }
-    if (tax_id !== undefined) {
-      updateFields.tax_id_encrypted = tax_id ? encrypt(tax_id) : null;
-    }
-
-    let emailChanged = false; // email change flag
-
-    // Email format validation
-    if (email !== undefined) {
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        return res.status(400).json({ message: 'Invalid email format.' });
+    // Loop through only allowed fields provided in request
+    allowedFields.forEach((field) => {
+      if (req.body[field] !== undefined && req.body[field] !== null) {
+        switch (field) {
+          case 'first_name':
+            updateFields.first_name_encrypted = encrypt(req.body[field]);
+            break;
+          case 'last_name':
+            updateFields.last_name_encrypted = encrypt(req.body[field]);
+            break;
+          case 'address':
+            updateFields.address_encrypted = encrypt(req.body[field]);
+            break;
+          case 'tax_id':
+            updateFields.tax_id_encrypted = encrypt(req.body[field]);
+            break;
+          case 'email':
+            // Validate email format
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(req.body[field])) {
+              throw { status: 400, message: 'Invalid email format.' };
+            }
+            updateFields.email = req.body[field];
+            break;
+        }
       }
+    });
 
-      if (email != req.user.email) {
-        // check if email is different
-        emailChanged = true;
-      }
-      updateFields.email = email;
-    }
-
-    // Check if any field is updated
-    const allNull = Object.keys(updateFields).every(
-      (key) => updateFields[key] === null
-    );
-
-    // If no valid fields to update return error to prevent empty update (might break SQL)
-    if (allNull) {
+    if (Object.keys(updateFields).length === 0) {
       return res.status(400).json({ message: 'No valid fields to update.' });
     }
 
     await updateUserProfile(userId, updateFields);
 
-    // return new cookie with updated email if email is changed
-    if (emailChanged) {
-      let token = null;
-      token = generateAccessToken({
+    // Handle email change
+    if (updateFields.email && updateFields.email !== req.user.email) {
+      const token = generateAccessToken({
         user_id: userId,
-        email: email,
+        email: updateFields.email,
         role: req.user.role,
       });
 
-      // pass as cookie
       res.cookie('token', token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production', // only true in production
@@ -200,6 +193,8 @@ export const updateProfile = async (req, res) => {
     return res.status(200).json({ message: 'Profile updated successfully' });
   } catch (error) {
     console.error('updateProfile error:', error);
-    return res.status(500).json({ message: 'Server error' });
+    return res
+      .status(error?.status || 500)
+      .json({ message: error?.message || 'Server error' });
   }
 };
