@@ -19,8 +19,7 @@ app.use(express.json());
 
 app.use(
   cors({
-    //Connection with frontend only in the given port
-    origin: 'http://localhost:2000',
+    origin: ['http://localhost:5173', 'http://localhost:2000'],
     credentials: true,
   })
 );
@@ -39,3 +38,4 @@ app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/invoice', invoiceRoutes);
 
 export default app;
+

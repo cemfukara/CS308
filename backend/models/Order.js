@@ -1,9 +1,11 @@
-// Data access helpers for orders & order items.
+// backend/app/models/Order.js
 
 import { db } from '../app/config/db.js';
 import { decrypt, encrypt } from '../utils/encrypter.js';
 
-// Helper to map a DB row into a safer JS object (decrypts shipping address)
+// --------------------------------------------------
+// Helper mapping function (decrypts shipping address)
+// --------------------------------------------------
 function mapOrderRow(row) {
   return {
     order_id: row.order_id,
@@ -20,152 +22,9 @@ function mapOrderRow(row) {
   };
 }
 
-// ------------------------------------------------------
-// Get all orders for ONE user (customer "My Orders" view)
-// ------------------------------------------------------
-export async function getUserOrders(userId) {
-  const [rows] = await db.query(
-    `
-      SELECT
-        o.order_id,
-        o.user_id,
-        o.status,
-        o.total_price,
-        o.shipping_address_encrypted,
-        o.created_at,
-        o.order_date,
-        COUNT(oi.order_item_id) AS item_count
-      FROM orders o
-      LEFT JOIN order_items oi ON oi.order_id = o.order_id
-      WHERE o.user_id = ?
-        AND o.status != 'cart'
-      GROUP BY o.order_id
-      ORDER BY o.created_at DESC
-    `,
-    [userId]
-  );
-
-  return rows.map(mapOrderRow);
-}
-
-// ------------------------------------------------------
-// Get items inside a specific order
-// ------------------------------------------------------
-export async function getOrderItems(orderId, userId) {
-  const [rows] = await db.query(
-    `
-      SELECT
-        oi.order_item_id,
-        oi.quantity,
-        oi.price_at_purchase,
-        p.product_id,
-        p.name,
-        p.model
-      FROM order_items oi
-      JOIN products p ON oi.product_id = p.product_id
-      JOIN orders o ON oi.order_id = o.order_id
-      WHERE oi.order_id = ?
-        AND o.user_id = ?
-    `,
-    [orderId, userId]
-  );
-
-  return rows;
-}
-
-// ------------------------------------------------------
-// Get a single order with metadata (for details page)
-// ------------------------------------------------------
-export async function getOrderById(orderId, userId) {
-  const [rows] = await db.query(
-    `
-      SELECT
-        o.order_id,
-        o.user_id,
-        o.status,
-        o.total_price,
-        o.shipping_address_encrypted,
-        o.created_at,
-        o.order_date,
-        u.email AS customer_email,
-        NULL AS item_count
-      FROM orders o
-      JOIN users u ON u.user_id = o.user_id
-      WHERE o.order_id = ?
-        AND o.user_id = ?
-    `,
-    [orderId, userId]
-  );
-
-  if (!rows.length) return null;
-  return mapOrderRow(rows[0]);
-}
-
-// ------------------------------------------------------
-// Create a new order + order_items (and update stock)
-// ------------------------------------------------------
-export async function createOrder({
-  userId,
-  items,
-  shippingAddress,
-  totalPrice,
-}) {
-  // items: [{ product_id, quantity, price }]
-  const encryptedAddress = shippingAddress ? encrypt(shippingAddress) : null;
-
-  // 1) Insert into orders
-  const [orderResult] = await db.query(
-    `
-      INSERT INTO orders (user_id, status, total_price, shipping_address_encrypted, order_date)
-      VALUES (?, 'processing', ?, ?, NOW())
-    `,
-    [userId, totalPrice, encryptedAddress]
-  );
-
-  const orderId = orderResult.insertId;
-
-  // 2) Insert order_items if any
-  if (items.length > 0) {
-    const values = items.map((it) => [
-      orderId,
-      it.product_id,
-      it.quantity || 1,
-      it.price ?? 0,
-    ]);
-
-    await db.query(
-      `
-        INSERT INTO order_items (order_id, product_id, quantity, price_at_purchase)
-        VALUES ?
-      `,
-      [values]
-    );
-
-    // 3) (Optional) Decrease stock for each product
-    for (const it of items) {
-      await db.query(
-        `
-          UPDATE products
-             SET quantity_in_stock = GREATEST(quantity_in_stock - ?, 0)
-           WHERE product_id = ?
-        `,
-        [it.quantity || 1, it.product_id]
-      );
-    }
-  }
-
-  return { order_id: orderId };
-}
-
-/*
----------------------------------------------------
----------------Product Manager Models--------------
----------------------------------------------------
-*/
-
-// ------------------------------------------------------
-// Get ALL non-cart orders (PM)
-// ------------------------------------------------------
+// --------------------------------------------------
+// Get ALL non-cart orders (PM view)
+// --------------------------------------------------
 export async function getAllOrders() {
   const [rows] = await db.query(
     `
@@ -191,11 +50,12 @@ export async function getAllOrders() {
   return rows.map(mapOrderRow);
 }
 
-// ------------------------------------------------------
-// Change order status (processing, in-transit, delivered, cancelled)
-// ------------------------------------------------------
+// --------------------------------------------------
+// Change order status (MAIN FIX HERE)
+// --------------------------------------------------
 export async function updateOrderStatus(orderId, newStatus) {
-  const rows = db.execute(
+  // MUST WAIT for DB response — earlier version forgot "await"
+  const [result] = await db.query(
     `
       UPDATE orders
          SET status = ?,
@@ -209,5 +69,123 @@ export async function updateOrderStatus(orderId, newStatus) {
     [newStatus, newStatus, orderId]
   );
 
-  return rows[0];
+  // result.affectedRows is the only truth
+  return result.affectedRows > 0;
+}
+
+// --------------------------------------------------
+// Get user orders (customer side)
+// --------------------------------------------------
+export async function getUserOrders(userId) {
+  const [rows] = await db.query(
+    `
+      SELECT
+        o.order_id,
+        o.user_id,
+        o.status,
+        o.total_price,
+        o.shipping_address_encrypted,
+        o.created_at,
+        o.order_date,
+        COUNT(oi.order_item_id) AS item_count
+      FROM orders o
+      LEFT JOIN order_items oi ON oi.order_id = o.order_id
+      WHERE o.user_id = ?
+        AND o.status != 'cart'
+      GROUP BY o.order_id
+      ORDER BY o.created_at DESC
+    `,
+    [userId]
+  );
+
+  return rows.map(mapOrderRow);
+}
+
+// --------------------------------------------------
+// Get items inside an order
+// --------------------------------------------------
+export async function getOrderItems(orderId, userId) {
+  const [rows] = await db.query(
+    `
+      SELECT
+        oi.order_item_id,
+        oi.quantity,
+        oi.price_at_purchase,
+        p.product_id,
+        p.name,
+        p.model
+      FROM order_items oi
+      JOIN products p ON oi.product_id = p.product_id
+      JOIN orders o ON oi.order_id = o.order_id
+      WHERE oi.order_id = ?
+        AND o.user_id = ?
+    `,
+    [orderId, userId]
+  );
+
+  return rows;
+}
+
+// --------------------------------------------------
+// Get single order by ID
+// --------------------------------------------------
+export async function getOrderById(orderId, userId) {
+  const [rows] = await db.query(
+    `
+      SELECT
+        o.order_id,
+        o.user_id,
+        o.status,
+        o.total_price,
+        o.shipping_address_encrypted,
+        o.created_at,
+        o.order_date,
+        u.email AS customer_email,
+        NULL AS item_count
+      FROM orders o
+      JOIN users u ON u.user_id = o.user_id
+      WHERE o.order_id = ?
+        AND o.user_id = ?
+    `,
+    [orderId, userId]
+  );
+
+  if (!rows.length) return null;
+  return mapOrderRow(rows[0]);
+}
+
+// --------------------------------------------------
+// Create new order
+// --------------------------------------------------
+export async function createOrder({ userId, items, shippingAddress, totalPrice }) {
+  const encryptedAddress = shippingAddress ? encrypt(shippingAddress) : null;
+
+  const [orderResult] = await db.query(
+    `
+      INSERT INTO orders (user_id, status, total_price, shipping_address_encrypted, order_date)
+      VALUES (?, 'processing', ?, ?, NOW())
+    `,
+    [userId, totalPrice, encryptedAddress]
+  );
+
+  const orderId = orderResult.insertId;
+
+  if (items.length > 0) {
+    const values = items.map((it) => [
+      orderId,
+      it.product_id,
+      it.quantity || 1,
+      it.price ?? 0,
+    ]);
+
+    await db.query(
+      `
+        INSERT INTO order_items (order_id, product_id, quantity, price_at_purchase)
+        VALUES ?
+      `,
+      [values]
+    );
+  }
+
+  return { order_id: orderId };
 }

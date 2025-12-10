@@ -1,321 +1,463 @@
-// src/pages/Admin/PMDeliveries.jsx
+import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { API_BASE, api } from "../../../lib/api";
+import styles from "../Admin.module.css";
 
-import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { api } from '@/lib/api';
-import { formatPrice } from '@/utils/formatPrice.js';
-import Dropdown from '@/components/Dropdown';
-import styles from '../Admin.module.css';
+// Includes "refunded"
+const STATUS_OPTIONS = [
+  "processing",
+  "in-transit",
+  "delivered",
+  "cancelled",
+  "refunded",
+];
 
-export default function PMDeliveries() {
+const completedStatuses = new Set(["delivered", "cancelled", "refunded"]);
+
+const PMDeliveriesPage = () => {
   const [deliveries, setDeliveries] = useState([]);
-  const [selectedDeliveries, setSelectedDeliveries] = useState([]);
-  const [bulkStatus, setBulkStatus] = useState('');
-  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [selected, setSelected] = useState(new Set());
+  const [bulkStatus, setBulkStatus] = useState("");
   const [loading, setLoading] = useState(true);
-  const [loadingInvoice, setLoadingInvoice] = useState(false);
-  const [error, setError] = useState('');
-  const [updatingId, setUpdatingId] = useState(null);
-  const [hideCompleted, setHideCompleted] = useState(false);
-  const [showOnlyCompleted, setShowOnlyCompleted] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterMode, setFilterMode] = useState("all"); // all | hide | only
+  const [invoiceOrder, setInvoiceOrder] = useState(null);
 
-  useEffect(() => {
-    loadDeliveries();
-  }, []);
+  // ----------------------
+  // Helpers
+  // ----------------------
+  const formatStatus = (status) => {
+    if (!status) return "";
+    const s = status.toLowerCase();
+    if (s === "in-transit") return "In transit";
+    if (s === "refunded") return "Refunded";
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  };
 
-  async function loadDeliveries() {
+  const getStatusClassName = (status) => {
+    const s = (status || "").toLowerCase();
+    if (s === "processing")
+      return `${styles.statusBadge} ${styles.status_processing}`;
+    if (s === "in-transit")
+      return `${styles.statusBadge} ${styles.status_inTransit}`;
+    if (s === "delivered")
+      return `${styles.statusBadge} ${styles.status_delivered}`;
+    if (s === "cancelled" || s === "refunded")
+      return `${styles.statusBadge} ${styles.status_cancelled}`;
+    return styles.statusBadge;
+  };
+
+  // ----------------------
+  // Fetch deliveries using api.js
+  // ----------------------
+  const fetchDeliveries = async () => {
     try {
       setLoading(true);
-      setError('');
-      const res = await api.get('/orders');
-      setDeliveries(res.orders ?? []);
+      setErrorMsg("");
+
+      const data = await api.get("/deliveries");
+
+      setDeliveries(Array.isArray(data.orders) ? data.orders : []);
     } catch (err) {
-      console.error('Failed to load deliveries', err);
-      setError('Failed to load deliveries. Please try again.');
+      console.error("❌ Failed to fetch deliveries:", err);
+      setErrorMsg("Failed to load deliveries from server.");
+      setDeliveries([]);
     } finally {
       setLoading(false);
     }
-  }
+  };
 
-  function toggleSelect(orderId) {
-    setSelectedDeliveries(prev =>
-      prev.includes(orderId) ? prev.filter(id => id !== orderId) : [...prev, orderId]
-    );
-  }
+  useEffect(() => {
+    fetchDeliveries();
+  }, []);
 
-  async function updateStatus(orderId, newStatus) {
+  // ----------------------
+  // Selection
+  // ----------------------
+  const toggleSelect = (orderId) => {
+    const copy = new Set(selected);
+    if (copy.has(orderId)) copy.delete(orderId);
+    else copy.add(orderId);
+    setSelected(copy);
+  };
+
+  // ----------------------
+  // Apply Status (uses api.patch)
+  // ----------------------
+  const applyStatus = async () => {
+    if (!bulkStatus || selected.size === 0) return;
+
     try {
-      setUpdatingId(orderId);
-      await api.put(`/orders/${orderId}/status`, { status: newStatus });
+      setErrorMsg("");
 
-      setDeliveries(prev =>
-        prev.map(order => (order.order_id === orderId ? { ...order, status: newStatus } : order))
-      );
+      for (const id of selected) {
+        await api.patch(`/deliveries/${id}/status`, { status: bulkStatus });
+      }
+
+      await fetchDeliveries();
+      setSelected(new Set());
+      setBulkStatus("");
     } catch (err) {
-      console.error('Failed to update status', err);
-      setError('Failed to update delivery status.');
-    } finally {
-      setUpdatingId(null);
+      console.error("Update error:", err);
+      setErrorMsg("Failed to update one or more deliveries.");
     }
-  }
+  };
 
-  async function applyBulkStatus() {
-    if (!bulkStatus || selectedDeliveries.length === 0) return;
-    for (const id of selectedDeliveries) {
-      // eslint-disable-next-line no-await-in-loop
-      await updateStatus(id, bulkStatus);
-    }
-    setSelectedDeliveries([]);
-    setBulkStatus('');
-  }
+  // ----------------------
+  // Search + Filter
+  // ----------------------
+  const normalizedSearch = searchTerm.trim().toLowerCase();
 
-  async function openInvoice(order) {
-    try {
-      setLoadingInvoice(true);
-      setError('');
-      const res = await api.get(`/orders/${order.order_id}`);
-      setSelectedOrder({
-        ...res.order,
-        items: res.items ?? [],
-      });
-    } catch (err) {
-      console.error('Failed to load invoice', err);
-      setError('Failed to load invoice. Please try again.');
-    } finally {
-      setLoadingInvoice(false);
-    }
-  }
+  const filteredDeliveries = deliveries.filter((d) => {
+    const statusNorm = (d.status || "").toLowerCase();
 
-  function closeInvoice() {
-    setSelectedOrder(null);
-  }
+    // Completed filter
+    if (filterMode === "hide" && completedStatuses.has(statusNorm)) return false;
+    if (filterMode === "only" && !completedStatuses.has(statusNorm)) return false;
 
-  function filteredDeliveries() {
-    let list = deliveries;
+    // Search filter
+    if (!normalizedSearch) return true;
 
-    if (hideCompleted) {
-      list = list.filter(o => o.status !== 'delivered' && o.status !== 'cancelled');
-    }
+    // Search only by:
+    //   - Delivery ID
+    //   - Email
+    //   - Status
+    const haystack = [
+      d.order_id,
+      d.customer_email,
+      statusNorm,
+    ]
+      .join(" ")
+      .toLowerCase();
 
-    if (showOnlyCompleted) {
-      list = list.filter(o => o.status === 'delivered' || o.status === 'cancelled');
-    }
+    return haystack.includes(normalizedSearch);
+  });
 
-    return list;
-  }
+  // ----------------------
+  // Invoice
+  // ----------------------
+  const openInvoice = (order) => setInvoiceOrder(order);
+  const closeInvoice = () => setInvoiceOrder(null);
+  const handlePrintInvoice = () => window.print();
 
-  function statusClass(status) {
-    switch (status) {
-      case 'delivered':
-        return `${styles.statusBadge} ${styles.status_delivered}`;
-      case 'in-transit':
-        return `${styles.statusBadge} ${styles.status_inTransit}`;
-      case 'cancelled':
-        return `${styles.statusBadge} ${styles.status_cancelled}`;
-      default:
-        return `${styles.statusBadge} ${styles.status_processing}`;
-    }
-  }
-
-  const visibleDeliveries = filteredDeliveries();
-  const hasData = visibleDeliveries.length > 0;
-
+  // ----------------------
+  // Render
+  // ----------------------
   return (
     <div className={styles.wrapper}>
-      {/* breadcrumbs same vibe as AdminProducts */}
-      <nav className={styles.breadcrumbs}>
+      {/* Breadcrumbs */}
+      <div className={styles.breadcrumbs}>
         <Link to="/admin" className={styles.crumbLink}>
           Admin
         </Link>
         <span className={styles.crumbSeparator}>/</span>
-        <span className={styles.crumbCurrent}>Delivery Management</span>
-      </nav>
+        <span className={styles.crumbCurrent}>Deliveries</span>
+      </div>
 
+      {/* Title */}
       <div className={styles.titleRow}>
         <h1 className={styles.title}>Delivery Management</h1>
-        {loading && <span className={styles.loadingPill}>Loading deliveries…</span>}
+        {loading && <span className={styles.loadingPill}>Loading…</span>}
       </div>
 
-      {error && <div className={styles.errorBanner}>{error}</div>}
+      {errorMsg && <div className={styles.errorBanner}>{errorMsg}</div>}
 
-      {/* controls row uses same layout as products controlsRow */}
+      {/* Search + Filter */}
       <div className={styles.controlsRow}>
-        <div className={styles.leftGroup}>
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <span className={styles.sortLabel}>Bulk Status</span>
-
-            <Dropdown
-              value={bulkStatus}
-              onChange={v => setBulkStatus(v)}
-              options={[
-                { label: 'Select status', value: '' },
-                { label: 'Processing', value: 'processing' },
-                { label: 'In-Transit', value: 'in-transit' },
-                { label: 'Delivered', value: 'delivered' },
-                { label: 'Cancelled', value: 'cancelled' },
-              ]}
-            />
-          </div>
-
-          <button
-            type="button"
-            className={styles.searchButton}
-            style={{ marginTop: 'auto' }}
-            onClick={applyBulkStatus}
-            disabled={!bulkStatus || selectedDeliveries.length === 0}
-          >
-            Apply to Selected
-          </button>
-        </div>
+        <input
+          type="text"
+          placeholder="Search by ID, email, status..."
+          className={styles.searchInput}
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
 
         <div className={styles.rightControls}>
-          <button
-            type="button"
-            className={styles.hideButton}
-            onClick={() => {
-              setHideCompleted(prev => !prev);
-              setShowOnlyCompleted(false);
-            }}
-          >
-            {hideCompleted ? 'Show All' : 'Hide Completed'}
+          <button className={styles.hideButton} onClick={() => setFilterMode("hide")}>
+            Hide Completed
           </button>
-
-          <button
-            type="button"
-            className={styles.hideButton}
-            onClick={() => {
-              setShowOnlyCompleted(prev => !prev);
-              setHideCompleted(false);
-            }}
-          >
-            {showOnlyCompleted ? 'Show All' : 'Show Completed'}
+          <button className={styles.hideButton} onClick={() => setFilterMode("only")}>
+            Show Completed
+          </button>
+          <button className={styles.hideButton} onClick={() => setFilterMode("all")}>
+            Reset
           </button>
         </div>
       </div>
 
-      {/* table styled like AdminProducts */}
+      {/* Bulk Update */}
+      <div className={styles.pmBulkSection}>
+        <div>
+          <div className={styles.sortLabel}>Bulk Update Status</div>
+          <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+            <select
+              className={styles.bulkSelect}
+              value={bulkStatus}
+              onChange={(e) => setBulkStatus(e.target.value)}
+            >
+              <option value="">Select…</option>
+              {STATUS_OPTIONS.map((s) => (
+                <option key={s} value={s}>
+                  {formatStatus(s)}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              className={styles.searchButton}
+              onClick={applyStatus}
+              disabled={!bulkStatus || selected.size === 0}
+            >
+              Apply
+            </button>
+          </div>
+        </div>
+
+        <div style={{ marginLeft: "auto" }}>
+          <span className={styles.pageInfo}>
+            {filteredDeliveries.length} deliveries • {selected.size} selected
+          </span>
+        </div>
+      </div>
+
+      {/* Table */}
       <div className={styles.tableWrapper}>
         <table className={styles.table}>
           <thead className={styles.thead}>
             <tr className={styles.tr}>
-              <th className={styles.th}></th>
-              <th className={styles.th}>Order ID</th>
-              <th className={styles.th}>Customer</th>
-              <th className={styles.th}>Items</th>
-              <th className={styles.th}>Address</th>
+              <th className={styles.th}>Select</th>
+              <th className={styles.th}>Delivery ID</th>
+              <th className={styles.th}>Customer ID</th>
+              <th className={styles.th}>Email</th>
+              <th className={styles.th}>Quantity</th>
               <th className={styles.th}>Total</th>
-              <th className={styles.th}>Date</th>
+              <th className={styles.th}>Address</th>
               <th className={styles.th}>Status</th>
-              <th className={styles.th}>Actions</th>
+              <th className={styles.th}>Created</th>
+              <th className={styles.th}>Invoice</th>
             </tr>
           </thead>
-          <tbody className={styles.tbody}>
-            {!hasData && !loading && (
-              <tr className={styles.tr}>
-                <td className={styles.td} colSpan={10}>
-                  <div className={styles.emptyState}>No deliveries found.</div>
-                </td>
-              </tr>
-            )}
 
-            {visibleDeliveries.map(order => (
-              <tr key={order.order_id} className={styles.tr}>
-                <td className={styles.td}>
-                  <input
-                    type="checkbox"
-                    checked={selectedDeliveries.includes(order.order_id)}
-                    onChange={() => toggleSelect(order.order_id)}
-                  />
-                </td>
-                <td className={styles.td}>{order.order_id}</td>
-                <td className={styles.td}>{order.customer_email || '—'}</td>
-                <td className={styles.td}>{order.item_count}</td>
-                <td className={styles.td}>{order.shipping_address}</td>
-                <td className={styles.td}>
-                  {formatPrice(order.total_price, order.currency || 'TL')}
-                </td>
-                <td className={styles.td}>
-                  {order.created_at ? new Date(order.created_at).toLocaleDateString('en-GB') : '—'}
-                </td>
-                <td className={styles.td}>
-                  <span className={statusClass(order.status)}>{order.status}</span>
-                </td>
-                <td className={styles.td}>
-                  <div className={styles.actionButtons}>
+          <tbody className={styles.tbody}>
+            {filteredDeliveries.map((d) => {
+              const isSelected = selected.has(d.order_id);
+
+              return (
+                <tr
+                  key={d.order_id}
+                  className={
+                    isSelected
+                      ? `${styles.tr} ${styles["pm-selected-row"]}`
+                      : styles.tr
+                  }
+                >
+                  <td className={styles.td}>
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => toggleSelect(d.order_id)}
+                    />
+                  </td>
+
+                  <td className={styles.td}>{d.order_id}</td>
+                  <td className={styles.td}>{d.user_id}</td>
+                  <td className={styles.td}>{d.customer_email}</td>
+                  <td className={styles.td}>{d.item_count ?? "N/A"}</td>
+                  <td className={styles.td}>
+                    {d.total_price != null ? `$${d.total_price}` : "N/A"}
+                  </td>
+                  <td className={styles.td}>{d.shipping_address || "N/A"}</td>
+
+                  <td className={styles.td}>
+                    <span className={getStatusClassName(d.status)}>
+                      {formatStatus(d.status)}
+                    </span>
+                  </td>
+
+                  <td className={styles.td}>
+                    {d.created_at
+                      ? new Date(d.created_at).toLocaleString()
+                      : "N/A"}
+                  </td>
+
+                  <td className={styles.td}>
                     <button
                       type="button"
-                      className={styles.editBtn}
-                      onClick={() => openInvoice(order)}
+                      className={styles.pmViewBtn}
+                      onClick={() => openInvoice(d)}
                     >
-                      View Invoice
+                      View
                     </button>
-                    <button
-                      type="button"
-                      className={styles.deleteBtn}
-                      disabled={updatingId === order.order_id}
-                      onClick={() =>
-                        updateStatus(
-                          order.order_id,
-                          order.status === 'processing'
-                            ? 'in-transit'
-                            : order.status === 'in-transit'
-                              ? 'delivered'
-                              : 'delivered'
-                        )
-                      }
-                    >
-                      {order.status === 'processing'
-                        ? 'Mark In-Transit'
-                        : order.status === 'in-transit'
-                          ? 'Mark Delivered'
-                          : 'Delivered'}
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
+
+        {filteredDeliveries.length === 0 && !loading && (
+          <div className={styles.emptyState}>No deliveries to show.</div>
+        )}
       </div>
 
-      {/* invoice modal reusing theme modal styles */}
-      {selectedOrder && (
-        <div className={styles.modalOverlay}>
-          <div className={styles.modal}>
-            <h2 className={styles.modalTitle}>
-              Invoice #{selectedOrder.order_id}
-              {loadingInvoice && (
-                <span className={styles.loadingPill} style={{ marginLeft: 8 }}>
-                  Loading…
-                </span>
-              )}
-            </h2>
+      {/* Invoice Modal */}
+      {invoiceOrder && (
+        <div className={styles.modalOverlay} onClick={closeInvoice}>
+          <div
+            className={`${styles.modal} ${styles.pmInvoiceModal} ${styles.printArea}`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className={styles.invoiceHeader}>
+              <div>
+                <h2 className={styles.invoiceTitle}>
+                  Order Invoice #{invoiceOrder.order_id}
+                </h2>
+                <p className={styles.invoiceId}>
+                  Order ID: {invoiceOrder.order_id}
+                </p>
+              </div>
 
-            <p className={styles.modalText}>
-              <strong>Customer:</strong> {selectedOrder.customer_email}
-            </p>
-            <p className={styles.modalText}>
-              <strong>Address:</strong> {selectedOrder.shipping_address}
-            </p>
+              <div className={styles.invoiceBrand}>
+                <div className={styles.invoiceBrandName}>TechZone</div>
+                <div className={styles.invoiceBrandSub}>Admin Panel</div>
+              </div>
+            </div>
 
-            <h3 className={styles.modalTitle}>Items</h3>
-            <ul className={styles.modalList}>
-              {selectedOrder.items.map((item, idx) => (
-                <li key={idx} className={styles.modalText}>
-                  {item.product_name} — {item.quantity} ×{' '}
-                  {formatPrice(item.price_at_purchase, selectedOrder.currency || 'TL')}
-                </li>
-              ))}
-            </ul>
+            {/* Meta */}
+            <div className={styles.invoiceMetaRow}>
+              <div className={styles.invoiceMetaBlock}>
+                <div className={styles.invoiceMetaTitle}>Billed To</div>
+                <div className={styles.invoiceMetaLine}>
+                  <span className={styles.invoiceMetaLabel}>Customer ID: </span>
+                  <span className={styles.invoiceMetaValue}>
+                    {invoiceOrder.user_id}
+                  </span>
+                </div>
+                <div className={styles.invoiceMetaLine}>
+                  <span className={styles.invoiceMetaLabel}>Email: </span>
+                  <span className={styles.invoiceMetaValue}>
+                    {invoiceOrder.customer_email}
+                  </span>
+                </div>
+                <div className={styles.invoiceMetaLine}>
+                  <span className={styles.invoiceMetaLabel}>Address: </span>
+                  <span className={styles.invoiceMetaValue}>
+                    {invoiceOrder.shipping_address || "N/A"}
+                  </span>
+                </div>
+              </div>
 
-            <p className={styles.modalText}>
-              <strong>Total:</strong>{' '}
-              {formatPrice(selectedOrder.total_price, selectedOrder.currency || 'TL')}
-            </p>
+              <div
+                className={`${styles.invoiceMetaBlock} ${styles.invoiceMetaBlockRight}`}
+              >
+                <div className={styles.invoiceMetaTitle}>Order Details</div>
+                <div className={styles.invoiceMetaLine}>
+                  <span className={styles.invoiceMetaLabel}>Date: </span>
+                  <span className={styles.invoiceMetaValue}>
+                    {invoiceOrder.created_at
+                      ? new Date(invoiceOrder.created_at).toLocaleString()
+                      : "N/A"}
+                  </span>
+                </div>
 
+                <div className={styles.invoiceMetaLine}>
+                  <span className={styles.invoiceMetaLabel}>Status: </span>
+                  <span className={styles.invoiceStatusPill}>
+                    {formatStatus(invoiceOrder.status)}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Items */}
+            <div>
+              <div className={styles.invoiceItemsTitle}>Order Items</div>
+
+              <table className={styles.invoiceItemsTable}>
+                <thead>
+                  <tr>
+                    <th>Item</th>
+                    <th>Quantity</th>
+                    <th>Unit Price</th>
+                    <th>Line Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {invoiceOrder.item_count ? (
+                    <tr>
+                      <td>Order items</td>
+                      <td>{invoiceOrder.item_count}</td>
+                      <td>
+                        {invoiceOrder.item_count &&
+                        invoiceOrder.total_price != null
+                          ? `$${(
+                              Number(invoiceOrder.total_price) /
+                              Number(invoiceOrder.item_count)
+                            ).toFixed(2)}`
+                          : "N/A"}
+                      </td>
+                      <td>
+                        {invoiceOrder.total_price != null
+                          ? `$${Number(invoiceOrder.total_price).toFixed(2)}`
+                          : "N/A"}
+                      </td>
+                    </tr>
+                  ) : (
+                    <tr>
+                      <td colSpan={4} className={styles.invoiceEmptyRow}>
+                        No item details available for this order.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Totals */}
+            <div className={styles.invoiceTotalsRow}>
+              <div className={styles.invoiceTotalsSpacer} />
+              <div className={styles.invoiceTotalsBox}>
+                <div className={styles.invoiceTotalsLine}>
+                  <span>Subtotal</span>
+                  <span>
+                    {invoiceOrder.total_price != null
+                      ? `$${Number(invoiceOrder.total_price).toFixed(2)}`
+                      : "N/A"}
+                  </span>
+                </div>
+
+                <div className={styles.invoiceTotalsLine}>
+                  <span>Shipping</span>
+                  <span>$0.00</span>
+                </div>
+
+                <div className={styles.invoiceTotalsLineStrong}>
+                  <span>Total</span>
+                  <span>
+                    {invoiceOrder.total_price != null
+                      ? `$${Number(invoiceOrder.total_price).toFixed(2)}`
+                      : "N/A"}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Buttons */}
             <div className={styles.modalActions}>
-              <button type="button" className={styles.cancelBtn} onClick={closeInvoice}>
+              <button
+                className={`${styles.pmModalButton} ${styles.close}`}
+                onClick={closeInvoice}
+              >
                 Close
+              </button>
+
+              <button
+                className={`${styles.pmModalButton} ${styles.print}`}
+                onClick={handlePrintInvoice}
+              >
+                Print
               </button>
             </div>
           </div>
@@ -323,4 +465,6 @@ export default function PMDeliveries() {
       )}
     </div>
   );
-}
+};
+
+export default PMDeliveriesPage;
