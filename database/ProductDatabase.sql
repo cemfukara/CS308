@@ -115,7 +115,7 @@ CREATE TABLE orders (
     user_id INT NOT NULL,
     
     -- 'cart' is the active shopping cart
-    status ENUM('cart', 'processing', 'in-transit', 'delivered', 'cancelled') NOT NULL DEFAULT 'cart',
+    status ENUM('cart', 'processing', 'in-transit', 'delivered', 'cancelled', 'refunded') NOT NULL DEFAULT 'cart',
     
     -- Final total price, can be NULL for an active 'cart'
     total_price DECIMAL(10, 2),

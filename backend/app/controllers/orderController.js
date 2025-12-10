@@ -12,25 +12,24 @@ import {
 
 // ==========================================================
 // GET /api/orders
-//  customers cart
+//  - Get orders for the logged-in customer
 // ==========================================================
 export async function getOrders(req, res) {
   try {
-    const userId = req.user.user_id; // JWT payload: { user_id, role, ... }
+    const userId = req.user.user_id;
 
-    // get orders
     const orders = await getUserOrders(userId);
 
     res.status(200).json({ success: true, orders });
   } catch (err) {
-    console.error('Error fetching orders:', err);
+    console.error('❌ Error fetching orders:', err);
     res.status(500).json({ success: false, message: 'Server error' });
   }
 }
 
 // ==========================================================
 // GET /api/orders/:id
-//  - returns items inside a specific order
+//  - Get the items inside a specific order
 // ==========================================================
 export async function getOrderDetails(req, res) {
   try {
@@ -55,7 +54,7 @@ export async function getOrderDetails(req, res) {
       items,
     });
   } catch (err) {
-    console.error('Error fetching order items:', err);
+    console.error('❌ Error fetching order items:', err);
     res.status(500).json({
       success: false,
       message: 'Server error',
@@ -65,7 +64,7 @@ export async function getOrderDetails(req, res) {
 
 // ==========================================================
 // POST /api/orders
-//  - Create new order from cart items
+//  - Create new order
 // ==========================================================
 export async function createOrderController(req, res) {
   try {
@@ -111,71 +110,66 @@ export async function createOrderController(req, res) {
       payment: payment || null,
     });
   } catch (err) {
-    console.error('Error creating order:', err);
+    console.error('❌ Error creating order:', err);
     res.status(500).json({ success: false, message: 'Server error' });
   }
 }
 
 /*
 ---------------------------------------------------
----------------Product Manager Controllers---------
+--------------- Product Manager Controllers --------
 ---------------------------------------------------
 */
 
-// Get deliveries (orders with status !'cart')
+// ==========================================================
+// GET /deliveries  (Product Manager)
+// ==========================================================
 export const getDeliveries = async (req, res) => {
   try {
     const orders = await getAllOrders();
-
     res.status(200).json({ orders });
   } catch (error) {
-    console.error(error);
+    console.error('❌ Error loading deliveries:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };
 
-// Helper array of allowed statuses
+// Allowed statuses
 const ALLOWED_STATUS_SET = new Set([
-  // no "cart" status as it will be stupid to update status to cart
   'processing',
   'in-transit',
   'delivered',
   'cancelled',
+  'refunded'
 ]);
 
-// Array is frozen to prevent modification in runtime
 Object.freeze(ALLOWED_STATUS_SET);
 
-// Patch a delivery status by order_id
+// ==========================================================
+// PATCH /deliveries/:id/status
+// ==========================================================
 export const updateOrderStatusController = async (req, res) => {
   try {
-    // get status from body and convert it to lowercase
     const status = req.body.status?.toLowerCase();
+    const order_id = parseInt(req.params.id);
 
-    // Check status is one of allowed
     if (!ALLOWED_STATUS_SET.has(status)) {
       return res.status(400).json({ message: 'Invalid status value' });
     }
 
-    // get order id from parameters
-    const order_id = parseInt(req.params.id);
-
-    // Check order_id
     if (isNaN(order_id)) {
       return res.status(400).json({ message: 'Invalid order id' });
     }
 
-    // execute update
     const updated = await updateOrderStatus(order_id, status);
 
-    // if no rows were affected, then order is not found
     if (!updated) {
       return res.status(404).json({ message: 'Order not found' });
     }
 
     res.status(200).json({ message: 'Delivery status updated' });
   } catch (err) {
-    console.error(err);
+    console.error('❌ Status update error:', err);
     res.status(500).json({ message: 'Server error' });
   }
 };

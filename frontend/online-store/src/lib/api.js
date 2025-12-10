@@ -9,8 +9,13 @@ async function handle(res) {
 }
 
 export const api = {
-  get: path => fetch(`${API_BASE}${path}`, { credentials: 'include' }).then(handle),
+  // GET
+  get: (path) =>
+    fetch(`${API_BASE}${path}`, {
+      credentials: 'include',
+    }).then(handle),
 
+  // POST
   post: (path, body) =>
     fetch(`${API_BASE}${path}`, {
       method: 'POST',
@@ -19,6 +24,7 @@ export const api = {
       body: JSON.stringify(body),
     }).then(handle),
 
+  // PUT
   put: (path, body) =>
     fetch(`${API_BASE}${path}`, {
       method: 'PUT',
@@ -27,6 +33,19 @@ export const api = {
       body: JSON.stringify(body),
     }).then(handle),
 
-  del: path =>
-    fetch(`${API_BASE}${path}`, { method: 'DELETE', credentials: 'include' }).then(handle),
+  // ⭐ PATCH (added for deliveries status update)
+  patch: (path, body) =>
+    fetch(`${API_BASE}${path}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(body),
+    }).then(handle),
+
+  // DELETE
+  del: (path) =>
+    fetch(`${API_BASE}${path}`, {
+      method: 'DELETE',
+      credentials: 'include',
+    }).then(handle),
 };

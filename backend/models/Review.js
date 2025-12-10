@@ -124,3 +124,33 @@ export async function approveReviewModel(review_id) {
   const sql = `UPDATE reviews SET approved = 1 WHERE review_id = ?`;
   await db.execute(sql, [review_id]);
 }
+
+// 5. Update an existing review (only by its owner)
+export const updateReview = async ({
+  reviewId,
+  userId,
+  rating,
+  commentText,
+}) => {
+  const [result] = await db.query(
+    `
+    UPDATE reviews
+    SET rating = ?, comment_text = ?
+    WHERE review_id = ? AND user_id = ?
+    `,
+    [rating, commentText || null, reviewId, userId]
+  );
+
+  if (result.affectedRows === 0) {
+    const error = new Error('Review not found or not owned by user.');
+    error.statusCode = 404;
+    throw error;
+  }
+
+  return {
+    review_id: reviewId,
+    user_id: userId,
+    rating,
+    comment_text: commentText || null,
+  };
+};

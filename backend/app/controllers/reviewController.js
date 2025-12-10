@@ -10,6 +10,7 @@ import {
   reviewBelongsToUserModel,
   userPurchasedProductModel,
   getAverageRatingModel,
+  updateReview,
 } from '../../models/Review.js';
 
 // =====================================================================
@@ -241,3 +242,38 @@ export async function deleteReviewPM(req, res) {
     res.status(500).json({ message: 'Server error' });
   }
 }
+
+// PUT /api/reviews/:reviewId
+export const updateReviewController = async (req, res) => {
+  try {
+    const { reviewId } = req.params;
+    const userId = req.user?.user_id;
+
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    const { rating, comment_text } = req.body;
+
+    if (!rating || rating < 1 || rating > 5) {
+      return res.status(400).json({ message: 'Rating must be 1–5.' });
+    }
+
+    const updated = await updateReview({
+      reviewId,
+      userId,
+      rating,
+      commentText: comment_text,
+    });
+
+    res.json({ message: 'Review updated', review: updated });
+  } catch (err) {
+    console.error('Error updating review:', err);
+
+    if (err.statusCode) {
+      return res.status(err.statusCode).json({ message: err.message });
+    }
+
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};

@@ -1057,3 +1057,318 @@ body {
   width: 100%;
   height: 300px;
 }
+
+/* ===========================
+   INVOICE LAYOUT + PRINT AREA
+   =========================== */
+
+/* The element that should be printed */
+.printArea {
+  /* normal modal styles already applied; print overrides below */
+}
+
+/* Header row with "Invoice" and brand */
+.invoiceHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.invoiceTitle {
+  font-size: 22px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+
+.invoiceId {
+  font-size: 13px;
+  color: #6b7280;
+  margin-top: 4px;
+}
+
+.invoiceBrand {
+  text-align: right;
+}
+
+.invoiceBrandName {
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.invoiceBrandSub {
+  font-size: 13px;
+  color: #6b7280;
+  margin-top: 2px;
+}
+
+/* Meta row: billed to + dates */
+.invoiceMetaRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+  margin-bottom: 18px;
+}
+
+.invoiceMetaBlock {
+  flex: 1;
+}
+
+.invoiceMetaBlockRight {
+  text-align: right;
+  min-width: 180px;
+}
+
+.invoiceMetaTitle {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6b7280;
+  margin-bottom: 6px;
+}
+
+.invoiceMetaLine {
+  font-size: 14px;
+  color: #111827;
+}
+
+.invoiceMetaLabel {
+  font-size: 13px;
+  color: #6b7280;
+  margin-bottom: 4px;
+}
+
+.invoiceMetaValue {
+  color: #111827;
+  font-weight: 500;
+}
+
+.invoiceStatusPill {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  background: #eef2ff;
+  color: #3730a3;
+  border: 1px solid #c7d2fe;
+}
+
+/* Items table inside invoice */
+.invoiceItemsTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+  margin: 10px 0 8px;
+}
+
+.invoiceItemsTable {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 14px;
+  font-size: 13px;
+}
+
+.invoiceItemsTable thead {
+  background: #f3f4f6;
+}
+
+.invoiceItemsTable th,
+.invoiceItemsTable td {
+  padding: 8px 10px;
+  border-bottom: 1px solid #e5e7eb;
+  text-align: left;
+}
+
+.invoiceItemsTable th {
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #6b7280;
+}
+
+.invoiceEmptyRow {
+  text-align: center;
+  font-size: 13px;
+  color: #6b7280;
+  padding: 12px 10px;
+}
+
+/* Totals row */
+.invoiceTotalsRow {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 6px;
+  margin-bottom: 12px;
+}
+
+.invoiceTotalsSpacer {
+  flex: 1;
+}
+
+.invoiceTotalsBox {
+  min-width: 220px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  padding: 10px 12px;
+  background: #f9fafb;
+}
+
+.invoiceTotalsLine,
+.invoiceTotalsLineStrong {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+
+.invoiceTotalsLineStrong {
+  font-weight: 600;
+  margin-top: 4px;
+  border-top: 1px dashed #d1d5db;
+  padding-top: 6px;
+}
+
+.invoiceFooterNote {
+  font-size: 11px;
+  color: #9ca3af;
+  margin-top: 4px;
+}
+
+/* PRINT STYLES: only print the invoice, not the whole admin page */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  .printArea,
+  .printArea * {
+    visibility: visible;
+  }
+
+  .printArea {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    border-radius: 0;
+    box-shadow: none;
+    border: none;
+    width: auto;
+    height: auto;
+  }
+
+  /* Hide modal background overlay on print */
+  .modalOverlay {
+    background: transparent !important;
+  }
+
+  /* Hide buttons when printing (we don't want Close / Print / Save PDF) */
+  .modalActions {
+    display: none !important;
+  }
+}
+
+/* ============================================
+   PM Deliveries – Layout Enhancements
+   ============================================ */
+
+/* Subtle highlight on selected rows */
+.pm-selected-row {
+  background: #eef2ff !important;
+  box-shadow: inset 0 0 0 1px #c7d2fe;
+}
+
+/* Improve the bulk controls appearance */
+.pmBulkSection {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+/* Improve View Invoice button specifically in deliveries */
+.pmViewBtn {
+  padding: 6px 12px;
+  border-radius: 6px;
+  background: #e0f2fe;
+  color: #0369a1;
+  border: 1px solid #bae6fd;
+  font-size: 12px;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.pmViewBtn:hover {
+  background: #bae6fd;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(3, 105, 161, 0.25);
+}
+
+/* Make status badges pop a bit more on hover */
+.statusBadge:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
+}
+
+/* Highlight invoice modal visually */
+.pmInvoiceModal {
+  border-radius: 14px;
+  padding: 24px;
+  border: 1px solid #e5e7eb;
+  background: white;
+}
+
+/* Better alignment for modal text */
+.pmInvoiceLine {
+  margin: 4px 0;
+  font-size: 14px;
+  color: #374151;
+}
+
+/* Make invoice close/print buttons consistent */
+.pmModalButton {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+}
+
+.pmModalButton.close {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.pmModalButton.close:hover {
+  background: #e5e7eb;
+}
+
+.pmModalButton.print {
+  background: #2563eb;
+  color: white;
+}
+
+.pmModalButton.print:hover {
+  background: #1d4ed8;
+}
+
+/* Smooth fade-in for invoice modal */
+.pmInvoiceModal {
+  animation: fadeInvoice 0.25s ease-out;
+}
+
+@keyframes fadeInvoice {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}

@@ -7,6 +7,7 @@ import {
   deleteReview,
   getUserReviews,
   getAverageRating,
+  updateReviewController,
 } from '../app/controllers/reviewController.js';
 
 import { authenticate } from '../app/middlewares/authMiddleware.js';
@@ -40,4 +41,5 @@ router.get('/user/reviews', authenticate, getUserReviews);
 // GET /api/reviews/:product_id/average
 router.get('/reviews/:product_id/average', getAverageRating);
 
-export default router;
+// PUT /api/reviews/:reviewId
+router.put('/reviews/:reviewId', authenticate, updateReviewController);
