@@ -76,6 +76,7 @@ CREATE TABLE reviews (
     user_id INT NOT NULL,
     rating INT NOT NULL, -- e.g., a number from 1 to 5
     comment_text TEXT,
+    approved BOOLEAN default false, -- true (1) for approved comments
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
     FOREIGN KEY (product_id) REFERENCES products(product_id),
@@ -249,11 +250,11 @@ VALUES
 
 -- 4. Insert reviews
 -- (Depends on users and products)
-INSERT INTO reviews (product_id, user_id, rating, comment_text)
+INSERT INTO reviews (product_id, user_id, rating, comment_text, approved)
 VALUES
-    (4, 2, 5, 'Absolutely love this laptop! Blazing fast and the screen is gorgeous.'),
-    (6, 1, 4, 'Great sound, but the battery life could be a little better.'),
-    (4, 1, 4, 'Solid machine for work. A bit pricy but worth it.');
+    (4, 2, 5, 'Absolutely love this laptop! Blazing fast and the screen is gorgeous.',true),
+    (6, 1, 4, 'Great sound, but the battery life could be a little better.',true),
+    (4, 1, 4, 'Solid machine for work. A bit pricy but worth it.',false);
 
 -- 5. Insert payment methods
 -- (Depends on users)
@@ -388,7 +389,7 @@ BEGIN
     JOIN
         users u ON r.user_id = u.user_id
     WHERE
-        r.product_id = p_product_id
+        r.product_id = p_product_id AND r.approved = 1
     ORDER BY
         r.created_at DESC;
 END$$
@@ -402,18 +403,20 @@ BEGIN
     FROM
         reviews r
     WHERE
-        r.product_id = p_product_id;
+        r.product_id = p_product_id AND r.approved = 1;
 END$$
 
 -- 3. Get All Reviews by a User
 CREATE PROCEDURE sp_GetUserReviews(IN p_user_id INT)
 BEGIN
     SELECT
+        r.review_id,
         p.product_id,
         p.name AS product_name,
         r.rating,
         r.comment_text,
-        r.created_at
+        r.created_at,
+        r.approved
     FROM
         reviews r
     JOIN

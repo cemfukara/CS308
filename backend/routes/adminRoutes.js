@@ -42,6 +42,13 @@ import {
   getRevenueProfitChartController,
 } from '../app/controllers/invoiceController.js';
 
+// Review Controllers
+import {
+  approveReview,
+  getPendingReviews,
+  deleteReviewPM,
+} from '../app/controllers/reviewController.js';
+
 const router = express.Router();
 
 /* ============================================================
@@ -52,7 +59,7 @@ const router = express.Router();
 router.get(
   '/analytics',
   authenticate,
-  authorizeRoles('sales_manager'),
+  authorizeRoles('sales manager'),
   (req, res) => {
     res.json({
       message: 'Get sales analytics is not implemented yet',
@@ -64,7 +71,7 @@ router.get(
 router.get(
   '/invoices',
   authenticate,
-  authorizeRoles('sales_manager'),
+  authorizeRoles('sales manager'),
   (req, res) => {
     res.json({ message: 'View invoices is not implemented yet' });
   }
@@ -74,7 +81,7 @@ router.get(
 router.get(
   '/invoices/:id/export',
   authenticate,
-  authorizeRoles('sales_manager'),
+  authorizeRoles('sales manager'),
   (req, res) => {
     res.json({ message: 'Export invoice is not implemented yet' });
   }
@@ -84,7 +91,7 @@ router.get(
 router.patch(
   '/products/:id/discount',
   authenticate,
-  authorizeRoles('sales_manager'),
+  authorizeRoles('sales manager'),
   setDiscount
 );
 
@@ -92,7 +99,7 @@ router.patch(
 router.patch(
   '/refunds/:id/approve',
   authenticate,
-  authorizeRoles('sales_manager'),
+  authorizeRoles('sales manager'),
   (req, res) => {
     res.json({ message: 'Approve/decline refund is not implemented yet' });
   }
@@ -108,7 +115,7 @@ router.patch(
 router.get(
   '/deliveries',
   authenticate,
-  authorizeRoles('product_manager'),
+  authorizeRoles('product manager'),
   getDeliveries
 );
 
@@ -116,7 +123,7 @@ router.get(
 router.patch(
   '/deliveries/:id/status',
   authenticate,
-  authorizeRoles('product_manager'),
+  authorizeRoles('product manager'),
   updateOrderStatusController
 );
 
@@ -126,7 +133,7 @@ router.patch(
 router.patch(
   '/products/:id/comments/:commentId/approve',
   authenticate,
-  authorizeRoles('product_manager'),
+  authorizeRoles('product manager'),
   (req, res) => {
     res.json({ message: 'Approve/reject comment not implemented yet' });
   }
@@ -164,7 +171,7 @@ router.delete(
 router.put(
   '/categories/:id',
   authenticate,
-  authorizeRoles('product_manager'),
+  authorizeRoles('product manager'),
   updateCategory
 );
 
@@ -172,7 +179,7 @@ router.put(
 router.put(
   '/categories/:id/reassign',
   authenticate,
-  authorizeRoles('product_manager'),
+  authorizeRoles('product manager'),
   reassignAndDeleteCategory
 );
 
@@ -180,7 +187,7 @@ router.put(
 router.post(
   '/categories',
   authenticate,
-  authorizeRoles('product_manager'),
+  authorizeRoles('product manager'),
   createCategory
 );
 
@@ -188,8 +195,34 @@ router.post(
 router.delete(
   '/categories/:id',
   authenticate,
-  authorizeRoles('product_manager'),
+  authorizeRoles('product manager'),
   deleteCategory
+);
+
+/* ----------- Review Management ----------- */
+
+// GET api/reviews/pending
+router.get(
+  '/reviews/pending',
+  authenticate,
+  authorizeRoles('product manager'),
+  getPendingReviews
+);
+
+// PATCH api/reviews/:review_id/approve
+router.patch(
+  '/reviews/:review_id/approve',
+  authenticate,
+  authorizeRoles('product manager'),
+  approveReview
+);
+
+// DELETE api/admin/reviews/:review_id
+router.delete(
+  '/admin/reviews/:review_id',
+  authenticate,
+  authorizeRoles('product manager'),
+  deleteReviewPM
 );
 
 /* ============================================================
@@ -200,7 +233,7 @@ router.delete(
 router.get(
   '/support/chat/queue',
   authenticate,
-  authorizeRoles('support_agent'),
+  authorizeRoles('support agent'),
   (req, res) => {
     res.json({ message: 'Chat queue not implemented yet' });
   }
@@ -210,7 +243,7 @@ router.get(
 router.get(
   '/support/chat/:id/context',
   authenticate,
-  authorizeRoles('support_agent'),
+  authorizeRoles('support agent'),
   (req, res) => {
     res.json({ message: 'Chat context not implemented yet' });
   }
@@ -220,7 +253,7 @@ router.get(
 router.post(
   '/support/chat/:id/message',
   authenticate,
-  authorizeRoles('support_agent'),
+  authorizeRoles('support agent'),
   (req, res) => {
     res.json({ message: 'Send message not implemented yet' });
   }
@@ -230,7 +263,7 @@ router.post(
 router.post(
   '/support/chat/:id/attachment',
   authenticate,
-  authorizeRoles('support_agent'),
+  authorizeRoles('support agent'),
   (req, res) => {
     res.json({ message: 'Send attachment not implemented yet' });
   }
@@ -240,7 +273,7 @@ router.post(
 router.patch(
   '/support/chat/:id/claim',
   authenticate,
-  authorizeRoles('support_agent'),
+  authorizeRoles('support agent'),
   (req, res) => {
     res.json({ message: 'Claim chat not implemented yet' });
   }

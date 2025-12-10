@@ -1,13 +1,6 @@
 // routes/categoryRoutes.js
 import express from 'express';
-import {
-  getAllCategories,
-  createCategory,
-  updateCategory,
-  deleteCategory,
-  reassignAndDeleteCategory,
-} from '../app/controllers/categoryController.js';
-import { authenticate } from '../app/middlewares/authMiddleware.js';
+import { getAllCategories } from '../app/controllers/categoryController.js';
 
 const router = express.Router();
 

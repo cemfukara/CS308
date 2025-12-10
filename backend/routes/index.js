@@ -10,6 +10,7 @@ import userRoutes from './userRoutes.js';
 import categoryRoutes from './categoryRoutes.js';
 import wishlistRoutes from './wishlistRoutes.js';
 import invoiceRoutes from './invoiceRoutes.js';
+import reviewRoutes from './reviewRoutes.js';
 
 export {
   adminRoutes,
@@ -20,4 +21,5 @@ export {
   categoryRoutes,
   wishlistRoutes,
   invoiceRoutes,
+  reviewRoutes,
 };

@@ -19,19 +19,41 @@ async function query(sql, params = []) {
 // ---------- EXPORT FUNCTIONS USING ESM ----------
 export async function getInvoicesByDateRange(startDate, endDate) {
   const sql = `
-    SELECT o.order_id,
-           o.user_id,
-           u.email AS user_email,
-           o.total_price,
-           o.status,
-           o.order_date,
-           o.created_at
+    SELECT 
+      o.order_id,
+      o.user_id,
+      u.email AS user_email,
+      o.total_price,
+      o.status,
+      o.order_date,
+      o.created_at,
+
+      JSON_ARRAYAGG(
+        JSON_OBJECT(
+          'product_name', p.name,
+          'quantity', oi.quantity
+        )
+      ) AS items
+
     FROM orders o
     JOIN users u ON u.user_id = o.user_id
+    JOIN order_items oi ON oi.order_id = o.order_id
+    JOIN products p ON p.product_id = oi.product_id
+
     WHERE o.status != 'cart'
       AND o.order_date BETWEEN ? AND ?
+
+    GROUP BY 
+      o.order_id, 
+      o.user_id, 
+      u.email,
+      o.total_price,
+      o.status,
+      o.order_date,
+      o.created_at
+
     ORDER BY o.order_date DESC;
-  `;
+`;
   const [rows] = await query(sql, [startDate, endDate]);
   return rows;
 }
