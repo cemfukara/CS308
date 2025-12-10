@@ -27,7 +27,7 @@ CREATE TABLE products (
     warranty_status VARCHAR(255),
     distributor_info VARCHAR(255),
     currency VARCHAR(10) NOT NULL DEFAULT 'TL',
-    
+
     -- Generated column for discount percentage
     discount_ratio DECIMAL(5, 2) AS (
         CASE
@@ -36,7 +36,7 @@ CREATE TABLE products (
             ELSE 0
         END
     ) STORED,
-    
+
     FOREIGN KEY (category_id) REFERENCES categories(category_id)
 );
 
@@ -50,19 +50,19 @@ CREATE INDEX idx_discount_ratio ON products (discount_ratio);
 CREATE TABLE users (
     user_id INT PRIMARY KEY AUTO_INCREMENT,
     email VARCHAR(255) NOT NULL UNIQUE,
-    
+
     -- Stores the bcrypt hash of the password
-    password_hash VARCHAR(255) NOT NULL, 
-    
+    password_hash VARCHAR(255) NOT NULL,
+
     -- 'customer' is the default value
     role ENUM('customer', 'sales manager', 'product manager', 'support agent', 'dev') NOT NULL DEFAULT 'customer',
-    
+
     -- Fields for encrypted Personally Identifiable Information (PII)
     first_name_encrypted BLOB,
     last_name_encrypted BLOB,
     address_encrypted BLOB,
     tax_id_encrypted BLOB, -- Added for sensitive tax ID
-    
+
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -76,6 +76,7 @@ CREATE TABLE reviews (
     user_id INT NOT NULL,
     rating INT NOT NULL, -- e.g., a number from 1 to 5
     comment_text TEXT,
+    approved BOOLEAN default false, -- true (1) for approved comments
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     status ENUM('pending', 'approved', 'rejected') NOT NULL DEFAULT 'pending',
     FOREIGN KEY (product_id) REFERENCES products(product_id),
@@ -92,17 +93,17 @@ CREATE TABLE reviews (
 CREATE TABLE payment_methods (
     payment_method_id INT PRIMARY KEY AUTO_INCREMENT,
     user_id INT NOT NULL,
-    
+
     -- This is the token from Stripe/PayPal. Safe to store.
     gateway_customer_id VARCHAR(255) NOT NULL,
-    
+
     -- These are for display. Safe to store.
     card_brand VARCHAR(50), -- e.g., 'Visa'
     last_four_digits CHAR(4), -- e.g., '4242'
-    
+
     -- Marks which card to auto-select at checkout
     is_default BOOLEAN DEFAULT false,
-    
+
     FOREIGN KEY (user_id) REFERENCES users(user_id)
 );
 
@@ -112,20 +113,20 @@ CREATE TABLE payment_methods (
 CREATE TABLE orders (
     order_id INT PRIMARY KEY AUTO_INCREMENT,
     user_id INT NOT NULL,
-    
+
     -- 'cart' is the active shopping cart
     status ENUM('cart', 'processing', 'in-transit', 'delivered', 'cancelled', 'refunded') NOT NULL DEFAULT 'cart',
-    
+
     -- Final total price, can be NULL for an active 'cart'
     total_price DECIMAL(10, 2),
-    
+
     -- Store the shipping address used *for this specific order*
     shipping_address_encrypted BLOB,
-    
+
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     -- 'order_date' is set when status changes from 'cart' to 'processing'
     order_date TIMESTAMP NULL,
-    
+
     FOREIGN KEY (user_id) REFERENCES users(user_id)
 );
 
@@ -137,10 +138,10 @@ CREATE TABLE order_items (
     order_id INT NOT NULL,
     product_id INT NOT NULL,
     quantity INT NOT NULL,
-    
+
     -- Store the price at time of purchase, as product.price can change
     price_at_purchase DECIMAL(10, 2) NOT NULL,
-    
+
     FOREIGN KEY (order_id) REFERENCES orders(order_id),
     FOREIGN KEY (product_id) REFERENCES products(product_id)
 );
@@ -153,10 +154,10 @@ CREATE TABLE wishlists (
     user_id INT NOT NULL,
     product_id INT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    
+
     FOREIGN KEY (user_id) REFERENCES users(user_id),
     FOREIGN KEY (product_id) REFERENCES products(product_id),
-    
+
     -- Prevent duplicate entries: A user can only wishlist a product once
     CONSTRAINT uq_user_product_wishlist UNIQUE(user_id, product_id)
 );
@@ -172,7 +173,7 @@ CREATE TABLE product_images (
     alt_text VARCHAR(255),
     is_primary BOOLEAN DEFAULT false,
     display_order INT DEFAULT 0,
-    
+
     FOREIGN KEY (product_id) REFERENCES products(product_id)
 );
 
@@ -205,7 +206,7 @@ VALUES
     ('Accessories', 'Chargers, cases, and other peripherals.');
 
 -- 2. Insert products
-INSERT INTO products (product_id, category_id, name, model, serial_number, description, quantity_in_stock, price, list_price, warranty_status, distributor_info) 
+INSERT INTO products (product_id, category_id, name, model, serial_number, description, quantity_in_stock, price, list_price, warranty_status, distributor_info)
 VALUES
 -- 1. iPhone 17 Pro Max
 (1, 1, 'iPhone 17 Pro Max', 'FUT-IP17-PM', 'SN-IP17-PM-BL', 'Future generation design, A19 Pro chip, 10x Telephoto camera.', 50, 89999.00, 89999.00, '2 Years Apple Turkey', 'Apple Inc.'),
@@ -249,11 +250,11 @@ VALUES
 
 -- 4. Insert reviews
 -- (Depends on users and products)
-INSERT INTO reviews (product_id, user_id, rating, comment_text)
+INSERT INTO reviews (product_id, user_id, rating, comment_text, approved)
 VALUES
-    (4, 2, 5, 'Absolutely love this laptop! Blazing fast and the screen is gorgeous.'),
-    (6, 1, 4, 'Great sound, but the battery life could be a little better.'),
-    (4, 1, 4, 'Solid machine for work. A bit pricy but worth it.');
+    (4, 2, 5, 'Absolutely love this laptop! Blazing fast and the screen is gorgeous.',true),
+    (6, 1, 4, 'Great sound, but the battery life could be a little better.',true),
+    (4, 1, 4, 'Solid machine for work. A bit pricy but worth it.',false);
 
 -- 5. Insert payment methods
 -- (Depends on users)
@@ -284,10 +285,10 @@ VALUES
     (2, 9, 2, 49.99),
     -- Items for order 3 (processing)
     (3, 5, 1, 899.50);
-    
+
 -- 8. Insert Wishlist items
--- (Depends on users and products)    
-INSERT INTO wishlists (user_id, product_id) 
+-- (Depends on users and products)
+INSERT INTO wishlists (user_id, product_id)
 VALUES
 (1, 4), -- John wants the AeroBook Pro
 (1, 7), -- John also wants the Speaker
@@ -295,7 +296,7 @@ VALUES
 
 
 -- 9. Insert Product Images (Resetting data for Items 1-10)
--- 
+--
 
 INSERT INTO product_images (product_id, image_url, alt_text, is_primary, display_order)
 VALUES
@@ -356,8 +357,8 @@ VALUES
     (10, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/apple/thumb/150372-1_large.jpg', 'Apple 20W Charger Front', true, 1),
     (10, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/apple/thumb/150372-2_large.jpg', 'Apple 20W Charger Prongs', false, 2),
     (10, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/apple/thumb/150372-3_large.jpg', 'Apple 20W Charger Box', false, 3);
-    
---  Dev data insertion into users table for dev test   
+
+--  Dev data insertion into users table for dev test
 SET SESSION sql_mode = 'NO_AUTO_VALUE_ON_ZERO';
 
 INSERT INTO users (user_id, email, password_hash, role)
@@ -414,6 +415,7 @@ END$$
 CREATE PROCEDURE sp_GetUserReviews(IN p_user_id INT)
 BEGIN
     SELECT
+        r.review_id,
         p.product_id,
         p.name AS product_name,
         r.rating,
