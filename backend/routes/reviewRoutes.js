@@ -42,7 +42,7 @@ router.delete('/reviews/:review_id', authenticate, deleteReview);
 // ======================================================================
 router.get('/user/reviews', authenticate, getUserReviews);
 
-// GET /api/reviews/:product_id/average
+// GET /api/products/:product_id/average
 router.get('/reviews/:product_id/average', getAverageRating);
 
 // PUT /api/reviews/:reviewId
