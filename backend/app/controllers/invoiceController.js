@@ -40,7 +40,7 @@ export async function getInvoicesByDateRange(req, res) {
     res.json(invoices);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Internal server error' });
+    return res.status(500).json({ message: 'Internal server error' });
   }
 }
 
@@ -112,7 +112,7 @@ export async function generateInvoicePDF(req, res) {
     doc.end();
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Internal server error' });
+    return res.status(500).json({ message: 'Internal server error' });
   }
 }
 
@@ -131,7 +131,7 @@ export async function getRevenueProfit(req, res) {
     });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Internal server error' });
+    return res.status(500).json({ message: 'Internal server error' });
   }
 }
 
@@ -153,6 +153,6 @@ export async function getRevenueProfitChartController(req, res) {
     res.json(chartData);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Internal server error' });
+    return res.status(500).json({ message: 'Internal server error' });
   }
 }

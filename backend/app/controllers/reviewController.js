@@ -11,74 +11,122 @@ import {
   userPurchasedProductModel,
   getAverageRatingModel,
   updateReview,
+  createRatingModel,
 } from '../../models/Review.js';
 
-// =====================================================================
-// POST /api/reviews
-// User creates a review (goes to pending approval)
-// =====================================================================
-export async function createReview(req, res) {
+// ------------------------
+// POST /api/ratings
+// ------------------------
+export async function createRating(req, res) {
   try {
     const user_id = req.user.user_id;
-    const { product_id, rating, comment_text } = req.body;
-
-    if (!product_id || !rating || !comment_text) {
-      return res.status(400).json({
-        message: 'product_id, rating, and comment_text are required',
-      });
-    }
-
-    if (isNaN(product_id)) {
-      return res.status(400).json({ message: 'product_id must be a number' });
-    }
-
-    if (isNaN(rating)) {
-      return res.status(400).json({ message: 'Review must be an integer' });
-    }
-
-    if (rating > 5 || rating < 0) {
-      return res
-        .status(400)
-        .json({ message: 'Invalid rating value (0 <= rating <= 5)' });
-    }
-
-    // ------------------------------------------------------------
-    // Check if user bought the product
-    // ------------------------------------------------------------
-    const hasPurchased = await userPurchasedProductModel(user_id, product_id);
-
     if (
       !(
         process.env.AUTH_DISABLED === 'true' &&
-        process.env.NODE_ENV == 'development' &&
-        req.user.role == 'dev'
+        process.env.NODE_ENV === 'development' &&
+        req.user.role === 'dev'
+      ) &&
+      !user_id
+    )
+      return res.status(401).json({ message: 'Unauthorized' }); //failsafe
+
+    const { product_id, rating } = req.body;
+    if (product_id === undefined || rating === undefined)
+      return res
+        .status(400)
+        .json({ message: 'product_id and rating are required' });
+
+    if (isNaN(product_id))
+      return res.status(400).json({ message: 'product_id must be a number' });
+    if (!Number.isInteger(Number(rating)))
+      return res.status(400).json({ message: 'Rating must be an integer' });
+
+    const numericRating = Number(rating);
+    if (numericRating < 1 || numericRating > 5)
+      return res.status(400).json({ message: 'Invalid rating value (1-5)' });
+
+    const hasPurchased = await userPurchasedProductModel(user_id, product_id);
+    if (
+      !(
+        process.env.AUTH_DISABLED === 'true' &&
+        process.env.NODE_ENV === 'development' &&
+        req.user.role === 'dev'
       ) &&
       !hasPurchased
-      // dev role excluded
-    ) {
-      return res.status(403).json({
-        message: 'You can only review products you have purchased.',
-      });
-    }
+    )
+      return res
+        .status(403)
+        .json({ message: 'You can only rate products you have purchased.' });
+
+    await createRatingModel({ user_id, product_id, rating: numericRating });
+    return res.status(200).json({ message: 'Rating submitted.' });
+  } catch (err) {
+    console.error('Error while creating rating: ', err);
+    return res.status(500).json({ message: 'Server Error' });
+  }
+}
+
+// ------------------------
+// POST /api/reviews
+// ------------------------
+export async function createReview(req, res) {
+  try {
+    const user_id = req.user.user_id;
+    if (
+      !(
+        process.env.AUTH_DISABLED === 'true' &&
+        process.env.NODE_ENV === 'development' &&
+        req.user.role === 'dev'
+      ) &&
+      !user_id
+    )
+      return res.status(401).json({ message: 'Unauthorized' }); // failsafe
+
+    const { product_id, rating, comment_text } = req.body;
+    if (product_id === undefined || rating === undefined || !comment_text)
+      return res
+        .status(400)
+        .json({ message: 'product_id, rating, and comment_text are required' });
+
+    if (isNaN(product_id))
+      return res.status(400).json({ message: 'product_id must be a number' });
+    if (!Number.isInteger(Number(rating)))
+      return res.status(400).json({ message: 'Rating must be an integer' });
+
+    const numericRating = Number(rating);
+    if (numericRating < 1 || numericRating > 5)
+      return res.status(400).json({ message: 'Invalid rating value (1-5)' });
+
+    const hasPurchased = await userPurchasedProductModel(user_id, product_id);
+    if (
+      !(
+        process.env.AUTH_DISABLED === 'true' &&
+        process.env.NODE_ENV === 'development' &&
+        req.user.role === 'dev'
+      ) &&
+      !hasPurchased
+    )
+      return res
+        .status(403)
+        .json({ message: 'You can only review products you have purchased.' });
 
     await createReviewModel({
       user_id,
       product_id,
-      rating,
+      rating: numericRating,
       comment_text,
     });
-
-    res.json({
-      message: 'Review submitted and is pending approval.',
-    });
+    return res
+      .status(200)
+      .json({ message: 'Review submitted and is pending approval.' });
   } catch (err) {
     if (err.message.includes('uq_user_product_review')) {
-      return res.status(400).json({
-        message: 'You have already reviewed this product.',
-      });
+      return res
+        .status(400)
+        .json({ message: 'You have already reviewed this product.' });
     }
-    console.error(err);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Error while creating review: ', err);
+    return res.status(500).json({ message: 'Server error' });
   }
 }
 
@@ -130,6 +178,18 @@ export async function deleteReview(req, res) {
     const review_id = req.params.review_id;
     const user_id = req.user.user_id;
 
+    if (
+      !(
+        process.env.AUTH_DISABLED === 'true' &&
+        process.env.NODE_ENV === 'development' &&
+        req.user.role === 'dev'
+      ) &&
+      !user_id
+    ) {
+      // Failsafe
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
     if (isNaN(review_id)) {
       return res.status(400).json({ message: 'review_id must be a number' });
     }
@@ -164,6 +224,18 @@ export async function deleteReview(req, res) {
 export async function getUserReviews(req, res) {
   try {
     const user_id = req.user.user_id;
+
+    if (
+      !(
+        process.env.AUTH_DISABLED === 'true' &&
+        process.env.NODE_ENV === 'development' &&
+        req.user.role === 'dev'
+      ) &&
+      !user_id
+    ) {
+      // Failsafe
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
 
     const data = await getReviewsByUserModel(user_id);
 
@@ -249,7 +321,14 @@ export const updateReviewController = async (req, res) => {
     const { reviewId } = req.params;
     const userId = req.user?.user_id;
 
-    if (!userId) {
+    if (
+      !(
+        process.env.AUTH_DISABLED === 'true' &&
+        process.env.NODE_ENV === 'development' &&
+        req.user.role === 'dev'
+      ) &&
+      !userId
+    ) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
 

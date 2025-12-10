@@ -7,6 +7,7 @@ import {
   getUserReviews,
   getAverageRating,
   updateReviewController,
+  createRating,
 } from '../app/controllers/reviewController.js';
 
 import { authenticate } from '../app/middlewares/authMiddleware.js';
@@ -24,6 +25,10 @@ router.get('/products/:product_id/reviews', getApprovedReviews);
 // POST /api/reviews
 // ======================================================================
 router.post('/reviews', authenticate, createReview);
+
+// POST /api/reviews/rate
+// post a rating without requiring any approval
+router.post('/reviews/rate', authenticate, createRating);
 
 // ======================================================================
 // PRIVATE ROUTE — Delete user's own review

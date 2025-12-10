@@ -403,7 +403,7 @@ BEGIN
     FROM
         reviews r
     WHERE
-        r.product_id = p_product_id AND r.approved = 1;
+        r.product_id = p_product_id;
 END$$
 
 -- 3. Get All Reviews by a User

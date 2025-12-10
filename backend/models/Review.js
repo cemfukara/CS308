@@ -1,9 +1,23 @@
 // Review models
 import { db } from '../app/config/db.js';
 
-// ---------------------------------------------------------------
-// Create a new review (pending approval)
-// ---------------------------------------------------------------
+// ------------------------
+// Insert or update a rating
+// ------------------------
+export async function createRatingModel({ user_id, product_id, rating }) {
+  const sql = `
+    INSERT INTO reviews (user_id, product_id, rating, comment_text, approved)
+    VALUES (?, ?, ?, NULL, TRUE)
+    ON DUPLICATE KEY UPDATE
+      rating = VALUES(rating),
+      approved = TRUE
+  `;
+  await db.query(sql, [user_id, product_id, rating]);
+}
+
+// ------------------------
+// Insert or update a review (rating + comment)
+// ------------------------
 export async function createReviewModel({
   user_id,
   product_id,
@@ -11,10 +25,14 @@ export async function createReviewModel({
   comment_text,
 }) {
   const sql = `
-    INSERT INTO reviews (user_id, product_id, rating, comment_text)
-    VALUES (?, ?, ?, ?)
+    INSERT INTO reviews (user_id, product_id, rating, comment_text, approved)
+    VALUES (?, ?, ?, ?, FALSE)
+    ON DUPLICATE KEY UPDATE
+      rating = VALUES(rating),
+      comment_text = VALUES(comment_text),
+      approved = FALSE
   `;
-  await db.execute(sql, [user_id, product_id, rating, comment_text]);
+  await db.query(sql, [user_id, product_id, rating, comment_text]);
 }
 
 // ---------------------------------------------------------------
