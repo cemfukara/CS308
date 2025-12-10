@@ -23,10 +23,11 @@ function mapOrderRow(row) {
 }
 
 // --------------------------------------------------
-// Get ALL non-cart orders (PM view)
+// Get ALL non-cart orders (PM view) WITH products & quantities
 // --------------------------------------------------
 export async function getAllOrders() {
-  const [rows] = await db.query(
+  // 1) Fetch all orders
+  const [orders] = await db.query(
     `
       SELECT
         o.order_id,
@@ -36,18 +37,59 @@ export async function getAllOrders() {
         o.shipping_address_encrypted,
         o.created_at,
         o.order_date,
-        u.email AS customer_email,
-        COUNT(oi.order_item_id) AS item_count
+        u.email AS customer_email
       FROM orders o
       JOIN users u ON u.user_id = o.user_id
-      LEFT JOIN order_items oi ON oi.order_id = o.order_id
       WHERE o.status != 'cart'
-      GROUP BY o.order_id
       ORDER BY o.created_at DESC
     `
   );
 
-  return rows.map(mapOrderRow);
+  if (orders.length === 0) return [];
+
+  const orderIds = orders.map((o) => o.order_id);
+
+  // 2) Fetch all items for these orders
+  const [items] = await db.query(
+    `
+      SELECT
+        oi.order_id,
+        oi.product_id,
+        p.name AS product_name,
+        oi.quantity
+      FROM order_items oi
+      JOIN products p ON p.product_id = oi.product_id
+      WHERE oi.order_id IN ( ${orderIds.map(() => '?').join(',')} )
+    `,
+    orderIds
+  );
+
+  // 3) Group by order_id
+  const itemsByOrder = {};
+  for (const it of items) {
+    if (!itemsByOrder[it.order_id]) itemsByOrder[it.order_id] = [];
+    itemsByOrder[it.order_id].push({
+      product_id: it.product_id,
+      product_name: it.product_name,
+      quantity: it.quantity,
+    });
+  }
+
+  // 4) Final merged result
+  return orders.map((order) => ({
+    order_id: order.order_id,
+    user_id: order.user_id,
+    status: order.status,
+    total_price: order.total_price,
+    created_at: order.created_at,
+    order_date: order.order_date,
+    customer_email: order.customer_email,
+
+    // decrypt() is your existing function — keep it
+    shipping_address: decrypt(order.shipping_address_encrypted),
+
+    products: itemsByOrder[order.order_id] || [],
+  }));
 }
 
 // --------------------------------------------------
@@ -157,7 +199,12 @@ export async function getOrderById(orderId, userId) {
 // --------------------------------------------------
 // Create new order
 // --------------------------------------------------
-export async function createOrder({ userId, items, shippingAddress, totalPrice }) {
+export async function createOrder({
+  userId,
+  items,
+  shippingAddress,
+  totalPrice,
+}) {
   const encryptedAddress = shippingAddress ? encrypt(shippingAddress) : null;
 
   const [orderResult] = await db.query(

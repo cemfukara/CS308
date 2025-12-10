@@ -135,7 +135,7 @@ export const updateReview = async ({
   const [result] = await db.query(
     `
     UPDATE reviews
-    SET rating = ?, comment_text = ?
+    SET rating = ?, comment_text = ?, approved = 0
     WHERE review_id = ? AND user_id = ?
     `,
     [rating, commentText || null, reviewId, userId]

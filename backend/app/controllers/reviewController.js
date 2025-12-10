@@ -256,7 +256,9 @@ export const updateReviewController = async (req, res) => {
     const { rating, comment_text } = req.body;
 
     if (!rating || rating < 1 || rating > 5) {
-      return res.status(400).json({ message: 'Rating must be 1–5.' });
+      return res
+        .status(400)
+        .json({ message: 'Invalid rating value (0 <= rating <= 5)' });
     }
 
     const updated = await updateReview({
@@ -266,7 +268,7 @@ export const updateReviewController = async (req, res) => {
       commentText: comment_text,
     });
 
-    res.json({ message: 'Review updated', review: updated });
+    res.json({ message: 'Review updated, pending approval', review: updated });
   } catch (err) {
     console.error('Error updating review:', err);
 
