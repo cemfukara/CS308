@@ -1,5 +1,4 @@
 // review routes
-
 import express from 'express';
 import {
   getApprovedReviews,
@@ -43,3 +42,5 @@ router.get('/reviews/:product_id/average', getAverageRating);
 
 // PUT /api/reviews/:reviewId
 router.put('/reviews/:reviewId', authenticate, updateReviewController);
+
+export default router;
