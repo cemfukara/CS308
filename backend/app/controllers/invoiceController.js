@@ -1,16 +1,15 @@
 import PDFDocument from 'pdfkit';
 import {
   getInvoicesByDateRange as modelGetInvoicesByDateRange,
-  getInvoiceById,
-  getInvoiceItems,
-  getRevenueProfitBetweenDates,
-  getRevenueProfitChart
+  getInvoiceById as modelGetInvoiceById,
+  getInvoiceItems as modelGetInvoiceItems,
+  getRevenueProfitBetweenDates as modelGetRevenueProfitBetweenDates,
+  getRevenueProfitChart as modelGetRevenueProfitChart,
 } from '../../models/Invoice.js';
 
 // Utility to parse & validate date query params
 function parseDateRange(query) {
   const { start, end } = query;
-
   if (!start || !end) {
     const err = new Error(
       'Both start and end query parameters are required, e.g. ?start=2025-01-01&end=2025-01-31'
@@ -34,32 +33,33 @@ function parseDateRange(query) {
 // -----------------------------------------------
 // GET /api/invoices/range?start=YYYY-MM-DD&end=YYYY-MM-DD
 // -----------------------------------------------
-export async function getInvoicesByDateRange(req, res, next) {
+export async function getInvoicesByDateRange(req, res) {
   try {
     const { start, end } = parseDateRange(req.query);
     const invoices = await modelGetInvoicesByDateRange(start, end);
     res.json(invoices);
   } catch (err) {
-    next(err);
+    console.error(err);
+    res.status(500).json({ message: 'Internal server error' });
   }
 }
 
 // -----------------------------------------------
 // GET /api/invoices/:orderId/pdf
 // -----------------------------------------------
-export async function generateInvoicePDF(req, res, next) {
+export async function generateInvoicePDF(req, res) {
   try {
     const orderId = parseInt(req.params.orderId, 10);
     if (!orderId) {
       return res.status(400).json({ message: 'Invalid order ID' });
     }
 
-    const invoice = await getInvoiceById(orderId);
+    const invoice = await modelGetInvoiceById(orderId);
     if (!invoice) {
       return res.status(404).json({ message: 'Invoice/order not found' });
     }
 
-    const items = await getInvoiceItems(orderId);
+    const items = await modelGetInvoiceItems(orderId);
 
     // Create the PDF
     const doc = new PDFDocument({ margin: 40 });
@@ -94,60 +94,65 @@ export async function generateInvoicePDF(req, res, next) {
     doc.fontSize(14).text('Items:');
     doc.moveDown(0.5);
 
-    items.forEach(i => {
-      doc.fontSize(12).text(
-        `${i.product_name} (x${i.quantity}) — $${Number(
-          i.price_at_purchase
-        ).toFixed(2)} each`
-      );
+    items.forEach((i) => {
+      doc
+        .fontSize(12)
+        .text(
+          `${i.product_name} (x${i.quantity}) — $${Number(
+            i.price_at_purchase
+          ).toFixed(2)} each`
+        );
     });
 
     doc.moveDown();
-    doc.fontSize(14).text(
-      `Total: $${Number(invoice.total_price || 0).toFixed(2)}`
-    );
+    doc
+      .fontSize(14)
+      .text(`Total: $${Number(invoice.total_price || 0).toFixed(2)}`);
 
     doc.end();
   } catch (err) {
-    next(err);
+    console.error(err);
+    res.status(500).json({ message: 'Internal server error' });
   }
 }
 
 // -----------------------------------------------
 // GET /api/invoices/revenue?start=YYYY-MM-DD&end=YYYY-MM-DD
 // -----------------------------------------------
-export async function getRevenueProfit(req, res, next) {
+export async function getRevenueProfit(req, res) {
   try {
     const { start, end } = parseDateRange(req.query);
-    const totals = await getRevenueProfitBetweenDates(start, end);
+    const totals = await modelGetRevenueProfitBetweenDates(start, end);
 
     res.json({
       revenue: Number(totals.total_revenue || 0),
       cost: Number(totals.total_cost || 0),
-      profit: Number(totals.total_profit || 0)
+      profit: Number(totals.total_profit || 0),
     });
   } catch (err) {
-    next(err);
+    console.error(err);
+    res.status(500).json({ message: 'Internal server error' });
   }
 }
 
 // -----------------------------------------------
 // GET /api/invoices/chart?start=YYYY-MM-DD&end=YYYY-MM-DD
 // -----------------------------------------------
-export async function getRevenueProfitChartController(req, res, next) {
+export async function getRevenueProfitChartController(req, res) {
   try {
     const { start, end } = parseDateRange(req.query);
-    const rows = await getRevenueProfitChartController(start, end);
+    const rows = await modelGetRevenueProfitChart(start, end);
 
-    const chartData = rows.map(r => ({
+    const chartData = rows.map((r) => ({
       day: r.day,
       revenue: Number(r.revenue || 0),
       cost: Number(r.cost || 0),
-      profit: Number(r.profit || 0)
+      profit: Number(r.profit || 0),
     }));
 
     res.json(chartData);
   } catch (err) {
-    next(err);
+    console.error(err);
+    res.status(500).json({ message: 'Internal server error' });
   }
 }

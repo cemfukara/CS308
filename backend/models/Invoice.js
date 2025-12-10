@@ -92,41 +92,46 @@ export async function getInvoiceItems(orderId) {
 }
 
 export async function getRevenueProfitBetweenDates(startDate, endDate) {
+  const COST_RATIO = 0.5; // 50% default cost
+
   const sql = `
     SELECT
       COALESCE(SUM(oi.quantity * oi.price_at_purchase), 0) AS total_revenue,
-      COALESCE(SUM(oi.quantity * ( COALESCE(p.cost_price, oi.price_at_purchase * 0.5) )), 0) AS total_cost,
+      COALESCE(SUM(oi.quantity * oi.price_at_purchase * ${COST_RATIO}), 0) AS total_cost,
       COALESCE(SUM(
         oi.quantity * oi.price_at_purchase
-        - oi.quantity * ( COALESCE(p.cost_price, oi.price_at_purchase * 0.5) )
+        - oi.quantity * oi.price_at_purchase * ${COST_RATIO}
       ), 0) AS total_profit
     FROM order_items oi
     JOIN orders o ON o.order_id = oi.order_id
-    JOIN products p ON p.product_id = oi.product_id
     WHERE o.status != 'cart'
       AND o.order_date BETWEEN ? AND ?;
   `;
+
   const [rows] = await query(sql, [startDate, endDate]);
   return rows[0] || { total_revenue: 0, total_cost: 0, total_profit: 0 };
 }
 
 export async function getRevenueProfitChart(startDate, endDate) {
+  const COST_RATIO = 0.5; // 50% default cost
+
   const sql = `
-    SELECT DATE(o.order_date) AS day,
-           COALESCE(SUM(oi.quantity * oi.price_at_purchase),0) AS revenue,
-           COALESCE(SUM(oi.quantity * ( COALESCE(p.cost_price, oi.price_at_purchase * 0.5) )),0) AS cost,
-           COALESCE(SUM(
-             oi.quantity * oi.price_at_purchase
-             - oi.quantity * ( COALESCE(p.cost_price, oi.price_at_purchase * 0.5) )
-           ),0) AS profit
+    SELECT 
+      DATE(o.order_date) AS day,
+      COALESCE(SUM(oi.quantity * oi.price_at_purchase), 0) AS revenue,
+      COALESCE(SUM(oi.quantity * oi.price_at_purchase * ${COST_RATIO}), 0) AS cost,
+      COALESCE(SUM(
+        oi.quantity * oi.price_at_purchase
+        - oi.quantity * oi.price_at_purchase * ${COST_RATIO}
+      ), 0) AS profit
     FROM order_items oi
     JOIN orders o ON o.order_id = oi.order_id
-    JOIN products p ON p.product_id = oi.product_id
     WHERE o.status != 'cart'
       AND o.order_date BETWEEN ? AND ?
     GROUP BY DATE(o.order_date)
     ORDER BY day ASC;
   `;
+
   const [rows] = await query(sql, [startDate, endDate]);
   return rows;
 }
