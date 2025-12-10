@@ -43,6 +43,7 @@ import AdminProductNew from './pages/Admin/PM/AdminProductNew.jsx';
 import AdminStock from './pages/Admin/PM/AdminStock.jsx';
 import AdminCategories from './pages/Admin/PM/AdminCategories.jsx';
 import PMDeliveries from './pages/Admin/PM/PMDeliveries.jsx';
+import AdminComments from './pages/Admin/PM/AdminComments.jsx';
 
 // Sales Manager (SM) – note the folder is ./pages/Admin/SM/
 import SMDiscounts from './pages/Admin/SM/SMDiscounts.jsx';
@@ -117,6 +118,7 @@ export function AppContent() {
           <Route path="pm/products/edit/:id" element={<AdminProductEdit />} />
           <Route path="pm/inventory" element={<AdminStock />} />
           <Route path="pm/categories" element={<AdminCategories />} />
+          <Route path="pm/comments" element={<AdminComments />} />
           <Route path="pm/deliveries" element={<PMDeliveries />} />
           <Route path="sm/discounts" element={<SMDiscounts />} />
           <Route path="sm/invoices" element={<SMInvoices />} />

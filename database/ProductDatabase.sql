@@ -77,7 +77,7 @@ CREATE TABLE reviews (
     rating INT NOT NULL, -- e.g., a number from 1 to 5
     comment_text TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
+    status ENUM('pending', 'approved', 'rejected') NOT NULL DEFAULT 'pending',
     FOREIGN KEY (product_id) REFERENCES products(product_id),
     FOREIGN KEY (user_id) REFERENCES users(user_id),
 
@@ -379,19 +379,23 @@ DELIMITER $$
 CREATE PROCEDURE sp_GetProductReviews(IN p_product_id INT)
 BEGIN
     SELECT
-        u.user_id, -- Changed from username
+        u.user_id,
         r.rating,
         r.comment_text,
-        r.created_at
+        r.created_at,
+        r.status
     FROM
         reviews r
     JOIN
         users u ON r.user_id = u.user_id
     WHERE
         r.product_id = p_product_id
+        AND r.comment_text IS NOT NULL
+        AND r.status = 'approved'
     ORDER BY
         r.created_at DESC;
 END$$
+
 
 -- 2. Get Average Rating for a Product
 CREATE PROCEDURE sp_GetProductAverageRating(IN p_product_id INT)
@@ -402,7 +406,8 @@ BEGIN
     FROM
         reviews r
     WHERE
-        r.product_id = p_product_id;
+        r.product_id = p_product_id
+            AND r.status = 'approved';
 END$$
 
 -- 3. Get All Reviews by a User
@@ -413,7 +418,8 @@ BEGIN
         p.name AS product_name,
         r.rating,
         r.comment_text,
-        r.created_at
+        r.created_at,
+        r.status
     FROM
         reviews r
     JOIN
@@ -423,6 +429,7 @@ BEGIN
     ORDER BY
         r.created_at DESC;
 END$$
+
 
 -- Reset delimiter
 DELIMITER ;

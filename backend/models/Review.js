@@ -110,3 +110,57 @@ export const deleteReview = async ({ reviewId, userId }) => {
 
   return { success: true };
 };
+
+// 7. Get all pending comments (for Product Manager moderation)
+export const getPendingComments = async () => {
+  const [rows] = await db.query(
+    `
+    SELECT
+      r.review_id,
+      r.product_id,
+      p.name AS product_name,
+      r.user_id,
+      u.email AS user_email,
+      r.rating,
+      r.comment_text,
+      r.created_at,
+      r.status
+    FROM reviews r
+    JOIN products p ON r.product_id = p.product_id
+    JOIN users u ON r.user_id = u.user_id
+    WHERE
+      r.comment_text IS NOT NULL
+      AND r.status = 'pending'
+    ORDER BY r.created_at DESC
+    `
+  );
+
+  return rows || [];
+};
+
+// 8. Update comment status (approve / reject)
+export const setReviewStatus = async ({ reviewId, status }) => {
+  const allowed = ['pending', 'approved', 'rejected'];
+  if (!allowed.includes(status)) {
+    const err = new Error('Invalid review status');
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const [result] = await db.query(
+    `
+    UPDATE reviews
+    SET status = ?
+    WHERE review_id = ?
+    `,
+    [status, reviewId]
+  );
+
+  if (result.affectedRows === 0) {
+    const error = new Error('Review not found');
+    error.statusCode = 404;
+    throw error;
+  }
+
+  return { success: true };
+};

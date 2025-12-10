@@ -6,6 +6,8 @@ import {
   createReview,
   updateReview,
   deleteReview,
+  getPendingComments,
+  setReviewStatus,
 } from '../../models/Review.js';
 
 // GET /api/reviews/product/:productId
@@ -138,5 +140,64 @@ export const deleteReviewController = async (req, res) => {
     }
 
     res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+// helper: ensure user is product manager
+function assertProductManager(req, res) {
+  const role = req.user?.role;
+  const allowed = ['product manager', 'dev'];
+
+  if (!allowed.includes(role)) {
+    res
+      .status(403)
+      .json({ message: 'Only product managers or devs can manage comments.' });
+    return false;
+  }
+  return true;
+}
+
+// GET /api/reviews/pending  (PM only)
+export const getPendingCommentsController = async (req, res) => {
+  if (!assertProductManager(req, res)) return;
+
+  try {
+    const rows = await getPendingComments();
+    res.json({ comments: rows });
+  } catch (err) {
+    console.error('Error loading pending comments:', err);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+// PATCH /api/reviews/:reviewId/approve  (PM only)
+export const approveReviewCommentController = async (req, res) => {
+  if (!assertProductManager(req, res)) return;
+
+  try {
+    const { reviewId } = req.params;
+    await setReviewStatus({ reviewId, status: 'approved' });
+    res.json({ message: 'Comment approved', success: true });
+  } catch (err) {
+    console.error('Error approving comment:', err);
+    res
+      .status(err.statusCode || 500)
+      .json({ message: err.message || 'Internal server error' });
+  }
+};
+
+// PATCH /api/reviews/:reviewId/reject  (PM only)
+export const rejectReviewCommentController = async (req, res) => {
+  if (!assertProductManager(req, res)) return;
+
+  try {
+    const { reviewId } = req.params;
+    await setReviewStatus({ reviewId, status: 'rejected' });
+    res.json({ message: 'Comment rejected', success: true });
+  } catch (err) {
+    console.error('Error rejecting comment:', err);
+    res
+      .status(err.statusCode || 500)
+      .json({ message: err.message || 'Internal server error' });
   }
 };

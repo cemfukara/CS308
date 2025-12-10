@@ -1,25 +1,27 @@
 .product-description {
   display: flex;
   flex-direction: row;
-  object-fit: contain;
+  align-items: flex-start;
   font-size: 14px;
   color: hsl(0, 0%, 30%);
   margin: 1px 7% 0 70px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow: visible;
+  text-overflow: unset;
+  white-space: normal;
 }
 
 .product-img-container {
-  height: 80vh;
   width: 50vw;
-  overflow: hidden;
-  object-fit: cover;
-  box-sizing: border-box;
-  object-position: center;
-  display: inline-block;
+  max-width: 50vw;
+  height: auto;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  overflow: visible;
   background-color: hsl(0, 0%, 90%);
   border-radius: 10px;
+  box-sizing: border-box;
 }
 
 .product-img {
@@ -222,6 +224,15 @@ textarea::-webkit-scrollbar:hover {
   font-weight: 600;
 }
 
+.avg-stars {
+  display: flex;
+  cursor: default;
+  align-items: center;
+  gap: 4px;
+  font-size: 40px;
+  color: hsl(48, 100%, 50%);
+}
+
 .rating-stars {
   display: flex;
   gap: 4px;
@@ -257,4 +268,124 @@ textarea::-webkit-scrollbar:hover {
     opacity: 0;
     transform: translateY(-6px);
   }
+}
+
+.reviews-list {
+  list-style: none;
+  padding-left: 0;
+  margin-left: 0;
+}
+
+.review-item {
+  margin-bottom: 16px;
+}
+
+.star.half {
+  color: #ffc107;
+  opacity: 0.7;
+}
+
+.product-main-img-wrapper {
+  position: relative;
+  width: 100%;
+  max-height: 65vh;
+  flex: 0 0 auto;
+}
+
+.img-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+}
+
+.img-nav-left {
+  left: 8px;
+}
+
+.img-nav-right {
+  right: 8px;
+}
+
+.product-thumbs {
+  align-self: center;
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 8px 10px;
+  overflow-x: auto;
+  scrollbar-color: transparent;
+}
+
+.thumb-btn {
+  border: none;
+  padding: 0;
+  background: transparent;
+  border-radius: 6px;
+  overflow: hidden;
+  cursor: pointer;
+  opacity: 0.7;
+}
+
+.thumb-btn.active {
+  outline: 1.5px solid hsla(0, 0%, 47%, 0.148);
+  opacity: 1;
+  filter: brightness(120%);
+}
+
+.thumb-btn img {
+  width: 56px;
+  height: 56px;
+  object-fit: cover;
+  display: block;
+}
+/* Smooth animation */
+.thumb-btn img {
+  transition:
+    transform 0.25s ease,
+    opacity 0.25s ease;
+}
+
+/* Hover effect: zoom + brighten */
+.thumb-btn:hover img {
+  transform: scale(1.08);
+  opacity: 1;
+}
+
+/* Hover the whole button: add subtle border */
+.thumb-btn:hover {
+  outline: 1.5px solid hsla(0, 0%, 47%, 0.148);
+  opacity: 1;
+}
+
+/* Smooth transition for hover animations */
+.img-nav {
+  transition:
+    transform 0.25s ease,
+    background-color 0.25s ease,
+    opacity 0.25s ease;
+  opacity: 0.7; /* slightly fade until hovered */
+}
+
+/* Hover: brighten + scale slightly */
+.img-nav:hover {
+  background-color: rgba(0, 0, 0, 0.75);
+  transform: translateY(-50%) scale(1.12);
+  opacity: 1;
+}
+
+/* Press (active/click) effect */
+.img-nav:active {
+  transform: translateY(-50%) scale(0.95);
+  background-color: rgba(0, 0, 0, 0.85);
 }
