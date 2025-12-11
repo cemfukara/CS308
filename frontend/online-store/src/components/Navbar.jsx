@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUser, faCartShopping } from '@fortawesome/free-solid-svg-icons';
 import './Navbar.css';
@@ -12,6 +12,34 @@ const Navbar = () => {
 
   const user = useAuthStore(state => state.user);
   const logout = useAuthStore(state => state.logout);
+
+  const location = useLocation();
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // ✅ Keep navbar search in sync with URL ?search=
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const currentSearch = params.get('search') || '';
+    setSearchQuery(currentSearch);
+  }, [location.search]);
+
+  const handleSearchChange = e => {
+    setSearchQuery(e.target.value);
+  };
+
+  const handleSearchSubmit = e => {
+    e.preventDefault();
+    const trimmed = searchQuery.trim();
+
+    const params = new URLSearchParams(location.search);
+    if (trimmed) {
+      params.set('search', trimmed);
+    } else {
+      params.delete('search');
+    }
+
+    navigate(`/products?${params.toString()}`);
+  };
 
   // ✅ Close dropdown when clicking outside
   useEffect(() => {
@@ -53,10 +81,18 @@ const Navbar = () => {
         </div>
 
         {/* ---------- Center: Search ---------- */}
-        <div className="navbar-center">
-          <input type="text" placeholder="Search for products..." className="search-input" />
-          <button className="search-button">Search</button>
-        </div>
+        <form className="navbar-center" onSubmit={handleSearchSubmit}>
+          <input
+            type="text"
+            placeholder="Search for products..."
+            className="search-input"
+            value={searchQuery}
+            onChange={handleSearchChange}
+          />
+          <button type="submit" className="search-button">
+            Search
+          </button>
+        </form>
 
         {/* ---------- Right: Profile + Cart ---------- */}
         <div className="navbar-right" ref={dropdownRef}>

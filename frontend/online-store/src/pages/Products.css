@@ -1,16 +1,106 @@
 .products-page {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 20px;
-  justify-items: center;
-  align-items: start;
-  padding: 20px;
+  padding: 20px 60px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
   background-color: #f9f9f9;
+  min-height: 60vh;
+  box-sizing: border-box;
+  font-family: 'Exo 2', sans-serif;
 }
 
+/* Top summary + controls row */
+.products-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.products-summary {
+  font-size: 16px;
+  color: #444;
+}
+
+.products-summary strong {
+  font-weight: 700;
+}
+
+.products-count {
+  font-size: 14px;
+  color: #777;
+}
+
+.products-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.products-limit,
+.products-sort {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.products-limit select,
+.products-sort select {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  background-color: #fff;
+}
+
+/* Product cards container */
+.products-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+
+.no-results {
+  font-style: italic;
+  color: #666;
+}
+
+/* Pagination bar */
+.pagination {
+  margin-top: 16px;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.pagination button {
+  min-width: 34px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  background-color: #fff;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.pagination button.active {
+  background-color: #1f6feb;
+  border-color: #1f6feb;
+  color: #fff;
+  font-weight: 600;
+}
+
+.pagination button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Loading / error states */
 .loading,
 .error {
   text-align: center;
-  font-size: 4.5rem;
-  font-family: 'Exo 2', sans-serif;
+  font-size: 1.4rem;
 }

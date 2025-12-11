@@ -42,6 +42,18 @@ export async function getAllProducts({
   const safeSortBy = validSortColumns.includes(sortBy) ? sortBy : 'product_id';
   const safeSortOrder = sortOrder.toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
 
+  // popularity = total quantity sold in order_items
+  let orderByClause = `ORDER BY ${safeSortBy} ${safeSortOrder}`;
+  if (sortBy === 'popularity') {
+    orderByClause = `
+      ORDER BY (
+        SELECT COALESCE(SUM(oi.quantity), 0)
+        FROM order_items oi
+        WHERE oi.product_id = products.product_id
+      ) ${safeSortOrder}
+    `;
+  }
+
   // 1. Count
   const [countRows] = await db.query(
     `SELECT COUNT(*) AS totalCount FROM products ${whereClause}`,
@@ -69,7 +81,7 @@ export async function getAllProducts({
             (list_price - price) AS discount_amount
         FROM products
         ${whereClause}
-        ORDER BY ${safeSortBy} ${safeSortOrder}
+        ${orderByClause}
         LIMIT ? OFFSET ?
     `;
 
