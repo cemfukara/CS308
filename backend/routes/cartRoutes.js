@@ -18,35 +18,35 @@ const router = express.Router();
 router.get('/', authenticate, getCart);
 
 /**
- * @route   POST /api/cart/items
+ * @route   POST /api/cart/add
  * @desc    Add product to cart
  * @access  Private
  */
-router.post('/items', authenticate, addItemToCart);
+router.post('/add', authenticate, addItemToCart);
 
 /**
- * @route   PUT /api/cart/items/:productId
+ * @route   PUT /api/cart/update
  * @desc    Update quantity of item in cart (optional future feature)
  * @access  Private
  */
-router.put('/items/:productId', (req, res) => {
+router.put('/update', (req, res) => {
   res.status(501).json({
     message: 'Update cart quantity not implemented yet',
   });
 });
 
 /**
- * @route   DELETE /api/cart/items/:productId
+ * @route   DELETE /api/cart/remove/:productId
  * @desc    Remove a single item from cart
  * @access  Private
  */
-router.delete('/items/:productId', authenticate, deleteCartItem);
+router.delete('/remove/:productId', authenticate, deleteCartItem);
 
 /**
- * @route   DELETE /api/cart//items
+ * @route   DELETE /api/cart/
  * @desc    Clear all items from cart
  * @access  Private
  */
-router.delete('/items', authenticate, clearUserCart);
+router.delete('/', authenticate, clearUserCart);
 
 export default router;

@@ -56,7 +56,7 @@ const router = express.Router();
    ============================================================ */
 
 // GET /analytics
-router.get(
+/*router.get(
   '/analytics',
   authenticate,
   authorizeRoles('sales manager'),
@@ -65,31 +65,31 @@ router.get(
       message: 'Get sales analytics is not implemented yet',
     });
   }
-);
+);*/
 
 // GET /invoices
-router.get(
+/*router.get(
   '/invoices',
   authenticate,
   authorizeRoles('sales manager'),
   (req, res) => {
     res.json({ message: 'View invoices is not implemented yet' });
   }
-);
+);*/
 
 // GET /invoices/:id/export
-router.get(
+/*router.get(
   '/invoices/:id/export',
   authenticate,
   authorizeRoles('sales manager'),
   (req, res) => {
     res.json({ message: 'Export invoice is not implemented yet' });
   }
-);
+);*/
 
 // PATCH /products/:id/discount
 router.patch(
-  '/products/:id/discount',
+  '/discounts',
   authenticate,
   authorizeRoles('sales manager'),
   setDiscount

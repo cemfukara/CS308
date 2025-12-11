@@ -67,7 +67,7 @@ export const addWishlistItem = async (req, res) => {
 export const removeWishlistItem = async (req, res) => {
   try {
     const userId = req.user.user_id;
-    const { product_id } = req.params;
+    const { id } = req.params;
 
     if (!product_id || isNaN(product_id)) {
       console.log(product_id);
