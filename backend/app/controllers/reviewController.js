@@ -51,12 +51,19 @@ export const getUserReviewsController = async (req, res) => {
 export const createReviewController = async (req, res) => {
   try {
     const { productId } = req.params;
-
-    // assuming your auth middleware attaches user info to req.user
     const userId = req.user?.user_id;
 
     if (!userId) {
       return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    // 1. CONSTRAINT CHECK: Delivery Verification
+    // "Products must be delivered before a user can rate and comment."
+    const canReview = await hasUserPurchasedProduct(userId, productId);
+    if (!canReview) {
+      return res.status(403).json({
+        message: 'You can only review products that have been delivered to you.',
+      });
     }
 
     const { rating, comment_text } = req.body;
@@ -65,21 +72,34 @@ export const createReviewController = async (req, res) => {
       return res.status(400).json({ message: 'Rating must be 1–5.' });
     }
 
+    // 2. CONSTRAINT CHECK: Status Logic
+    // "Comments should be approved... Ratings submitted directly."
+    // If there is a comment -> Pending (wait for PM).
+    // If NO comment (rating only) -> Approved (visible immediately).
+    const hasComment = comment_text && comment_text.trim().length > 0;
+    const status = hasComment ? 'pending' : 'approved';
+
     const review = await createReview({
       userId,
       productId,
       rating,
       commentText: comment_text,
+      status,
     });
 
-    res.status(201).json({ message: 'Review created', review });
+    // Inform user of status
+    let message = 'Review submitted successfully.';
+    if (status === 'pending') {
+      message =
+        'Your rating is recorded. Your comment is pending approval by a moderator.';
+    }
+
+    res.status(201).json({ message, review });
   } catch (err) {
     console.error('Error creating review:', err);
-
     if (err.statusCode) {
       return res.status(err.statusCode).json({ message: err.message });
     }
-
     res.status(500).json({ message: 'Internal server error' });
   }
 };
