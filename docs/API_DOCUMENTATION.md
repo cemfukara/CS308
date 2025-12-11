@@ -658,19 +658,10 @@ Updates the user info with given fields
 
 Get the info of given product
 
-- Request Body:
+- Request Query:
 
   ```
-  {
-    // Optional parameters
-    // example values are default values
-    limit = 10,
-    page = 1,
-    sortBy = 'product_id',
-    sortOrder = 'ASC',
-    search = '',
-    category = null,
-  }
+    http://localhost:5000/api/products?page=1&limit=20&sortBy=price&sortOrder=asc&search=laptop&category=electronics
   ```
 
 - Response Body:

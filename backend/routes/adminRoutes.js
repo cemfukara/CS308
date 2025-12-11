@@ -202,28 +202,28 @@ router.delete(
 /* ----------- Review Management ----------- */
 
 // GET api/reviews/pending
-router.get(
+/*router.get(
   '/reviews/pending',
   authenticate,
   authorizeRoles('product manager'),
   getPendingReviews
-);
+);*/
 
 // PATCH api/reviews/:review_id/approve
-router.patch(
+/*router.patch(
   '/reviews/:review_id/approve',
   authenticate,
   authorizeRoles('product manager'),
   approveReview
-);
+);*/
 
 // DELETE api/admin/reviews/:review_id
-router.delete(
+/*router.delete(
   '/admin/reviews/:review_id',
   authenticate,
   authorizeRoles('product manager'),
   deleteReviewPM
-);
+);*/
 
 /* ============================================================
    SUPPORT AGENT ROUTES
