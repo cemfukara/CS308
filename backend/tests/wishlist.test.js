@@ -30,7 +30,7 @@ const mockAuth = (req, res, next) => {
 // 3. Define Routes (mirroring wishlistRoutes.js)
 app.get('/wishlist', mockAuth, getWishlist);
 app.post('/wishlist', mockAuth, addWishlistItem);
-app.delete('/wishlist/:product_id', mockAuth, removeWishlistItem);
+app.delete('/wishlist/:id', mockAuth, removeWishlistItem);
 app.delete('/wishlist', mockAuth, clearWishlist);
 
 // --- Test Data ---
@@ -64,7 +64,9 @@ describe('Wishlist Controller Tests', () => {
     });
 
     it('should return 500 if model throws an error', async () => {
-      WishlistModel.getWishlistByUserId.mockRejectedValue(new Error('DB Error'));
+      WishlistModel.getWishlistByUserId.mockRejectedValue(
+        new Error('DB Error')
+      );
 
       const response = await request(app).get('/wishlist');
 
@@ -83,7 +85,7 @@ describe('Wishlist Controller Tests', () => {
       // 1. Check valid product
       ProductModel.getProductById.mockResolvedValue(mockProduct);
       // 2. Check duplicates (return empty list or list without this ID)
-      WishlistModel.getWishlistByUserId.mockResolvedValue([999]); 
+      WishlistModel.getWishlistByUserId.mockResolvedValue([999]);
       // 3. Add to wishlist
       WishlistModel.addToWishlist.mockResolvedValue(55); // Insert ID
 
@@ -92,7 +94,7 @@ describe('Wishlist Controller Tests', () => {
       expect(response.status).toBe(201);
       expect(response.body.message).toBe('Product added to wishlist');
       expect(response.body.wishlist.id).toBe(55);
-      
+
       expect(ProductModel.getProductById).toHaveBeenCalledWith(101);
       expect(WishlistModel.addToWishlist).toHaveBeenCalledWith(1, 101);
     });
@@ -128,7 +130,7 @@ describe('Wishlist Controller Tests', () => {
   // ------------------------------------------------------------------
   // DELETE /wishlist/:product_id
   // ------------------------------------------------------------------
-  describe('DELETE /wishlist/:product_id', () => {
+  describe('DELETE /wishlist/id', () => {
     it('should return 200 when item removed successfully', async () => {
       WishlistModel.deleteFromWishlist.mockResolvedValue(1); // 1 row affected
 
@@ -149,9 +151,9 @@ describe('Wishlist Controller Tests', () => {
     });
 
     it('should return 400 for invalid product id parameter', async () => {
-        const response = await request(app).delete('/wishlist/abc');
-        expect(response.status).toBe(400);
-        expect(response.body.message).toBe('Invalid product_id');
+      const response = await request(app).delete('/wishlist/abc');
+      expect(response.status).toBe(400);
+      expect(response.body.message).toBe('Invalid id');
     });
   });
 
