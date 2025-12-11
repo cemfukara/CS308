@@ -53,6 +53,12 @@
   font-weight: 700;
 }
 
+/* wrapper for each input + its inline error */
+.field {
+  display: flex;
+  flex-direction: column;
+}
+
 .auth-form input {
   padding: 12px 14px;
   border: 1px solid #ddd;
@@ -67,27 +73,7 @@
   outline: none;
 }
 
-.verify-btn {
-  background: #1565c0;
-  color: #fff;
-  font-weight: 600;
-  border: none;
-  padding: 10px;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: 0.3s;
-}
-
-.verify-btn:hover {
-  background: #0d47a1;
-}
-
-.verified-msg {
-  text-align: center;
-  color: #2e7d32;
-  font-weight: 600;
-}
-
+/* main submit button */
 .auth-form button[type='submit'] {
   background: #0d47a1;
   color: #fff;
@@ -104,76 +90,20 @@
   background: #08306b;
 }
 
+/* inline error below inputs (register) */
+.field-error {
+  color: #d32f2f;
+  font-size: 14px;
+  margin-top: 4px;
+  text-align: left;
+}
+
+/* login error */
 .error {
   color: #d32f2f;
   font-size: 14px;
-  text-align: center;
-  margin-top: -8px;
-}
-
-/* Popup overlay */
-.popup-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.6);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 9999;
-}
-
-/* Popup box */
-.popup {
-  background: #fff;
-  padding: 25px 30px;
-  border-radius: 12px;
-  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
-  text-align: center;
-  width: 320px;
-  animation: fadeIn 0.3s ease-in-out;
-}
-
-.popup input {
-  width: 100%;
-  padding: 10px;
-  margin: 12px 0;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-  font-size: 15px;
-}
-
-.popup-buttons {
-  display: flex;
-  justify-content: center;
-  gap: 12px;
-}
-
-.popup-buttons button {
-  background: #1976d2;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  padding: 8px 14px;
-  cursor: pointer;
-  transition: background 0.3s;
-}
-
-.popup-buttons button:hover {
-  background: #125a9c;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
+  margin-top: 4px;
+  text-align: left;
 }
 
 /* Forgot password link */
@@ -191,3 +121,4 @@
   color: #0d47a1;
   text-decoration: underline;
 }
+

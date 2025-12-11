@@ -1,4 +1,6 @@
+// backend/routes/userRoutes.js
 // Defines user-related API routes (/register, /login, /profile, etc.).
+
 import express from 'express';
 import {
   login,
@@ -32,7 +34,7 @@ router.post('/login', login);
 router.get('/profile', authenticate, getProfile);
 
 /**
- * @route   PUT /api/users/profile
+ * @route   PATCH /api/users/profile
  * @desc    Update logged-in user's profile info
  * @access  Private
  */
