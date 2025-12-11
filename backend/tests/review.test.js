@@ -15,9 +15,35 @@ import {
   rejectReviewCommentController,
 } from '../app/controllers/reviewController.js';
 
+vi.mock('../models/Review.js', () => {
+  return {
+    getProductReviews: vi.fn(),
+    getProductAverageRating: vi.fn(),
+    getUserReviews: vi.fn(),
+    hasUserPurchasedProduct: vi.fn(),
+    createReview: vi.fn(),
+    updateReview: vi.fn(),
+    deleteReview: vi.fn(),
+    getPendingComments: vi.fn(),
+    setReviewStatus: vi.fn(),
+    // If your controller imports the class as default, this handles that case too:
+    default: {
+      getProductReviews: vi.fn(),
+      getProductAverageRating: vi.fn(),
+      getUserReviews: vi.fn(),
+      hasUserPurchasedProduct: vi.fn(),
+      createReview: vi.fn(),
+      updateReview: vi.fn(),
+      deleteReview: vi.fn(),
+      getPendingComments: vi.fn(),
+      setReviewStatus: vi.fn(),
+    },
+  };
+});
+
 // 1. Mock the Review Model
 import * as ReviewModel from '../models/Review.js';
-vi.mock('../models/Review.js');
+//vi.mock('../models/Review.js');
 
 // 2. Setup Express App
 const app = express();
@@ -34,7 +60,10 @@ const mockAuth = (req, res, next) => {
 // 3. Define Routes (mirroring reviewRoutes.js)
 // Public Routes
 app.get('/reviews/product/:productId', getProductReviewsController);
-app.get('/reviews/product/:productId/average', getProductAverageRatingController);
+app.get(
+  '/reviews/product/:productId/average',
+  getProductAverageRatingController
+);
 app.get('/reviews/user/:userId', getUserReviewsController);
 
 // Protected Routes (Customer)
@@ -44,13 +73,29 @@ app.delete('/reviews/:reviewId', mockAuth, deleteReviewController);
 
 // Protected Routes (Product Manager)
 app.get('/reviews/pending', mockAuth, getPendingCommentsController);
-app.patch('/reviews/:reviewId/approve', mockAuth, approveReviewCommentController);
+app.patch(
+  '/reviews/:reviewId/approve',
+  mockAuth,
+  approveReviewCommentController
+);
 app.patch('/reviews/:reviewId/reject', mockAuth, rejectReviewCommentController);
 
 // --- Test Data ---
 const mockReviews = [
-  { review_id: 1, user_id: 101, rating: 5, comment_text: 'Great!', status: 'approved' },
-  { review_id: 2, user_id: 102, rating: 4, comment_text: 'Good', status: 'approved' }
+  {
+    review_id: 1,
+    user_id: 101,
+    rating: 5,
+    comment_text: 'Great!',
+    status: 'approved',
+  },
+  {
+    review_id: 2,
+    user_id: 102,
+    rating: 4,
+    comment_text: 'Good',
+    status: 'approved',
+  },
 ];
 const mockStats = { average_rating: 4.5, review_count: 2 };
 
@@ -117,7 +162,10 @@ describe('Review Controller Tests', () => {
 
     it('should create an APPROVED review if NO comment is provided', async () => {
       ReviewModel.hasUserPurchasedProduct.mockResolvedValue(true);
-      ReviewModel.createReview.mockResolvedValue({ review_id: 1, status: 'approved' });
+      ReviewModel.createReview.mockResolvedValue({
+        review_id: 1,
+        status: 'approved',
+      });
 
       const response = await request(app)
         .post(`/reviews/product/${productId}`)
@@ -126,15 +174,20 @@ describe('Review Controller Tests', () => {
       expect(response.status).toBe(201);
       expect(response.body.review.status).toBe('approved');
       // Verify createReview was called with status: 'approved'
-      expect(ReviewModel.createReview).toHaveBeenCalledWith(expect.objectContaining({
-        status: 'approved',
-        commentText: ''
-      }));
+      expect(ReviewModel.createReview).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: 'approved',
+          commentText: '',
+        })
+      );
     });
 
     it('should create a PENDING review if a comment IS provided', async () => {
       ReviewModel.hasUserPurchasedProduct.mockResolvedValue(true);
-      ReviewModel.createReview.mockResolvedValue({ review_id: 2, status: 'pending' });
+      ReviewModel.createReview.mockResolvedValue({
+        review_id: 2,
+        status: 'pending',
+      });
 
       const response = await request(app)
         .post(`/reviews/product/${productId}`)
@@ -143,11 +196,13 @@ describe('Review Controller Tests', () => {
       expect(response.status).toBe(201);
       expect(response.body.review.status).toBe('pending');
       expect(response.body.message).toMatch(/pending approval/);
-      
-      expect(ReviewModel.createReview).toHaveBeenCalledWith(expect.objectContaining({
-        status: 'pending',
-        commentText: 'I loved it!'
-      }));
+
+      expect(ReviewModel.createReview).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: 'pending',
+          commentText: 'I loved it!',
+        })
+      );
     });
 
     it('should return 400 for invalid rating', async () => {
@@ -181,9 +236,7 @@ describe('Review Controller Tests', () => {
     it('should return 200 and updated review', async () => {
       ReviewModel.updateReview.mockResolvedValue({ review_id: 1, rating: 3 });
 
-      const response = await request(app)
-        .put('/reviews/1')
-        .send({ rating: 3 });
+      const response = await request(app).put('/reviews/1').send({ rating: 3 });
 
       expect(response.status).toBe(200);
       expect(response.body.message).toBe('Review updated');
@@ -227,7 +280,7 @@ describe('Review Controller Tests', () => {
       expect(response.body.message).toMatch(/approved/);
       expect(ReviewModel.setReviewStatus).toHaveBeenCalledWith({
         reviewId: 99,
-        status: 'approved'
+        status: 'approved',
       });
     });
   });
@@ -242,7 +295,7 @@ describe('Review Controller Tests', () => {
       expect(response.body.message).toMatch(/rejected/);
       expect(ReviewModel.setReviewStatus).toHaveBeenCalledWith({
         reviewId: 99,
-        status: 'rejected'
+        status: 'rejected',
       });
     });
   });

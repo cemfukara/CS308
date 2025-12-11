@@ -87,9 +87,9 @@ const router = express.Router();
   }
 );*/
 
-// PATCH /products/:id/discount
+// PATCH /products/discount
 router.patch(
-  '/discounts',
+  '/discount',
   authenticate,
   authorizeRoles('sales manager'),
   setDiscount
@@ -130,14 +130,14 @@ router.patch(
 /* ---------- Product Management ---------- */
 
 // PATCH /products/:id/comments/:commentId/approve
-router.patch(
+/*router.patch(
   '/products/:id/comments/:commentId/approve',
   authenticate,
   authorizeRoles('product manager'),
   (req, res) => {
     res.json({ message: 'Approve/reject comment not implemented yet' });
   }
-);
+);*/
 
 // POST /products
 router.post(

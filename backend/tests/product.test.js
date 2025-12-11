@@ -11,6 +11,13 @@ vi.mock('../models/Product.js');
 vi.mock('../models/Notification.js');
 vi.mock('../models/Wishlist.js');
 
+vi.mock('../app/middlewares/validationMiddleware.js', () => {
+  return {
+    // We replace the complex validation array with a single simple pass-through function
+    validateProductInput: [(req, res, next) => next()],
+  };
+});
+
 // 2. Mock Auth Middleware
 vi.mock('../app/middlewares/authMiddleware.js', () => ({
   authenticate: (req, res, next) => {
@@ -90,16 +97,16 @@ describe('Product Controller', () => {
   });
 
   // Test 6: setDiscount (Sales Manager feature)
-  it('PATCH /api/products/:id/discount - should apply discount and notify', async () => {
+  it('PATCH /api/discount - should apply discount and notify', async () => {
     const mockProduct = { product_id: 1, price: 80, list_price: 100 };
-    
+
     // Mock the chain of calls
     ProductModel.applyDiscount.mockResolvedValue(mockProduct);
     WishlistModel.getWishlistedUsers.mockResolvedValue([{ user_id: 5 }]);
     NotificationModel.notifyUsers.mockResolvedValue(true);
 
     const res = await request(app)
-      .patch('/api/products/1/discount')
+      .patch('/api/discount')
       .send({ productId: 1, discountRate: 20 });
 
     expect(res.status).toBe(200);

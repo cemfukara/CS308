@@ -87,7 +87,8 @@ export async function setDiscount(req, res, next) {
       notifiedUsers: wishlistedUsers.length,
     });
   } catch (err) {
-    next(err);
+    console.error(err);
+    return res.status(500).json({ message: 'Internal server error' });
   }
 }
 
