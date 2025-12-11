@@ -1,3 +1,4 @@
+// backend/app/controllers/userController.js
 // This file contains business logic for user-related operations (login, register, etc.).
 
 import bcrypt from 'bcryptjs';
@@ -32,7 +33,7 @@ export const login = async (req, res) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production', // only true in production
       sameSite: 'strict',
-      maxAge: 60 * 60 * 1000,
+      maxAge: 60 * 60 * 1000, // 1 hour
     });
 
     res.json({ message: 'Login successful' });
@@ -42,47 +43,43 @@ export const login = async (req, res) => {
   }
 };
 
-// REGISTER controller
+// REGISTER controller – now uses first_name, last_name, optional tax_id
 export const register = async (req, res) => {
-  const { full_name, email, password } = req.body; //get body
+  const { first_name, last_name, email, password, tax_id } = req.body;
+
   try {
-    if (!full_name || !email || !password)
-      return res
-        .status(400)
-        .json({ message: 'Full name, email and password required' });
+    if (!first_name || !last_name || !email || !password) {
+      return res.status(400).json({
+        message: 'First name, last name, email and password required',
+      });
+    }
 
     // Check duplicates
     const existingUser = await findByEmail(email);
-    if (existingUser)
+    if (existingUser) {
       return res.status(409).json({ message: 'Email already registered' });
+    }
 
     // Hash password
     const password_hash = await bcrypt.hash(password, 10);
 
-    // Split full name into parts
-    const nameParts = full_name.trim().split(' ');
-    let firstName = '';
-    let lastName = '';
-
-    // If no surname entered
-    if (nameParts.length === 1) {
-      firstName = nameParts[0];
-      lastName = '';
-    } else {
-      // Set last word of the full_name to surname (last_name), rest is firstName
-      lastName = nameParts.pop();
-      firstName = nameParts.join(' ');
-    }
-
     // Create user (role defaults to 'customer' in db)
-    const user_id = await createUser(firstName, lastName, email, password_hash);
+    const user_id = await createUser(
+      first_name,
+      last_name,
+      email,
+      password_hash,
+      tax_id
+    );
 
     res.status(201).json({
       message: 'User registered successfully',
       user: {
-        full_name,
         user_id,
         email,
+        first_name,
+        last_name,
+        tax_id: tax_id || null,
       },
     });
   } catch (err) {
@@ -174,7 +171,7 @@ export const updateProfile = async (req, res) => {
 
     await updateUserProfile(userId, updateFields);
 
-    // Handle email change
+    // Handle email change → refresh JWT cookie
     if (updateFields.email && updateFields.email !== req.user.email) {
       const token = generateAccessToken({
         user_id: userId,
@@ -184,7 +181,7 @@ export const updateProfile = async (req, res) => {
 
       res.cookie('token', token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production', // only true in production
+        secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
         maxAge: 60 * 60 * 1000,
       });

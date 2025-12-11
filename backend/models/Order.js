@@ -232,6 +232,20 @@ export async function createOrder({
       `,
       [values]
     );
+
+    // 3) Decrease stock for each product
+    for (const it of items) {
+      const qty = it.quantity || 1;
+
+      await db.query(
+        `
+          UPDATE products
+             SET quantity_in_stock = GREATEST(quantity_in_stock - ?, 0)
+           WHERE product_id = ?
+        `,
+        [qty, it.product_id]
+      );
+    }
   }
 
   return { order_id: orderId };

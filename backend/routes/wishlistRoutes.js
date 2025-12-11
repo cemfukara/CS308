@@ -15,7 +15,7 @@ router.get('/', authenticate, getWishlist);
 
 router.post('/', authenticate, addWishlistItem);
 
-router.delete('/:product_id', authenticate, removeWishlistItem);
+router.delete('/:id', authenticate, removeWishlistItem);
 
 router.delete('/', authenticate, clearWishlist);
 

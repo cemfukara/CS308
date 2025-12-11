@@ -1,11 +1,14 @@
+// backend/app/middlewares/authMiddleware.js
 // This middleware verifies JWT tokens and authenticates users before accessing protected routes.
 
 import jwt from 'jsonwebtoken';
 import { findById } from '../../models/User.js';
 
 // This function decodes the valid JWT token from cookies and passes its contents to req.user
-// IMPORTANT: This function does not checks for user roles, only decodes the token. Must used with authorizeRoles([-allowed roles-]) for role checks.
+// IMPORTANT: This function does not check for user roles, only decodes the token.
+// Must be used with authorizeRoles([...]) for role checks.
 export const authenticate = async (req, res, next) => {
+  // Dev shortcut: AUTH_DISABLED + NODE_ENV=development → always log in as dev user (id 0)
   if (
     process.env.AUTH_DISABLED === 'true' &&
     process.env.NODE_ENV == 'development'
@@ -22,13 +25,17 @@ export const authenticate = async (req, res, next) => {
     };
     return next();
   }
+
   const token = req.cookies.token; // read from cookie
 
-  if (!token)
-    return res.status(401).json({ message: 'Unauthorized: No token provided' });
+  if (!token) {
+    return res
+      .status(401)
+      .json({ message: 'Unauthorized: No token provided' });
+  }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET); //try to verify token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.user = decoded;
     return next();
   } catch {
@@ -36,9 +43,8 @@ export const authenticate = async (req, res, next) => {
   }
 };
 
-// check auth for specified roles. "allowedRoles" could be are "customer", "product manager", "sales manager", and "support agent"
-// But this functions only checks that if the user's role in the JWT token (supplied by authenticate) matches the requested roles.
-// The function does not check the validity (is the role is one of the possible role) of the allowedRoles and user's role.
+// check auth for specified roles. "allowedRoles" could be "customer",
+// "product manager", "sales manager", "support agent" or "dev".
 export const authorizeRoles = (allowedRoles = []) => {
   return (req, res, next) => {
     const user = req.user;
@@ -47,7 +53,7 @@ export const authorizeRoles = (allowedRoles = []) => {
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
-    // If in dev mode with no authentication, allow "dev" role to access anything
+    // In dev mode, "dev" role can access anything
     if (process.env.NODE_ENV === 'development' && user.role === 'dev') {
       return next();
     }
@@ -59,3 +65,6 @@ export const authorizeRoles = (allowedRoles = []) => {
     return next();
   };
 };
+
+
+
