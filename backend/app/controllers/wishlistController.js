@@ -69,13 +69,13 @@ export const removeWishlistItem = async (req, res) => {
     const userId = req.user.user_id;
     const { id } = req.params;
 
-    if (!product_id || isNaN(product_id)) {
-      console.log(product_id);
-      return res.status(400).json({ message: 'Invalid product_id' });
+    if (!id || isNaN(id)) {
+      console.log(id);
+      return res.status(400).json({ message: 'Invalid id' });
     }
 
     // Remove and get affected rows
-    const deleted = await deleteFromWishlist(userId, product_id);
+    const deleted = await deleteFromWishlist(userId, id);
 
     // If no rows affected
     if (deleted === 0) {
@@ -85,7 +85,7 @@ export const removeWishlistItem = async (req, res) => {
     // If deleted successfully
     res
       .status(200)
-      .json({ message: `product_id:${product_id} is removed from wishlist` });
+      .json({ message: `product_id:${id} is removed from wishlist` });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });

@@ -70,13 +70,18 @@ describe('User Route Tests (Vitest + ESM)', () => {
     ]); // findByEmail
 
     const res = await request(app).post('/api/users/register').send({
-      full_name: 'Ali Mehmet Yılmaz',
+      first_name: 'Ali Mehmet',
+      last_name: 'Yılmaz',
       email: 'alimemo@provider.com',
       password: 'password123',
     });
 
     expect(res.status).toBe(201);
+    expect(res.body.user.user_id).toBe(1);
     expect(res.body.user.email).toBe('alimemo@provider.com');
+    expect(res.body.user.first_name).toBe('Ali Mehmet');
+    expect(res.body.user.last_name).toBe('Yılmaz');
+    expect(res.body.user.tax_id).toBe(null);
   });
 
   it('POST /users/register - missing fields', async () => {
@@ -86,7 +91,9 @@ describe('User Route Tests (Vitest + ESM)', () => {
     });
 
     expect(res.status).toBe(400);
-    expect(res.body.message).toBe('Full name, email and password required');
+    expect(res.body.message).toBe(
+      'First name, last name, email and password required'
+    );
   });
 
   it('POST /users/login - success', async () => {
