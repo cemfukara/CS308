@@ -41,7 +41,7 @@ export async function getCartItems(orderId) {
       p.model,
       p.price,
 
-      -- Best image
+      -- image
       (
         SELECT image_url
         FROM product_images 
@@ -68,162 +68,62 @@ export async function getCartItems(orderId) {
   return rows;
 }
 
-// --------------------------------------------------
-// Add product to cart (with stock management)
-// --------------------------------------------------
+// --------------------------------------------
+// Add product to cart
+// --------------------------------------------
 export async function addToCart(orderId, productId, quantity = 1) {
-  try {
-    await db.beginTransaction();
-
-    // Check if item exists
-    const [[existingItem]] = await db.query(
-      `SELECT quantity FROM order_items
-       WHERE order_id = ? AND product_id = ?`,
-      [orderId, productId]
-    );
-
-    // Lock product row for stock check (FOR UPDATE)
-    const [[product]] = await db.query(
-      `SELECT quantity_in_stock, price
-       FROM products
-       WHERE product_id = ? FOR UPDATE`,
-      [productId]
-    );
-
-    if (!product) {
-      await db.rollback();
-      return { status: 404, message: 'Product not found' };
-    }
-
-    let requiredDecrease = quantity;
-
-    if (existingItem) {
-      // If item already exists, user wants to add +quantity more
-      requiredDecrease = quantity;
-
-      if (product.quantity_in_stock < requiredDecrease) {
-        await db.rollback();
-        return { status: 400, message: 'Not enough stock' };
-      }
-
-      await db.query(
-        `UPDATE order_items
-         SET quantity = quantity + ?
+  // Check if item already exists
+  const [rows] = await db.query(
+    `SELECT * FROM order_items
          WHERE order_id = ? AND product_id = ?`,
-        [quantity, orderId, productId]
-      );
-    } else {
-      // New cart line
-      if (product.quantity_in_stock < quantity) {
-        await db.rollback();
-        return { status: 400, message: 'Not enough stock' };
-      }
+    [orderId, productId]
+  );
 
-      await db.query(
-        `INSERT INTO order_items (order_id, product_id, quantity, price_at_purchase)
+  if (rows.length > 0) {
+    // Increase quantity
+    return db.query(
+      `UPDATE order_items 
+             SET quantity = quantity + ?
+             WHERE order_id = ? AND product_id = ?`,
+      [quantity, orderId, productId]
+    );
+  }
+
+  // Fetch current price for price_at_purchase
+  const [[product]] = await db.query(
+    `SELECT price FROM products WHERE product_id = ?`,
+    [productId]
+  );
+
+  // Insert new row
+  return db.query(
+    `INSERT INTO order_items (order_id, product_id, quantity, price_at_purchase)
          VALUES (?, ?, ?, ?)`,
-        [orderId, productId, quantity, product.price]
-      );
-    }
-
-    // Decrease stock
-    await db.query(
-      `UPDATE products
-       SET quantity_in_stock = quantity_in_stock - ?
-       WHERE product_id = ?`,
-      [requiredDecrease, productId]
-    );
-
-    await db.commit();
-    return { success: true };
-  } catch (err) {
-    await db.rollback();
-    throw err;
-  }
+    [orderId, productId, quantity, product.price]
+  );
 }
 
-// --------------------------------------------------
-// Remove item from cart (restore stock)
-// --------------------------------------------------
+// --------------------------------------------
+// Remove item from cart
+// --------------------------------------------
 export async function removeFromCart(userId, productId) {
-  try {
-    await db.beginTransaction();
-
-    // Get cart item with quantity
-    const [[item]] = await db.query(
-      `SELECT oi.order_id, oi.quantity
-       FROM order_items oi
-       INNER JOIN orders o ON oi.order_id = o.order_id
-       WHERE o.user_id = ?
-         AND o.status = 'cart'
-         AND oi.product_id = ?`,
-      [userId, productId]
-    );
-
-    if (!item) {
-      await db.rollback();
-      return { status: 404, message: 'Item not found in cart' };
-    }
-
-    // Restore stock
-    await db.query(
-      `UPDATE products
-       SET quantity_in_stock = quantity_in_stock + ?
-       WHERE product_id = ?`,
-      [item.quantity, productId]
-    );
-
-    // Remove cart row
-    await db.query(
-      `DELETE FROM order_items
-       WHERE order_id = ? AND product_id = ?`,
-      [item.order_id, productId]
-    );
-
-    await db.commit();
-    return { success: true };
-  } catch (err) {
-    await db.rollback();
-    throw err;
-  }
+  return db.query(
+    `
+    DELETE oi
+    FROM order_items oi
+    INNER JOIN orders o
+      ON oi.order_id = o.order_id
+    WHERE o.user_id = ?
+      AND o.status = 'cart'
+      AND oi.product_id = ?
+    `,
+    [userId, productId]
+  );
 }
 
-// --------------------------------------------------
-// Clear entire cart (restore stock)
-// --------------------------------------------------
+// --------------------------------------------
+// Clear cart (delete all items)
+// --------------------------------------------
 export async function clearCart(orderId) {
-  try {
-    await db.beginTransaction();
-
-    // Get all cart items
-    const [items] = await db.query(
-      `SELECT product_id, quantity
-       FROM order_items
-       WHERE order_id = ?`,
-      [orderId]
-    );
-
-    // Restore stock
-    for (const item of items) {
-      await db.query(
-        `UPDATE products
-         SET quantity_in_stock = quantity_in_stock + ?
-         WHERE product_id = ?`,
-        [item.quantity, item.product_id]
-      );
-    }
-
-    // Delete all items
-    await db.query(
-      `DELETE FROM order_items
-       WHERE order_id = ?`,
-      [orderId]
-    );
-
-    await db.commit();
-    return { success: true };
-  } catch (err) {
-    await db.rollback();
-    throw err;
-  }
+  return db.query(`DELETE FROM order_items WHERE order_id = ?`, [orderId]);
 }

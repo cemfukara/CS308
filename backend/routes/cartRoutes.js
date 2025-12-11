@@ -40,13 +40,15 @@ router.put('/update', (req, res) => {
  * @desc    Remove a single item from cart
  * @access  Private
  */
+// TODO decrease quantity instead of deleting whole product
 router.delete('/remove/:productId', authenticate, deleteCartItem);
 
 /**
- * @route   DELETE /api/cart/
+ * @route   DELETE /api/cart/clear
  * @desc    Clear all items from cart
  * @access  Private
  */
-router.delete('/', authenticate, clearUserCart);
+// TODO return proper response to deleting already deleted cart instead of returning true
+router.delete('/clear', authenticate, clearUserCart);
 
 export default router;
