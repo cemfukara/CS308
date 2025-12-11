@@ -8,6 +8,7 @@ import {
   deleteReview,
   getPendingComments,
   setReviewStatus,
+  hasUserPurchasedProduct,
 } from '../../models/Review.js';
 
 // GET /api/reviews/product/:productId
@@ -50,10 +51,14 @@ export const getUserReviewsController = async (req, res) => {
 // POST /api/reviews/product/:productId
 export const createReviewController = async (req, res) => {
   try {
-    const { productId } = req.params;
     const userId = req.user?.user_id;
+    const { productId } = req.params;
 
-    if (!userId) {
+    if (isNaN(productId)) {
+      return res.status(400).json({ message: 'Invalid productId' });
+    }
+
+    if (!userId && userId != 0) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
@@ -62,7 +67,8 @@ export const createReviewController = async (req, res) => {
     const canReview = await hasUserPurchasedProduct(userId, productId);
     if (!canReview) {
       return res.status(403).json({
-        message: 'You can only review products that have been delivered to you.',
+        message:
+          'You can only review products that have been delivered to you.',
       });
     }
 
@@ -110,7 +116,7 @@ export const updateReviewController = async (req, res) => {
     const { reviewId } = req.params;
     const userId = req.user?.user_id;
 
-    if (!userId) {
+    if (!userId && userId != 0) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
@@ -145,7 +151,7 @@ export const deleteReviewController = async (req, res) => {
     const { reviewId } = req.params;
     const userId = req.user?.user_id;
 
-    if (!userId) {
+    if (!userId && userId != 0) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
