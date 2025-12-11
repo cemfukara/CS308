@@ -1,19 +1,17 @@
-// review routes
+// backend/routes/reviewRoutes.js
 import express from 'express';
 import {
-  getApprovedReviews,
-  createReview,
-  deleteReview,
-  getUserReviews,
-  getAverageRating,
+  getProductReviewsController,
+  getProductAverageRatingController,
+  getUserReviewsController,
+  createReviewController,
   updateReviewController,
   deleteReviewController,
   getPendingCommentsController,
   approveReviewCommentController,
   rejectReviewCommentController,
 } from '../app/controllers/reviewController.js';
-
-import { authenticate } from '../app/middlewares/authMiddleware.js';
+import { authenticate } from '../app/middlewares/authMiddleware.js'; // adjust path
 
 const router = express.Router();
 const requireProductManager = (req, res, next) => {

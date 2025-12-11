@@ -44,9 +44,9 @@ import {
 
 // Review Controllers
 import {
-  approveReview,
-  getPendingReviews,
-  deleteReviewPM,
+  approveReviewCommentController as approveReview,
+  getPendingCommentsController as getPendingReviews,
+  deleteReviewController as deleteReviewPM,
 } from '../app/controllers/reviewController.js';
 
 const router = express.Router();

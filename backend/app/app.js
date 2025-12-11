@@ -37,6 +37,6 @@ app.use('/api/users', userRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/invoice', invoiceRoutes);
-app.use('/api/', reviewRoutes);
+app.use('/api/reviews', reviewRoutes);
 
 export default app;

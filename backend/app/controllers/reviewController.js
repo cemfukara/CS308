@@ -1,321 +1,88 @@
-// review controller
+// backend/app/controllers/reviewController.js
 import {
-  createReviewModel,
-  getApprovedReviewsModel,
-  getPendingReviewsModel,
-  approveReviewModel,
-  deleteUserReviewModel,
-  getReviewsByUserModel,
-  deleteReviewPMModel,
-  reviewBelongsToUserModel,
-  userPurchasedProductModel,
-  getAverageRatingModel,
+  getProductReviews,
+  getProductAverageRating,
+  getUserReviews,
+  createReview,
   updateReview,
   deleteReview,
   getPendingComments,
   setReviewStatus,
 } from '../../models/Review.js';
 
-// ------------------------
-// POST /api/ratings
-// ------------------------
-export async function createRating(req, res) {
+// GET /api/reviews/product/:productId
+export const getProductReviewsController = async (req, res) => {
   try {
-    const user_id = req.user.user_id;
-    if (
-      !(
-        process.env.AUTH_DISABLED === 'true' &&
-        process.env.NODE_ENV === 'development' &&
-        req.user.role === 'dev'
-      ) &&
-      !user_id
-    )
-      return res.status(401).json({ message: 'Unauthorized' }); //failsafe
-
-    const { product_id, rating } = req.body;
-    if (product_id === undefined || rating === undefined)
-      return res
-        .status(400)
-        .json({ message: 'product_id and rating are required' });
-
-    if (isNaN(product_id))
-      return res.status(400).json({ message: 'product_id must be a number' });
-    if (!Number.isInteger(Number(rating)))
-      return res.status(400).json({ message: 'Rating must be an integer' });
-
-    const numericRating = Number(rating);
-    if (numericRating < 1 || numericRating > 5)
-      return res.status(400).json({ message: 'Invalid rating value (1-5)' });
-
-    const hasPurchased = await userPurchasedProductModel(user_id, product_id);
-    if (
-      !(
-        process.env.AUTH_DISABLED === 'true' &&
-        process.env.NODE_ENV === 'development' &&
-        req.user.role === 'dev'
-      ) &&
-      !hasPurchased
-    )
-      return res
-        .status(403)
-        .json({ message: 'You can only rate products you have purchased.' });
-
-    await createRatingModel({ user_id, product_id, rating: numericRating });
-    return res.status(200).json({ message: 'Rating submitted.' });
+    const { productId } = req.params;
+    const reviews = await getProductReviews(productId);
+    res.json({ reviews });
   } catch (err) {
-    console.error('Error while creating rating: ', err);
-    return res.status(500).json({ message: 'Server Error' });
+    console.error('Error getting product reviews:', err);
+    res.status(500).json({ message: 'Internal server error' });
   }
-}
+};
 
-// ------------------------
-// POST /api/reviews
-// ------------------------
-export async function createReview(req, res) {
+// GET /api/reviews/product/:productId/average
+export const getProductAverageRatingController = async (req, res) => {
   try {
-    const user_id = req.user.user_id;
-    if (
-      !(
-        process.env.AUTH_DISABLED === 'true' &&
-        process.env.NODE_ENV === 'development' &&
-        req.user.role === 'dev'
-      ) &&
-      !user_id
-    )
-      return res.status(401).json({ message: 'Unauthorized' }); // failsafe
-
-    const { product_id, rating, comment_text } = req.body;
-    if (product_id === undefined || rating === undefined || !comment_text)
-      return res
-        .status(400)
-        .json({ message: 'product_id, rating, and comment_text are required' });
-
-    if (isNaN(product_id))
-      return res.status(400).json({ message: 'product_id must be a number' });
-    if (!Number.isInteger(Number(rating)))
-      return res.status(400).json({ message: 'Rating must be an integer' });
-
-    const numericRating = Number(rating);
-    if (numericRating < 1 || numericRating > 5)
-      return res.status(400).json({ message: 'Invalid rating value (1-5)' });
-
-    const hasPurchased = await userPurchasedProductModel(user_id, product_id);
-    if (
-      !(
-        process.env.AUTH_DISABLED === 'true' &&
-        process.env.NODE_ENV === 'development' &&
-        req.user.role === 'dev'
-      ) &&
-      !hasPurchased
-    )
-      return res
-        .status(403)
-        .json({ message: 'You can only review products you have purchased.' });
-
-    await createReviewModel({
-      user_id,
-      product_id,
-      rating: numericRating,
-      comment_text,
-    });
-    return res
-      .status(200)
-      .json({ message: 'Review submitted and is pending approval.' });
+    const { productId } = req.params;
+    const stats = await getProductAverageRating(productId);
+    res.json(stats);
   } catch (err) {
-    if (err.message.includes('uq_user_product_review')) {
-      return res
-        .status(400)
-        .json({ message: 'You have already reviewed this product.' });
-    }
-    console.error('Error while creating review: ', err);
-    return res.status(500).json({ message: 'Server error' });
+    console.error('Error getting average rating:', err);
+    res.status(500).json({ message: 'Internal server error' });
   }
-}
+};
 
-// Get average rating of a product
-export async function getAverageRating(req, res) {
+// GET /api/reviews/user/:userId
+// You can also use req.user.user_id if you only allow "me"
+export const getUserReviewsController = async (req, res) => {
   try {
-    const product_id = req.params.product_id;
-
-    if (isNaN(product_id)) {
-      return res.status(400).json({ message: 'product_id must be a number' });
-    }
-
-    const data = await getAverageRatingModel(product_id);
-
-    return res.status(200).json({ average: data });
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: 'Server error' });
-  }
-}
-
-// =====================================================================
-// GET /api/products/:product_id/reviews
-// Public: Get approved reviews for a product
-// =====================================================================
-export async function getApprovedReviews(req, res) {
-  try {
-    const product_id = req.params.product_id;
-
-    if (isNaN(product_id)) {
-      return res.status(400).json({ message: 'product_id must be a number' });
-    }
-
-    const data = await getApprovedReviewsModel(product_id);
-
-    return res.json({ reviews: data });
+    const { userId } = req.params;
+    const reviews = await getUserReviews(userId);
+    res.json({ reviews });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Error getting user reviews:', err);
+    res.status(500).json({ message: 'Internal server error' });
   }
-}
+};
 
-// =====================================================================
-// DELETE /api/reviews/:review_id
-// User: Delete own review
-// =====================================================================
-export async function deleteReview(req, res) {
+// POST /api/reviews/product/:productId
+export const createReviewController = async (req, res) => {
   try {
-    const review_id = req.params.review_id;
-    const user_id = req.user.user_id;
+    const { productId } = req.params;
 
-    if (
-      !(
-        process.env.AUTH_DISABLED === 'true' &&
-        process.env.NODE_ENV === 'development' &&
-        req.user.role === 'dev'
-      ) &&
-      !user_id
-    ) {
-      // Failsafe
+    // assuming your auth middleware attaches user info to req.user
+    const userId = req.user?.user_id;
+
+    if (!userId) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
-    if (isNaN(review_id)) {
-      return res.status(400).json({ message: 'review_id must be a number' });
+    const { rating, comment_text } = req.body;
+
+    if (!rating || rating < 1 || rating > 5) {
+      return res.status(400).json({ message: 'Rating must be 1–5.' });
     }
 
-    const belongs = await reviewBelongsToUserModel(review_id, user_id);
-    if (!belongs) {
-      return res.status(403).json({
-        message: 'You cannot delete a review you did not write.',
-      });
-    }
-
-    const deleted = await deleteUserReviewModel(review_id, user_id);
-    if (!deleted) {
-      return res.status(404).json({
-        message: 'Review not found.',
-      });
-    }
-
-    res.json({
-      message: 'Review deleted successfully.',
+    const review = await createReview({
+      userId,
+      productId,
+      rating,
+      commentText: comment_text,
     });
+
+    res.status(201).json({ message: 'Review created', review });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Server error' });
-  }
-}
+    console.error('Error creating review:', err);
 
-// =====================================================================
-// GET /api/user/reviews
-// User: Get own reviews (approved + pending)
-// =====================================================================
-export async function getUserReviews(req, res) {
-  try {
-    const user_id = req.user.user_id;
-
-    if (
-      !(
-        process.env.AUTH_DISABLED === 'true' &&
-        process.env.NODE_ENV === 'development' &&
-        req.user.role === 'dev'
-      ) &&
-      !user_id
-    ) {
-      // Failsafe
-      return res.status(401).json({ message: 'Unauthorized' });
+    if (err.statusCode) {
+      return res.status(err.statusCode).json({ message: err.message });
     }
 
-    const data = await getReviewsByUserModel(user_id);
-
-    res.json({
-      reviews: data,
-    });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Internal server error' });
   }
-}
-
-/*--------PM Controllers -------*/
-
-// =====================================================================
-// GET /api/admin/reviews/pending
-// Product Manager: List pending reviews
-// =====================================================================
-export async function getPendingReviews(req, res) {
-  try {
-    const rows = await getPendingReviewsModel();
-    res.json({ pending: rows });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Server error' });
-  }
-}
-
-// =====================================================================
-// PATCH /api/admin/reviews/:review_id/approve
-// Product Manager: Approve a review
-// =====================================================================
-export async function approveReview(req, res) {
-  try {
-    const review_id = req.params.review_id;
-
-    if (isNaN(review_id)) {
-      return res.status(400).json({ message: 'review_id must be a number' });
-    }
-
-    await approveReviewModel(review_id);
-
-    res.json({
-      message: 'Review approved successfully.',
-    });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Server error' });
-  }
-}
-
-// =====================================================================
-// DELETE /api/admin/reviews/:review_id
-// PM: Delete any review
-// =====================================================================
-export async function deleteReviewPM(req, res) {
-  try {
-    const review_id = req.params.review_id;
-
-    if (isNaN(review_id)) {
-      return res.status(400).json({ message: 'review_id must be a number' });
-    }
-
-    const deleted = await deleteReviewPMModel(review_id);
-    if (!deleted) {
-      return res.status(404).json({
-        message: 'Review not found.',
-      });
-    }
-
-    res.json({
-      message: 'Review deleted successfully.',
-    });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Server error' });
-  }
-}
+};
 
 // PUT /api/reviews/:reviewId
 export const updateReviewController = async (req, res) => {
@@ -323,23 +90,14 @@ export const updateReviewController = async (req, res) => {
     const { reviewId } = req.params;
     const userId = req.user?.user_id;
 
-    if (
-      !(
-        process.env.AUTH_DISABLED === 'true' &&
-        process.env.NODE_ENV === 'development' &&
-        req.user.role === 'dev'
-      ) &&
-      !userId
-    ) {
+    if (!userId) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
     const { rating, comment_text } = req.body;
 
     if (!rating || rating < 1 || rating > 5) {
-      return res
-        .status(400)
-        .json({ message: 'Invalid rating value (0 <= rating <= 5)' });
+      return res.status(400).json({ message: 'Rating must be 1–5.' });
     }
 
     const updated = await updateReview({
@@ -349,7 +107,7 @@ export const updateReviewController = async (req, res) => {
       commentText: comment_text,
     });
 
-    res.json({ message: 'Review updated, pending approval', review: updated });
+    res.json({ message: 'Review updated', review: updated });
   } catch (err) {
     console.error('Error updating review:', err);
 
@@ -399,47 +157,54 @@ function assertProductManager(req, res) {
   return true;
 }
 
-// GET /api/reviews/pending  (PM only)
+// GET /api/reviews/pending  (PM + DEV)
 export const getPendingCommentsController = async (req, res) => {
-  if (!assertProductManager(req, res)) return;
-
   try {
-    const rows = await getPendingComments();
-    res.json({ comments: rows });
+    const comments = await getPendingComments();
+    res.json({ comments });
   } catch (err) {
-    console.error('Error loading pending comments:', err);
-    res.status(500).json({ message: 'Internal server error' });
+    console.error('Error fetching pending comments:', err);
+    res.status(500).json({ message: 'Failed to fetch pending comments' });
   }
 };
 
-// PATCH /api/reviews/:reviewId/approve  (PM only)
+// PATCH /api/reviews/:reviewId/approve  (PM + DEV)
 export const approveReviewCommentController = async (req, res) => {
-  if (!assertProductManager(req, res)) return;
-
   try {
-    const { reviewId } = req.params;
+    // accept both /:reviewId and /:review_id
+    const rawId = req.params.reviewId ?? req.params.review_id;
+    console.log('Approve request for reviewId =', rawId);
+
+    const reviewId = Number(rawId);
+    if (!reviewId) {
+      return res.status(400).json({ message: 'Invalid review id' });
+    }
+
     await setReviewStatus({ reviewId, status: 'approved' });
-    res.json({ message: 'Comment approved', success: true });
+    res.json({ message: 'Review approved successfully' });
   } catch (err) {
-    console.error('Error approving comment:', err);
+    console.error('Error approving review comment:', err);
     res
-      .status(err.statusCode || 500)
-      .json({ message: err.message || 'Internal server error' });
+      .status(500)
+      .json({ message: err.message || 'Failed to approve review' });
   }
 };
 
-// PATCH /api/reviews/:reviewId/reject  (PM only)
+// PATCH /api/reviews/:reviewId/reject  (PM + DEV)
 export const rejectReviewCommentController = async (req, res) => {
-  if (!assertProductManager(req, res)) return;
-
   try {
-    const { reviewId } = req.params;
+    const rawId = req.params.reviewId ?? req.params.review_id;
+    console.log('Reject request for reviewId =', rawId);
+
+    const reviewId = Number(rawId);
+    if (!reviewId) {
+      return res.status(400).json({ message: 'Invalid review id' });
+    }
+
     await setReviewStatus({ reviewId, status: 'rejected' });
-    res.json({ message: 'Comment rejected', success: true });
+    res.json({ message: 'Review rejected successfully' });
   } catch (err) {
-    console.error('Error rejecting comment:', err);
-    res
-      .status(err.statusCode || 500)
-      .json({ message: err.message || 'Internal server error' });
+    console.error('Error rejecting review comment:', err);
+    res.status(500).json({ message: err.message || 'Failed to reject review' });
   }
 };
