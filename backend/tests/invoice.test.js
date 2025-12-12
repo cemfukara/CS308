@@ -19,11 +19,22 @@ vi.mock('pdfkit', () => {
   return {
     default: class PDFDocument {
       constructor() {
-        this.pipe = vi.fn();
+        // 1. Capture the 'destination' (the Express 'res' object)
+        this.pipe = vi.fn((destination) => {
+          this._destination = destination;
+          return destination;
+        });
+
         this.fontSize = vi.fn().mockReturnThis();
         this.text = vi.fn().mockReturnThis();
         this.moveDown = vi.fn().mockReturnThis();
-        this.end = vi.fn();
+
+        // 2. When the PDF is done, manually close the Express response
+        this.end = vi.fn(() => {
+          if (this._destination) {
+            this._destination.end();
+          }
+        });
       }
     },
   };
@@ -77,7 +88,9 @@ describe('Invoice Controller Tests', () => {
     });
 
     it('should return 400 if start or end date is missing', async () => {
-      const response = await request(app).get('/invoices/range?start=2025-01-01'); // Missing end
+      const response = await request(app).get(
+        '/invoices/range?start=2025-01-01'
+      ); // Missing end
 
       expect(response.status).toBe(500); // Controller throws, caught by error handler (mocked app defaults to 500 html/text)
       // Note: In a real app with proper error middleware, this might check for 400 JSON.
@@ -85,7 +98,9 @@ describe('Invoice Controller Tests', () => {
     });
 
     it('should return 500 if model throws an error', async () => {
-      InvoiceModel.getInvoicesByDateRange.mockRejectedValue(new Error('DB Error'));
+      InvoiceModel.getInvoicesByDateRange.mockRejectedValue(
+        new Error('DB Error')
+      );
 
       const response = await request(app).get(`/invoices/range${mockQuery}`);
 
@@ -121,7 +136,7 @@ describe('Invoice Controller Tests', () => {
       expect(response.headers['content-disposition']).toContain(
         `attachment; filename=invoice-${orderId}.pdf`
       );
-      
+
       expect(InvoiceModel.getInvoiceById).toHaveBeenCalledWith(orderId);
       expect(InvoiceModel.getInvoiceItems).toHaveBeenCalledWith(orderId);
     });

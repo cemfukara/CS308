@@ -29,9 +29,7 @@ export const authenticate = async (req, res, next) => {
   const token = req.cookies.token; // read from cookie
 
   if (!token) {
-    return res
-      .status(401)
-      .json({ message: 'Unauthorized: No token provided' });
+    return res.status(401).json({ message: 'Unauthorized: No token provided' });
   }
 
   try {
@@ -49,13 +47,13 @@ export const authorizeRoles = (allowedRoles = []) => {
   return (req, res, next) => {
     const user = req.user;
 
-    if (!user) {
-      return res.status(401).json({ message: 'Unauthorized' });
-    }
-
     // In dev mode, "dev" role can access anything
     if (process.env.NODE_ENV === 'development' && user.role === 'dev') {
       return next();
+    }
+
+    if (!user) {
+      return res.status(401).json({ message: 'Unauthorized' });
     }
 
     if (!allowedRoles.includes(user.role)) {
@@ -65,6 +63,3 @@ export const authorizeRoles = (allowedRoles = []) => {
     return next();
   };
 };
-
-
-

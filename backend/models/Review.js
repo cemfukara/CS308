@@ -6,10 +6,27 @@ export const getProductReviews = async (productId) => {
     productId,
   ]);
 
-  // mysql2 + CALL returns [ [rows], ... ]
-  const rows = Array.isArray(resultSets) ? resultSets : [];
+  // to get rid of bottom sql info
+  const rows = resultSets[0] || [];
+
   return rows;
 };
+
+// Check if user purchased product (status must be delivered)
+export async function hasUserPurchasedProduct(user_id, product_id) {
+  const sql = `
+    SELECT 1
+    FROM orders o
+    JOIN order_items oi ON oi.order_id = o.order_id
+    WHERE o.user_id = ?
+      AND o.status = 'delivered'
+      AND oi.product_id = ?
+    LIMIT 1
+  `;
+
+  const [rows] = await db.execute(sql, [user_id, product_id]);
+  return rows.length > 0; // true if purchased
+}
 
 // 2. Get average rating + review count for a product
 export const getProductAverageRating = async (productId) => {
@@ -24,7 +41,9 @@ export const getProductAverageRating = async (productId) => {
 // 3. Get all reviews made by a specific user
 export const getUserReviews = async (userId) => {
   const [resultSets] = await db.query('CALL sp_GetUserReviews(?);', [userId]);
-  const rows = Array.isArray(resultSets) ? resultSets : [];
+
+  // to get rid of bottom sql info
+  const rows = resultSets[0] || [];
   return rows;
 };
 
