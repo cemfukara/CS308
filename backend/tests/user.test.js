@@ -57,17 +57,8 @@ describe('User Route Tests (Vitest + ESM)', () => {
   });
 
   it('POST /users/register - success', async () => {
+    mockQuery.mockResolvedValueOnce([[]]); // findByEmail
     mockQuery.mockResolvedValueOnce([{ insertId: 1 }]); // createUser
-    mockQuery.mockResolvedValueOnce([
-      [
-        {
-          user_id: 1,
-          email: 'alimemo@provider.com',
-          first_name_encrypted: 'enc',
-          last_name_encrypted: 'enc',
-        },
-      ],
-    ]); // findByEmail
 
     const res = await request(app).post('/api/users/register').send({
       first_name: 'Ali Mehmet',
@@ -77,6 +68,7 @@ describe('User Route Tests (Vitest + ESM)', () => {
     });
 
     expect(res.status).toBe(201);
+    expect(res.body.message).toBe('User registered successfully');
     expect(res.body.user.user_id).toBe(1);
     expect(res.body.user.email).toBe('alimemo@provider.com');
     expect(res.body.user.first_name).toBe('Ali Mehmet');
