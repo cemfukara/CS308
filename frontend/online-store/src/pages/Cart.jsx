@@ -37,14 +37,14 @@ const Cart = () => {
       ) : (
         <>
           <div className="cart-items">
-            {cart.map(item => (
+            {cart.map(item => {
+              const placeholder = new URL('../assets/placeholder.jpg', import.meta.url).href;
+              const imageSrc = item.product_images?.[0]?.image_url || placeholder;
+              
+              return (
               <div key={item.product_id} className="cart-item">
                 <img
-                  src={
-                    item.image
-                      ? new URL(`../assets/${item.image}`, import.meta.url).href
-                      : new URL('../assets/placeholder.jpg', import.meta.url).href
-                  }
+                  src={imageSrc}
                   alt={item.name}
                 />
 
@@ -85,7 +85,8 @@ const Cart = () => {
 
                 <button onClick={() => removeFromCart(item.product_id)}>Remove</button>
               </div>
-            ))}
+              );
+            })}
           </div>
 
           <div className="cart-summary">
