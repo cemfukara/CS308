@@ -4,6 +4,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUser, faCartShopping } from '@fortawesome/free-solid-svg-icons';
 import './Navbar.css';
 import useAuthStore from '../store/authStore';
+import Dropdown from '@/components/Dropdown';
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -15,6 +16,41 @@ const Navbar = () => {
 
   const location = useLocation();
   const [searchQuery, setSearchQuery] = useState('');
+  const [categories, setCategories] = useState([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadCategories() {
+      try {
+        setCategoriesLoading(true);
+        const res = await fetch('/api/categories', { credentials: 'include' });
+        if (!res.ok) throw new Error('Failed to load categories');
+        const data = await res.json();
+
+        if (!cancelled) setCategories(Array.isArray(data) ? data : []);
+      } catch (e) {
+        if (!cancelled) setCategories([]);
+        console.error(e);
+      } finally {
+        if (!cancelled) setCategoriesLoading(false);
+      }
+    }
+
+    loadCategories();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const categoryOptions = [
+    { label: 'All Categories', value: '' },
+    ...categories.map(c => ({
+      label: c.name,
+      value: c.name,
+    })),
+  ];
 
   // ✅ Keep navbar search in sync with URL ?search=
   useEffect(() => {
@@ -144,55 +180,34 @@ const Navbar = () => {
         </div>
       </nav>
 
-      {/* ---------- Category Bar ---------- */}
       <div className="category-bar">
-        <ul className="categories">
-          <li className="category-item">
-            <Link to="/products">All Products</Link>
-          </li>
-          <li className="category-item">
-            <span>Phones</span>
-            <ul className="subcategory">
-              <li>
-                <Link to="/products?category=smartphones">Smartphones</Link>
-              </li>
-              <li>
-                <Link to="/products?category=cases">Cases & Accessories</Link>
-              </li>
-              <li>
-                <Link to="/products?category=chargers">Chargers</Link>
-              </li>
-            </ul>
-          </li>
-          <li className="category-item">
-            <span>Computers</span>
-            <ul className="subcategory">
-              <li>
-                <Link to="/products?category=laptops">Laptops</Link>
-              </li>
-              <li>
-                <Link to="/products?category=desktops">Desktops</Link>
-              </li>
-              <li>
-                <Link to="/products?category=monitors">Monitors</Link>
-              </li>
-            </ul>
-          </li>
-          <li className="category-item">
-            <span>Accessories</span>
-            <ul className="subcategory">
-              <li>
-                <Link to="/products?category=headphones">Headphones</Link>
-              </li>
-              <li>
-                <Link to="/products?category=keyboards">Keyboards</Link>
-              </li>
-              <li>
-                <Link to="/products?category=mice">Mice</Link>
-              </li>
-            </ul>
-          </li>
-        </ul>
+        <div className="category-filter-row">
+          {/* ✅ All Products button (LEFT) */}
+          <button
+            className="all-products-btn"
+            onClick={() => navigate('/products')}
+            style={{ marginLeft: 'auto', marginTop: '22px' }}
+          >
+            All Products
+          </button>
+
+          {/* Categories dropdown */}
+          <div className="category-filter">
+            <Dropdown
+              label="Categories"
+              value={new URLSearchParams(location.search).get('category') || ''}
+              options={categoryOptions}
+              onChange={value => {
+                const params = new URLSearchParams(location.search);
+
+                if (value) params.set('category', value);
+                else params.delete('category');
+
+                navigate(`/products?${params.toString()}`);
+              }}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );

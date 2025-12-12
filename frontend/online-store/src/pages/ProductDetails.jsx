@@ -470,7 +470,28 @@ function ProductDetails() {
           </div>
         </div>
 
-        <h1>{formatPrice(product.price, product.currency)}</h1>
+        <div className={`price-block ${product.discount_ratio !== '0.00' ? 'has-discount' : ''}`}>
+          {product.discount_ratio !== '0.00' && (
+            <span className="discount-badge-float">-{product.discount_ratio}%</span>
+          )}
+
+          <div className="price-main">
+            <h1 className="price-now">{formatPrice(product.price, product.currency)}</h1>
+
+            {product.discount_ratio !== '0.00' && (
+              <div className="price-meta">
+                <span className="price-was">
+                  {formatPrice(product.list_price, product.currency)}
+                </span>
+
+                <span className="price-save">
+                  You save {formatPrice(product.list_price - product.price, product.currency)}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+
         <p className={inStock ? 'stock-ok' : 'stock-bad'}>
           {inStock ? `In stock: ${product.quantity_in_stock}` : 'Currently out of stock'}
         </p>
