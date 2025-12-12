@@ -112,7 +112,59 @@ const Navbar = () => {
         {/* ---------- Left: Logo ---------- */}
         <div className="navbar-left">
           <Link to="/" className="logo">
-            TechZone
+            <svg
+              width="220"
+              height="48"
+              viewBox="0 0 220 48"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <rect x="0" y="0" width="48" height="48" rx="12" fill="url(#grad)" />
+
+              <path
+                d="M14 16H24C26 16 28 14 30 14H34"
+                stroke="white"
+                stroke-width="2.4"
+                stroke-linecap="round"
+              />
+              <circle cx="36" cy="14" r="2.6" fill="white" />
+
+              <path
+                d="M14 24H26C28 24 30 26 32 26H36"
+                stroke="white"
+                stroke-width="2.4"
+                stroke-linecap="round"
+              />
+              <circle cx="38" cy="26" r="2.6" fill="white" />
+
+              <path d="M14 32H22" stroke="white" stroke-width="2.4" stroke-linecap="round" />
+              <circle cx="24" cy="32" r="2.6" fill="white" />
+
+              <text
+                x="64"
+                y="32"
+                font-size="26"
+                font-weight="700"
+                font-family="Inter, system-ui, -apple-system, BlinkMacSystemFont, sans-serif"
+                fill="#111"
+              >
+                TechZone
+              </text>
+
+              <defs>
+                <linearGradient
+                  id="grad"
+                  x1="0"
+                  y1="0"
+                  x2="48"
+                  y2="48"
+                  gradientUnits="userSpaceOnUse"
+                >
+                  <stop offset="0%" stop-color="#3B82F6" />
+                  <stop offset="100%" stop-color="#2563EB" />
+                </linearGradient>
+              </defs>
+            </svg>
           </Link>
         </div>
 

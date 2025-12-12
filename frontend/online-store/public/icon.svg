@@ -1,0 +1,24 @@
+<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect x="0" y="0" width="48" height="48" rx="12" fill="url(#grad)"></rect>
+
+  <!-- Circuit line 1 -->
+  <path d="M12 16H22C24 16 26 14 28 14H32" stroke="white" stroke-width="2.4" stroke-linecap="round"></path>
+  <circle cx="34" cy="14" r="2.6" fill="white"></circle>
+
+  <!-- Circuit line 2 -->
+  <path d="M12 24H24C26 24 28 26 30 26H34" stroke="white" stroke-width="2.4" stroke-linecap="round"></path>
+  <circle cx="36" cy="26" r="2.6" fill="white"></circle>
+
+  <!-- Circuit line 3 -->
+  <path d="M12 32H20" stroke="white" stroke-width="2.4" stroke-linecap="round"></path>
+  <circle cx="22" cy="32" r="2.6" fill="white"></circle>
+
+  <!-- Gradient -->
+  <defs>
+    <linearGradient id="grad" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#3B82F6"></stop>
+      <stop offset="100%" stop-color="#2563EB"></stop>
+    </linearGradient>
+  </defs>
+</svg>
