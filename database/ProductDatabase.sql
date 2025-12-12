@@ -357,6 +357,77 @@ VALUES
     (10, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/apple/thumb/150372-2_large.jpg', 'Apple 20W Charger Prongs', false, 2),
     (10, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/apple/thumb/150372-3_large.jpg', 'Apple 20W Charger Box', false, 3);
 
+-- ===================================================================
+-- NEW PRODUCTS INSERT SCRIPT
+-- Contains Product IDs: 11, 12, 13, 14, 15
+-- ===================================================================
+
+INSERT INTO products (
+    product_id, category_id, name, model, serial_number, description, 
+    quantity_in_stock, price, list_price, warranty_status, distributor_info, currency
+) VALUES 
+-- 11. MagSafe Case for iPhone 17 Pro Max
+(
+    11, 4, 'Apple iPhone 17 Pro Max Clear Case with MagSafe', 'MGFW4ZM/A', 'SN-IP17PM-MAG-001', 
+    'Thin, light, and easy to grip — this Apple-designed case shows off the brilliant colored finish of iPhone 17 Pro Max while providing extra protection. Crafted with a blend of optically clear polycarbonate and flexible materials.', 
+    1, 2499.00, 2750.00, '2 Years Apple Türkiye Warranty', 'Apple Türkiye', 'TL'
+),
+-- 12. Logitech G213 Keyboard
+(
+    12, 2, 'Logitech G G213 Prodigy RGB Gaming Keyboard', '920-008094', 'SN-G213-KB-TR-001', 
+    'Gaming-grade performance with Mech-Dome keys that deliver a superior tactile response. Features 5 individual RGB lighting zones with 16.8 million colors (LIGHTSYNC), a spill-resistant durable design, and dedicated media controls.', 
+    0, 2199.00, 2600.00, '2 Years Logitech Türkiye Warranty', 'Logitech Türkiye', 'TL'
+),
+-- 13. Razer Basilisk V3 Pro Mouse
+(
+    13, 2, 'Razer Basilisk V3 Pro 30000 DPI Wireless Gaming Mouse', 'RZ01-04620100-R3G1', 'SN-RAZER-BAS-V3-001', 
+    'The king of gaming mice returns to raise the game. Armed with the Razer Focus Pro 30K Optical Sensor, 13-zone Chroma lighting with full underglow, and the Razer HyperScroll Tilt Wheel. Features iconic ergonomic form with 10+1 programmable buttons.', 
+    10, 5499.00, 6250.00, '2 Years Bilkom Warranty', 'Bilkom', 'TL'
+),
+-- 14. Apple AirPods Pro 2
+(
+    14, 3, 'Apple AirPods Pro (2nd Generation) with MagSafe Charging Case (USB-C)', 'MTJV3TU/A', 'SN-AIRPODS-PRO2-001', 
+    'Rebuilt from the sound up. AirPods Pro 2 feature up to 2x more Active Noise Cancellation, plus Adaptive Transparency, and Personalized Spatial Audio with dynamic head tracking for immersive sound. Now with multiple ear tips (XS, S, M, L) and up to 6 hours of listening time.', 
+    100, 8999.00, 9999.00, '2 Years Apple Türkiye Warranty', 'Apple Türkiye', 'TL'
+),
+-- 15. Xiaomi Redmi Note 14
+(
+    15, 1, 'Xiaomi Redmi Note 14 8GB/256GB Black', '24117RN76G', 'SN-REDMI-N14-001', 
+    'Features a 6.67-inch AMOLED display with 120Hz refresh rate, 5500mAh battery with 33W fast charging, and a 108MP triple camera system. Powered by MediaTek Helio G99 Ultra with IP54 dust and splash resistance.', 
+    11, 12999.00, 13999.00, '2 Years Xiaomi Türkiye Warranty', 'Xiaomi Türkiye', 'TL'
+);
+
+-- ===================================================================
+-- INSERT PRODUCT IMAGES (IDs 11, 12, 13, 14, 15)
+-- ===================================================================
+
+INSERT INTO product_images (product_id, image_url, is_primary) VALUES 
+-- Product 11 (iPhone Case)
+(11, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/apple/thumb/153653-1_large.jpg', 1),
+(11, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/apple/thumb/153653-2_large.jpg', 0),
+(11, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/apple/thumb/153653-3_large.jpg', 0),
+
+-- Product 12 (Logitech Keyboard)
+(12, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/logitech/thumb/v2-84663_large.jpg', 1),
+(12, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/logitech/thumb/v2-84663-1_large.jpg', 0),
+(12, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/logitech/thumb/v2-84663-2_large.jpg', 0),
+
+-- Product 13 (Razer Mouse)
+(13, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/razer/thumb/142187-1_large.jpg', 1),
+(13, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/razer/thumb/142187-2_large.jpg', 0),
+(13, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/razer/thumb/142187-3_large.jpg', 0),
+
+-- Product 14 (AirPods Pro 2)
+(14, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/apple/thumb/141492-1_large.jpg', 1),
+(14, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/apple/thumb/141492-2_large.jpg', 0),
+(14, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/apple/thumb/141492-3_large.jpg', 0),
+(14, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/apple/thumb/141492-5_large.jpg', 0),
+
+-- Product 15 (Xiaomi Redmi Note 14)
+(15, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/xiaomi/thumb/149055-1_large.jpg', 1),
+(15, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/xiaomi/thumb/149055-4_large.jpg', 0);
+
+
 --  Dev data insertion into users table for dev test
 SET SESSION sql_mode = 'NO_AUTO_VALUE_ON_ZERO';
 
