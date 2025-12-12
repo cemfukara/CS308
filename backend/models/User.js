@@ -33,7 +33,7 @@ export const createUser = async (
     [email, password_hash, firstNameEnc, lastNameEnc, taxEnc]
   );
 
-  return result[0].user_id;
+  return result.insertId;
 };
 
 // Return user info by id (with decrypted fields)
