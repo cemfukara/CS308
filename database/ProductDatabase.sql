@@ -1,3 +1,5 @@
+-- Use below line once for refreshing your database
+-- drop schema mydb; create schema mydb;
 USE mydb;
 
 -- ===================================================================
@@ -392,7 +394,7 @@ INSERT INTO products (
 ),
 -- 15. Xiaomi Redmi Note 14
 (
-    15, 1, 'Xiaomi Redmi Note 14 8GB/256GB Black', '24117RN76G', 'SN-REDMI-N14-001', 
+    15, 1, 'Xiaomi Redmi Note 14 8GB 256GB Black', '24117RN76G', 'SN-REDMI-N14-001', 
     'Features a 6.67-inch AMOLED display with 120Hz refresh rate, 5500mAh battery with 33W fast charging, and a 108MP triple camera system. Powered by MediaTek Helio G99 Ultra with IP54 dust and splash resistance.', 
     11, 12999.00, 13999.00, '2 Years Xiaomi Türkiye Warranty', 'Xiaomi Türkiye', 'TL'
 );
