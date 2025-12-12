@@ -3,6 +3,7 @@
 
 import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
+import { formatPrice } from '../../frontend/online-store/src/utils/formatPrice.js';  
 
 dotenv.config();
 
@@ -50,7 +51,7 @@ Dear ${customerName},
 Thank you for your order!
 
 Order ID: ${orderId}
-Total: ${currencySymbol}${orderDetails.totalPrice || 'N/A'}
+Total: ${formatPrice(orderDetails.totalPrice, orderDetails.currency)}
 
 Your invoice is attached to this email as a PDF document.
 
@@ -84,7 +85,7 @@ ${senderName}
               <div class="order-details">
                 <h3>Order Details</h3>
                 <p><strong>Order ID:</strong> ${orderId}</p>
-                <p><strong>Total:</strong> ${currencySymbol}${orderDetails.totalPrice || 'N/A'}</p>
+                <p><strong>Total:</strong> ${formatPrice(orderDetails.totalPrice, orderDetails.currency)}</p>
                 <p><strong>Status:</strong> Processing</p>
               </div>
               

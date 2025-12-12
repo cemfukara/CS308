@@ -2,6 +2,7 @@
 // Helper to generate PDF invoices for orders using PDFKit
 
 import PDFDocument from 'pdfkit';
+import {formatPrice} from '../../frontend/online-store/src/utils/formatPrice.js';
 
 /**
  * Generate a PDF invoice buffer from order data
@@ -107,11 +108,11 @@ export function generateInvoicePDF(orderData, items) {
 
         doc.text(productName, 40, itemY, { width: 250 });
         doc.text(`${quantity}`, 300, itemY, { width: 80, align: 'center' });
-        doc.text(`${currencySymbol}${unitPrice.toFixed(2)}`, 390, itemY, {
+        doc.text(`${formatPrice(unitPrice, orderData.currency,false)}`, 390, itemY, {
           width: 80,
           align: 'right',
         });
-        doc.text(`${currencySymbol}${subtotal.toFixed(2)}`, 480, itemY, {
+        doc.text(`${formatPrice(subtotal, orderData.currency,false)}`, 480, itemY, {
           width: 90,
           align: 'right',
         });
@@ -136,7 +137,7 @@ export function generateInvoicePDF(orderData, items) {
         .fillColor('#000000')
         .text('Total:', 390, doc.y, { width: 80, align: 'right' });
       doc.text(
-        `${currencySymbol}${Number(orderData.total_price || 0).toFixed(2)}`,
+        `${formatPrice(orderData.total_price, orderData.currency,false)}`,
         480,
         doc.y - 14,
         { width: 90, align: 'right' }

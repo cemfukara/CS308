@@ -38,7 +38,7 @@ function resolveCurrencyMeta(currencyRaw) {
 }
 
 // Main formatter: returns e.g. ₺1.234,50 or $1,234.50 or €1.234,50
-export function formatPrice(value, currencyRaw) {
+export function formatPrice(value, currencyRaw, isSymbol = true) {
   const amount = Number(value) || 0;
   const meta = resolveCurrencyMeta(currencyRaw);
 
@@ -46,6 +46,10 @@ export function formatPrice(value, currencyRaw) {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(amount);
+
+  if(!isSymbol){
+  return `${meta.code}${formattedNumber}`;  
+}
 
   // Always "symbol + number", no space: ₺1.234,50 / $1,234.50 / €1.234,50
   return `${meta.symbol}${formattedNumber}`;
