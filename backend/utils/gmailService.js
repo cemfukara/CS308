@@ -35,16 +35,22 @@ export async function sendInvoiceEmail(
 ) {
   const senderName = process.env.MAILJET_SENDER_NAME || 'Online Store';
   const senderEmail = process.env.GMAIL_USER;
+  
+  // Get customer name and currency
+  const customerName = orderDetails.customerName || 'Customer';
+  const currencySymbol = orderDetails.currency === 'TRY' ? '₺' : '$';
 
   const mailOptions = {
     from: `"${senderName}" <${senderEmail}>`,
     to: customerEmail,
     subject: `Order Confirmation - Invoice #${orderId}`,
     text: `
+Dear ${customerName},
+
 Thank you for your order!
 
 Order ID: ${orderId}
-Total: $${orderDetails.totalPrice || 'N/A'}
+Total: ${currencySymbol}${orderDetails.totalPrice || 'N/A'}
 
 Your invoice is attached to this email as a PDF document.
 
@@ -72,13 +78,13 @@ ${senderName}
               <h1>Thank You for Your Order!</h1>
             </div>
             <div class="content">
-              <p>Dear Customer,</p>
+              <p>Dear ${customerName},</p>
               <p>We're pleased to confirm that we've received your order. Your invoice is attached to this email.</p>
               
               <div class="order-details">
                 <h3>Order Details</h3>
                 <p><strong>Order ID:</strong> ${orderId}</p>
-                <p><strong>Total:</strong> $${orderDetails.totalPrice || 'N/A'}</p>
+                <p><strong>Total:</strong> ${currencySymbol}${orderDetails.totalPrice || 'N/A'}</p>
                 <p><strong>Status:</strong> Processing</p>
               </div>
               

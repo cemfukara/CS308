@@ -9,6 +9,7 @@ import {
   getAllOrders,
   updateOrderStatus,
 } from '../../models/Order.js';
+import { findById as findUserById } from '../../models/User.js';
 // Email services when mailjet is working
 // import { sendInvoiceEmail } from '../../utils/emailService.js';
 // Email services when mailjet is not working
@@ -111,21 +112,32 @@ export async function createOrderController(req, res) {
 
     // Send invoice email after successful order creation
     try {
-      // Fetch the complete order details and items
-      const [orderDetails, orderItems] = await Promise.all([
+      // Fetch the complete order details, items, and user info
+      const [orderDetails, orderItems, userInfo] = await Promise.all([
         getOrderById(order_id, userId),
         getOrderItems(order_id, userId),
+        findUserById(userId),
       ]);
 
       if (orderDetails && orderDetails.customer_email) {
+        // Determine currency from items (use first item's currency or default to TRY)
+        const currency = normalizedItems[0]?.currency || 'TRY';
+        
+        // Get customer name
+        const customerName = userInfo
+          ? `${userInfo.first_name || ''} ${userInfo.last_name || ''}`.trim() || 'Customer'
+          : 'Customer';
+
         // Generate PDF invoice
         const pdfBuffer = await generateInvoicePDF(
           {
             order_id,
             customer_email: orderDetails.customer_email,
+            customer_name: customerName,
             status: orderDetails.status,
             total_price: totalPrice,
             order_date: orderDetails.order_date,
+            currency,
           },
           orderItems
         );
@@ -135,7 +147,11 @@ export async function createOrderController(req, res) {
           orderDetails.customer_email,
           order_id,
           pdfBuffer,
-          { totalPrice }
+          { 
+            totalPrice,
+            currency,
+            customerName,
+          }
         );
 
         console.log(

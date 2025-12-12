@@ -26,6 +26,10 @@ export function generateInvoicePDF(orderData, items) {
       doc.on('end', () => resolve(Buffer.concat(buffers)));
       doc.on('error', reject);
 
+      // Determine currency symbol
+      // Note: PDFKit's default font doesn't support ₺ symbol, so we use "TL" for Turkish Lira
+      const currencySymbol = orderData.currency === 'TRY' ? 'TL' : '$';
+
       // Header
       doc.fontSize(24).text('INVOICE', { align: 'center', underline: true });
       doc.moveDown(1.5);
@@ -55,7 +59,8 @@ export function generateInvoicePDF(orderData, items) {
 
       doc.fontSize(10);
       doc.text(`Order ID: ${orderData.order_id}`);
-      doc.text(`Customer Email: ${orderData.customer_email}`);
+      doc.text(`Customer: ${orderData.customer_name || 'Customer'}`);
+      doc.text(`Email: ${orderData.customer_email}`);
       doc.text(`Status: ${orderData.status || 'Processing'}`);
       doc.text(
         `Order Date: ${
@@ -96,16 +101,17 @@ export function generateInvoicePDF(orderData, items) {
         const unitPrice = Number(item.price_at_purchase || 0);
         const quantity = Number(item.quantity || 1);
         const subtotal = unitPrice * quantity;
+        
+        // Use item.name which comes from the products table join
+        const productName = item.name || 'Unknown Product';
 
-        doc.text(item.product_name || 'Unknown Product', 40, itemY, {
-          width: 250,
-        });
+        doc.text(productName, 40, itemY, { width: 250 });
         doc.text(`${quantity}`, 300, itemY, { width: 80, align: 'center' });
-        doc.text(`$${unitPrice.toFixed(2)}`, 390, itemY, {
+        doc.text(`${currencySymbol}${unitPrice.toFixed(2)}`, 390, itemY, {
           width: 80,
           align: 'right',
         });
-        doc.text(`$${subtotal.toFixed(2)}`, 480, itemY, {
+        doc.text(`${currencySymbol}${subtotal.toFixed(2)}`, 480, itemY, {
           width: 90,
           align: 'right',
         });
@@ -130,7 +136,7 @@ export function generateInvoicePDF(orderData, items) {
         .fillColor('#000000')
         .text('Total:', 390, doc.y, { width: 80, align: 'right' });
       doc.text(
-        `$${Number(orderData.total_price || 0).toFixed(2)}`,
+        `${currencySymbol}${Number(orderData.total_price || 0).toFixed(2)}`,
         480,
         doc.y - 14,
         { width: 90, align: 'right' }

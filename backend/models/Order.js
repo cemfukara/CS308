@@ -156,7 +156,8 @@ export async function getOrderItems(orderId, userId) {
         oi.price_at_purchase,
         p.product_id,
         p.name,
-        p.model
+        p.model,
+        p.currency
       FROM order_items oi
       JOIN products p ON oi.product_id = p.product_id
       JOIN orders o ON oi.order_id = o.order_id
