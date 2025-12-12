@@ -12,18 +12,9 @@ const mailjet = Mailjet.apiConnect(
   process.env.MAILJET_API_SECRET
 );
 
-/**
- * Send an email with optional attachments
- * @param {Object} options - Email options
- * @param {string} options.to - Recipient email address
- * @param {string} options.subject - Email subject
- * @param {string} options.textContent - Plain text content
- * @param {string} options.htmlContent - HTML content
- * @param {Array} options.attachments - Array of attachment objects
- * @returns {Promise<Object>} - Mailjet response
- */
 export async function sendEmail({
   to,
+  toName = '',
   subject,
   textContent,
   htmlContent,
@@ -45,11 +36,17 @@ export async function sendEmail({
       To: [
         {
           Email: to,
+          Name: toName || to.split('@')[0], // Use email username if no name provided
         },
       ],
       Subject: subject,
       TextPart: textContent,
       HTMLPart: htmlContent,
+      // Add custom headers to improve deliverability
+      CustomID: `order-${Date.now()}`,
+      // Enable tracking (optional - can help with deliverability reputation)
+      TrackOpens: 'enabled',
+      TrackClicks: 'enabled',
     };
 
     // Add attachments if provided
@@ -61,12 +58,22 @@ export async function sendEmail({
       }));
     }
 
+    // For testing: Enable sandbox mode if configured
+    const sandboxMode = process.env.MAILJET_SANDBOX_MODE === 'true';
+    if (sandboxMode) {
+      messageData.SandboxMode = true;
+      console.log('🧪 Sandbox mode enabled - email will not be actually sent');
+    }
+
     const request = mailjet.post('send', { version: 'v3.1' }).request({
       Messages: [messageData],
     });
 
     const result = await request;
     console.log('✅ Email sent successfully to:', to);
+    if (result.body && result.body.Messages) {
+      console.log('📊 Email status:', result.body.Messages[0].Status);
+    }
     return result.body;
   } catch (error) {
     console.error('❌ Error sending email:', error.message);

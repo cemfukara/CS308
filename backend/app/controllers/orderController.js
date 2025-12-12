@@ -9,7 +9,11 @@ import {
   getAllOrders,
   updateOrderStatus,
 } from '../../models/Order.js';
-import { sendInvoiceEmail } from '../../utils/emailService.js';
+// Email services when mailjet is working
+// import { sendInvoiceEmail } from '../../utils/emailService.js';
+// Email services when mailjet is not working
+import { sendInvoiceEmail } from '../../utils/gmailService.js';
+// PDF generator
 import { generateInvoicePDF } from '../../utils/pdfGenerator.js';
 
 // ==========================================================
