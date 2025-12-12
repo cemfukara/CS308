@@ -9,6 +9,8 @@ import {
   getAllOrders,
   updateOrderStatus,
 } from '../../models/Order.js';
+import { sendInvoiceEmail } from '../../utils/emailService.js';
+import { generateInvoicePDF } from '../../utils/pdfGenerator.js';
 
 // ==========================================================
 // GET /api/orders
@@ -102,6 +104,48 @@ export async function createOrderController(req, res) {
       shippingAddress: address,
       totalPrice,
     });
+
+    // Send invoice email after successful order creation
+    try {
+      // Fetch the complete order details and items
+      const [orderDetails, orderItems] = await Promise.all([
+        getOrderById(order_id, userId),
+        getOrderItems(order_id, userId),
+      ]);
+
+      if (orderDetails && orderDetails.customer_email) {
+        // Generate PDF invoice
+        const pdfBuffer = await generateInvoicePDF(
+          {
+            order_id,
+            customer_email: orderDetails.customer_email,
+            status: orderDetails.status,
+            total_price: totalPrice,
+            order_date: orderDetails.order_date,
+          },
+          orderItems
+        );
+
+        // Send email with PDF attachment
+        await sendInvoiceEmail(
+          orderDetails.customer_email,
+          order_id,
+          pdfBuffer,
+          { totalPrice }
+        );
+
+        console.log(
+          `✅ Invoice email sent successfully for order #${order_id}`
+        );
+      }
+    } catch (emailError) {
+      // Log email error but don't fail the order
+      console.error('❌ Failed to send invoice email:', emailError.message);
+      console.error(
+        'Order was created successfully but email failed. Order ID:',
+        order_id
+      );
+    }
 
     res.status(201).json({
       success: true,
