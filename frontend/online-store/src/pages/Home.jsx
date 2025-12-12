@@ -1,48 +1,107 @@
-import React from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import HeroSlider from '../components/HeroSlider';
-import './Home.css'; // optional if you have custom styles
+import HeroSlider from '@/components/HeroSlider';
+import { getFeaturedProduct } from '@/lib/productsApi';
+import { formatPrice } from '@/utils/formatPrice';
+import './Home.css';
 
 function Home() {
+  const [featured, setFeatured] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadFeatured() {
+      try {
+        setLoading(true);
+        setError('');
+
+        const data = await getFeaturedProduct();
+        if (!cancelled) setFeatured(data);
+      } catch (err) {
+        console.error(err);
+        if (!cancelled) setError('Failed to load featured product');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    loadFeatured();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const image =
+    featured?.product_images?.[0]?.image_url ||
+    new URL('../assets/placeholder.jpg', import.meta.url).href;
+
+  const productId = featured?.serial_number || featured?.product_id || '';
+
   return (
     <div className="home">
-      {/* Banner Section */}
+      {/* HERO */}
       <HeroSlider />
 
-      {/* Start Shopping Button */}
-      <div className="text-center my-10">
-        <Link
-          to="/products"
-          className="inline-block bg-blue-600 text-white px-8 py-3 rounded-md text-lg font-semibold hover:bg-blue-700 transition"
-        >
+      {/* CTA */}
+      <div className="home-cta">
+        <Link to="/products" className="home-cta-btn">
           Start Shopping
         </Link>
       </div>
 
-      {/* Featured Product Section */}
-      <section className="max-w-6xl mx-auto px-6 py-12">
-        <h2 className="text-2xl font-bold mb-6 text-gray-800 text-center">Featured Product</h2>
+      {/* FEATURED */}
+      <section className="featured-section">
+        <h2 className="featured-title">🔥 Best Deal Right Now</h2>
 
-        <div className="flex justify-center">
-          <div className="border rounded-lg p-6 shadow-md hover:shadow-lg transition w-80 text-center bg-white">
-            <img
-              src="/src/assets/WM1.jpg" // change to any real image from your products
-              alt="Wireless Headphones"
-              className="w-full h-52 object-cover rounded-md mb-4"
-            />
-            <h3 className="text-lg font-semibold mb-2">Wireless Headphones</h3>
-            <p className="text-gray-600 mb-3">
-              High-quality sound with Bluetooth 5.0 and noise cancellation.
-            </p>
-            <p className="text-blue-600 font-bold text-lg mb-4">$79.99</p>
-            <Link
-              to="/products"
-              className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition"
-            >
-              View Product
-            </Link>
+        {loading && <div className="featured-card loading">Loading featured product…</div>}
+
+        {!loading && error && <div className="featured-card error">{error}</div>}
+
+        {!loading && !error && !featured && (
+          <div className="featured-card empty">No discounted products available.</div>
+        )}
+
+        {!loading && !error && featured && (
+          <div className="featured-card">
+            {/* Discount badge */}
+            {featured.discount_ratio > 0 && (
+              <span className="featured-badge">-{Math.round(featured.discount_ratio)}%</span>
+            )}
+
+            <img src={image} alt={featured.name} className="featured-image" />
+
+            <div className="featured-content">
+              <h3>{featured.name}</h3>
+
+              <p className="featured-description">{featured.description}</p>
+
+              <div className="featured-price">
+                {featured.list_price > featured.price && (
+                  <span className="featured-old-price">
+                    {formatPrice(featured.list_price, featured.currency)}
+                  </span>
+                )}
+
+                <span className="featured-new-price">
+                  {formatPrice(featured.price, featured.currency)}
+                </span>
+
+                {featured.discount_amount > 0 && (
+                  <span className="featured-save">
+                    You save {formatPrice(featured.discount_amount, featured.currency)}
+                  </span>
+                )}
+              </div>
+
+              <Link to={`/products/${productId}`} className="featured-btn">
+                View Product
+              </Link>
+            </div>
           </div>
-        </div>
+        )}
       </section>
     </div>
   );

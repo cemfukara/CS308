@@ -32,3 +32,5 @@ export const createProduct = payload => {
 export const updateProduct = (productId, payload) => {
   return api.put(`/products/${productId}`, payload);
 };
+
+export const getFeaturedProduct = () => api.get('/products/featured');

@@ -7,6 +7,7 @@ import {
   updateProduct,
   deleteProduct,
   applyDiscount,
+  getFeaturedProduct,
 } from '../../models/Product.js';
 
 import { getWishlistedUsers } from '../../models/Wishlist.js';
@@ -52,6 +53,22 @@ export async function fetchProductDetails(req, res) {
     res.status(200).json(product);
   } catch (err) {
     console.error('Error fetching product details:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
+// --- NEW: fetchFeaturedProduct (GET /api/products/featured) ---
+export async function fetchFeaturedProduct(req, res) {
+  try {
+    const product = await getFeaturedProduct();
+
+    if (!product) {
+      return res.status(404).json({ message: 'No discounted product found' });
+    }
+
+    res.status(200).json(product);
+  } catch (err) {
+    console.error('Error fetching featured product:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 }

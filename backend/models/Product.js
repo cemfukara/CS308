@@ -316,3 +316,45 @@ export async function deleteProduct(productId) {
 
   return result.affectedRows;
 }
+
+// GET FEATURED PRODUCT (highest discount)
+export async function getFeaturedProduct() {
+  const [rows] = await db.query(`
+    SELECT
+      product_id,
+      category_id,
+      name,
+      model,
+      serial_number,
+      description,
+      quantity_in_stock,
+      price,
+      list_price,
+      warranty_status,
+      distributor_info,
+      discount_ratio,
+      currency,
+      (list_price - price) AS discount_amount
+    FROM products
+    WHERE discount_ratio > 0
+    ORDER BY discount_ratio DESC, discount_amount DESC
+    LIMIT 1
+  `);
+
+  const product = rows[0];
+  if (!product) return null;
+
+  // attach images (same pattern as getProductById)
+  const [imageRows] = await db.query(
+    `
+      SELECT image_id, product_id, image_url, is_primary, display_order
+      FROM product_images
+      WHERE product_id = ?
+      ORDER BY is_primary DESC, display_order ASC, image_id ASC
+    `,
+    [product.product_id]
+  );
+
+  product.product_images = imageRows || [];
+  return product;
+}

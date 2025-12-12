@@ -4,6 +4,7 @@ import express from 'express';
 import {
   fetchProducts,
   fetchProductDetails,
+  fetchFeaturedProduct,
   addProduct,
   updateProductDetails,
   removeProduct,
@@ -24,6 +25,7 @@ const router = express.Router();
  */
 router.get('/', fetchProducts);
 
+router.get('/featured', fetchFeaturedProduct);
 /**
  * @route   GET /api/products/:id
  * @desc    Get single product by ID
