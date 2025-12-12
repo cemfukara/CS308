@@ -4,6 +4,7 @@ import {
   generateInvoicePDF,
   getRevenueProfit,
   getRevenueProfitChartController,
+  getInvoiceJson,
 } from '../app/controllers/invoiceController.js';
 
 import {
@@ -20,6 +21,15 @@ router.get(
   authenticate,
   authorizeRoles('sales manager'),
   getInvoicesByDateRange
+);
+
+// Get single invoice as JSON (used by SMInvoices "View" modal)
+// GET /api/invoice/:orderId/json
+router.get(
+  '/:orderId/json',
+  authenticate,
+  authorizeRoles('sales manager'),
+  getInvoiceJson
 );
 
 // Download single invoice as PDF

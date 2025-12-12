@@ -156,3 +156,44 @@ export async function getRevenueProfitChartController(req, res) {
     return res.status(500).json({ message: 'Internal server error' });
   }
 }
+
+// -----------------------------------------------
+// GET /api/invoices/:orderId/json
+// -----------------------------------------------
+export async function getInvoiceJson(req, res) {
+  try {
+    const orderId = parseInt(req.params.orderId, 10);
+    if (!orderId) {
+      return res.status(400).json({ message: 'Invalid order ID' });
+    }
+
+    // Get main invoice data
+    const invoice = await modelGetInvoiceById(orderId);
+    if (!invoice) {
+      return res.status(404).json({ message: 'Invoice/order not found' });
+    }
+
+    // Get line items
+    const items = await modelGetInvoiceItems(orderId);
+
+    // Format response exactly how the frontend expects
+    return res.json({
+      invoice: {
+        order_id: invoice.order_id,
+        customer_email: invoice.user_email,
+        shipping_address: invoice.shipping_address || null,
+        status: invoice.status,
+        total_price: invoice.total_price,
+        order_date: invoice.order_date,
+      },
+      items: items.map((i) => ({
+        product_name: i.product_name,
+        quantity: i.quantity,
+        price_at_purchase: i.price_at_purchase,
+      })),
+    });
+  } catch (err) {
+    console.error('getInvoiceJson error:', err);
+    return res.status(500).json({ message: 'Failed to load invoice' });
+  }
+}

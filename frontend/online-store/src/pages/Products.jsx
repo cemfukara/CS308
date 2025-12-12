@@ -12,7 +12,6 @@ const CATEGORY_SLUG_TO_ID = {
   laptops: 2,
   audio: 3,
   accessories: 4,
-  // extra slugs mapped to closest category if needed
   cases: 4,
   chargers: 4,
   desktops: 2,
@@ -35,9 +34,9 @@ function mapSortValue(value) {
     case 'price_desc':
       return { sortBy: 'price', sortOrder: 'DESC' };
     case 'popularity_desc':
-      return { sortBy: 'popularity', sortOrder: 'DESC' };
+      return { sortBy: 'product_id', sortOrder: 'DESC' }; // placeholder
     default:
-      return { sortBy: undefined, sortOrder: undefined };
+      return { sortBy: 'product_id', sortOrder: 'ASC' };
   }
 }
 
@@ -50,54 +49,56 @@ function Products() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Filters (mirrored from URL)
+  // just for displaying in UI
   const [searchTerm, setSearchTerm] = useState('');
   const [categorySlug, setCategorySlug] = useState('');
   const [sortValue, setSortValue] = useState('');
   const [limitValue, setLimitValue] = useState(12);
   const [page, setPage] = useState(1);
 
-  // Parse query params whenever URL changes
+  // 🔥 SINGLE EFFECT: parse URL + fetch products
   useEffect(() => {
     const params = new URLSearchParams(location.search);
 
     const search = params.get('search') || '';
     const category = params.get('category') || '';
     const sort = params.get('sort') || '';
-
     const limitParam = parseInt(params.get('limit') || '', 10);
     const pageParam = parseInt(params.get('page') || '', 10);
 
+    const limit = !Number.isNaN(limitParam) && limitParam > 0 ? limitParam : 12;
+    const currentPage = !Number.isNaN(pageParam) && pageParam > 0 ? pageParam : 1;
+
+    // update display state
     setSearchTerm(search);
     setCategorySlug(category);
     setSortValue(sort);
-    setLimitValue(!Number.isNaN(limitParam) && limitParam > 0 ? limitParam : 12);
-    setPage(!Number.isNaN(pageParam) && pageParam > 0 ? pageParam : 1);
-  }, [location.search]);
+    setLimitValue(limit);
+    setPage(currentPage);
 
-  // Fetch products when filters change
-  useEffect(() => {
+    const { sortBy, sortOrder } = mapSortValue(sort);
+    const categoryId = getCategoryIdFromSlug(category);
+
     const fetchProducts = async () => {
       try {
         setLoading(true);
         setError(null);
 
-        const { sortBy, sortOrder } = mapSortValue(sortValue);
-        const categoryId = getCategoryIdFromSlug(categorySlug);
-
-        const data = await getAllProducts({
-          search: searchTerm || undefined,
+        const res = await getAllProducts({
+          search: search || undefined,
           sortBy,
           sortOrder,
           category: categoryId || undefined,
-          limit: limitValue,
-          page,
+          limit,
+          page: currentPage,
         });
 
-        const items = Array.isArray(data)
-          ? data
-          : Array.isArray(data.products)
-            ? data.products
+        const data = res.data || res; // api wrapper might already return data
+
+        const items = Array.isArray(data.products)
+          ? data.products
+          : Array.isArray(data)
+            ? data
             : [];
 
         setProducts(items);
@@ -110,12 +111,29 @@ function Products() {
     };
 
     fetchProducts();
-  }, [searchTerm, categorySlug, sortValue, limitValue, page]);
+  }, [location.search]);
 
   const totalPages = useMemo(() => {
     if (!limitValue) return 1;
     return Math.max(1, Math.ceil(totalCount / limitValue));
   }, [totalCount, limitValue]);
+
+  // URL-updating handlers
+
+  const handleLimitChange = newLimit => {
+    const params = new URLSearchParams(location.search);
+    params.set('limit', newLimit);
+    params.set('page', '1');
+    navigate(`/products?${params.toString()}`);
+  };
+
+  const handleSortChange = newSort => {
+    const params = new URLSearchParams(location.search);
+    if (newSort) params.set('sort', newSort);
+    else params.delete('sort');
+    params.set('page', '1');
+    navigate(`/products?${params.toString()}`);
+  };
 
   const handlePageChange = newPage => {
     if (newPage < 1 || newPage > totalPages) return;
@@ -124,7 +142,6 @@ function Products() {
     navigate(`/products?${params.toString()}`);
   };
 
-  // Build page number window (max 5 pages shown)
   const pageNumbers = useMemo(() => {
     const maxButtons = 5;
     const pages = [];
@@ -133,23 +150,16 @@ function Products() {
     if (end - start + 1 < maxButtons) {
       start = Math.max(1, end - maxButtons + 1);
     }
-    for (let p = start; p <= end; p += 1) {
-      pages.push(p);
-    }
+    for (let p = start; p <= end; p += 1) pages.push(p);
     return pages;
   }, [page, totalPages]);
 
-  if (loading) {
-    return <p className="loading">Loading products...</p>;
-  }
-
-  if (error) {
-    return <p className="error">{error}</p>;
-  }
+  if (loading) return <p className="loading">Loading products...</p>;
+  if (error) return <p className="error">{error}</p>;
 
   return (
     <div className="products-page">
-      {/* Top toolbar */}
+      {/* Toolbar */}
       <div className="products-toolbar">
         <div className="products-summary">
           {searchTerm ? (
@@ -175,12 +185,7 @@ function Products() {
           <Dropdown
             label="Items per page"
             value={String(limitValue)}
-            onChange={newLimit => {
-              const params = new URLSearchParams(location.search);
-              params.set('limit', newLimit);
-              params.set('page', '1');
-              navigate(`/products?${params.toString()}`);
-            }}
+            onChange={handleLimitChange}
             options={[
               { label: '4', value: '4' },
               { label: '8', value: '8' },
@@ -193,13 +198,7 @@ function Products() {
           <Dropdown
             label="Sort by"
             value={sortValue}
-            onChange={newSort => {
-              const params = new URLSearchParams(location.search);
-              if (newSort) params.set('sort', newSort);
-              else params.delete('sort');
-              params.set('page', '1');
-              navigate(`/products?${params.toString()}`);
-            }}
+            onChange={handleSortChange}
             options={[
               { label: 'Default', value: '' },
               { label: 'Price: Low → High', value: 'price_asc' },
@@ -234,7 +233,7 @@ function Products() {
         })}
       </div>
 
-      {/* Pagination controls */}
+      {/* Pagination */}
       {totalPages > 1 && (
         <div className="pagination">
           <button type="button" onClick={() => handlePageChange(1)} disabled={page === 1}>

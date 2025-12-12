@@ -102,7 +102,8 @@ export async function updateOrderStatus(orderId, newStatus) {
       UPDATE orders
          SET status = ?,
              order_date = CASE
-               WHEN ? IN ('processing', 'in-transit', 'delivered')
+               -- Spec: order_date is set when status changes from 'cart' to 'processing'
+               WHEN status = 'cart' AND ? = 'processing'
                THEN NOW()
                ELSE order_date
              END
@@ -207,16 +208,55 @@ export async function createOrder({
 }) {
   const encryptedAddress = shippingAddress ? encrypt(shippingAddress) : null;
 
-  const [orderResult] = await db.query(
+  // 1) Try to reuse the latest 'cart' order for this user
+  const [existingCartRows] = await db.query(
     `
-      INSERT INTO orders (user_id, status, total_price, shipping_address_encrypted, order_date)
-      VALUES (?, 'processing', ?, ?, NOW())
+      SELECT order_id
+      FROM orders
+      WHERE user_id = ?
+        AND status = 'cart'
+      ORDER BY created_at DESC
+      LIMIT 1
     `,
-    [userId, totalPrice, encryptedAddress]
+    [userId]
   );
 
-  const orderId = orderResult.insertId;
+  let orderId;
 
+  if (existingCartRows.length > 0) {
+    // Reuse existing cart row → convert it to a real order
+    orderId = existingCartRows[0].order_id;
+
+    await db.query(
+      `
+        UPDATE orders
+           SET status = 'processing',
+               total_price = ?,
+               shipping_address_encrypted = ?,
+               order_date = CASE
+                 WHEN order_date IS NULL THEN NOW()
+                 ELSE order_date
+               END
+         WHERE order_id = ?
+      `,
+      [totalPrice, encryptedAddress, orderId]
+    );
+
+    // Optional safety: clear any old cart items for this order
+    await db.query(`DELETE FROM order_items WHERE order_id = ?`, [orderId]);
+  } else {
+    // No cart row in DB → create a fresh processing order as fallback
+    const [orderResult] = await db.query(
+      `
+        INSERT INTO orders (user_id, status, total_price, shipping_address_encrypted, order_date)
+        VALUES (?, 'processing', ?, ?, NOW())
+      `,
+      [userId, totalPrice, encryptedAddress]
+    );
+    orderId = orderResult.insertId;
+  }
+
+  // 2) Insert order_items from checkout payload
   if (items.length > 0) {
     const values = items.map((it) => [
       orderId,

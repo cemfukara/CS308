@@ -1,49 +1,44 @@
-import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { API_BASE, api } from "../../../lib/api";
-import styles from "../Admin.module.css";
+import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { API_BASE, api } from '../../../lib/api';
+import styles from '../Admin.module.css';
+import { formatPrice } from '@/utils/formatPrice';
 
 // Includes "refunded"
-const STATUS_OPTIONS = [
-  "processing",
-  "in-transit",
-  "delivered",
-  "cancelled",
-  "refunded",
-];
+const STATUS_OPTIONS = ['processing', 'in-transit', 'delivered', 'cancelled', 'refunded'];
 
-const completedStatuses = new Set(["delivered", "cancelled", "refunded"]);
+const completedStatuses = new Set(['delivered', 'cancelled', 'refunded']);
 
 const PMDeliveriesPage = () => {
   const [deliveries, setDeliveries] = useState([]);
   const [selected, setSelected] = useState(new Set());
-  const [bulkStatus, setBulkStatus] = useState("");
+  const [bulkStatus, setBulkStatus] = useState('');
   const [loading, setLoading] = useState(true);
-  const [errorMsg, setErrorMsg] = useState("");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filterMode, setFilterMode] = useState("all"); // all | hide | only
+  const [errorMsg, setErrorMsg] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterMode, setFilterMode] = useState('all'); // all | hide | only
   const [invoiceOrder, setInvoiceOrder] = useState(null);
+  const [invoiceItems, setInvoiceItems] = useState([]);
+  const [invoiceLoading, setInvoiceLoading] = useState(false);
+  const [invoiceError, setInvoiceError] = useState('');
 
   // ----------------------
   // Helpers
   // ----------------------
-  const formatStatus = (status) => {
-    if (!status) return "";
+  const formatStatus = status => {
+    if (!status) return '';
     const s = status.toLowerCase();
-    if (s === "in-transit") return "In transit";
-    if (s === "refunded") return "Refunded";
+    if (s === 'in-transit') return 'In transit';
+    if (s === 'refunded') return 'Refunded';
     return s.charAt(0).toUpperCase() + s.slice(1);
   };
 
-  const getStatusClassName = (status) => {
-    const s = (status || "").toLowerCase();
-    if (s === "processing")
-      return `${styles.statusBadge} ${styles.status_processing}`;
-    if (s === "in-transit")
-      return `${styles.statusBadge} ${styles.status_inTransit}`;
-    if (s === "delivered")
-      return `${styles.statusBadge} ${styles.status_delivered}`;
-    if (s === "cancelled" || s === "refunded")
+  const getStatusClassName = status => {
+    const s = (status || '').toLowerCase();
+    if (s === 'processing') return `${styles.statusBadge} ${styles.status_processing}`;
+    if (s === 'in-transit') return `${styles.statusBadge} ${styles.status_inTransit}`;
+    if (s === 'delivered') return `${styles.statusBadge} ${styles.status_delivered}`;
+    if (s === 'cancelled' || s === 'refunded')
       return `${styles.statusBadge} ${styles.status_cancelled}`;
     return styles.statusBadge;
   };
@@ -54,14 +49,14 @@ const PMDeliveriesPage = () => {
   const fetchDeliveries = async () => {
     try {
       setLoading(true);
-      setErrorMsg("");
+      setErrorMsg('');
 
-      const data = await api.get("/deliveries");
+      const data = await api.get('/deliveries');
 
       setDeliveries(Array.isArray(data.orders) ? data.orders : []);
     } catch (err) {
-      console.error("❌ Failed to fetch deliveries:", err);
-      setErrorMsg("Failed to load deliveries from server.");
+      console.error('❌ Failed to fetch deliveries:', err);
+      setErrorMsg('Failed to load deliveries from server.');
       setDeliveries([]);
     } finally {
       setLoading(false);
@@ -75,7 +70,7 @@ const PMDeliveriesPage = () => {
   // ----------------------
   // Selection
   // ----------------------
-  const toggleSelect = (orderId) => {
+  const toggleSelect = orderId => {
     const copy = new Set(selected);
     if (copy.has(orderId)) copy.delete(orderId);
     else copy.add(orderId);
@@ -89,7 +84,7 @@ const PMDeliveriesPage = () => {
     if (!bulkStatus || selected.size === 0) return;
 
     try {
-      setErrorMsg("");
+      setErrorMsg('');
 
       for (const id of selected) {
         await api.patch(`/deliveries/${id}/status`, { status: bulkStatus });
@@ -97,10 +92,10 @@ const PMDeliveriesPage = () => {
 
       await fetchDeliveries();
       setSelected(new Set());
-      setBulkStatus("");
+      setBulkStatus('');
     } catch (err) {
-      console.error("Update error:", err);
-      setErrorMsg("Failed to update one or more deliveries.");
+      console.error('Update error:', err);
+      setErrorMsg('Failed to update one or more deliveries.');
     }
   };
 
@@ -109,12 +104,12 @@ const PMDeliveriesPage = () => {
   // ----------------------
   const normalizedSearch = searchTerm.trim().toLowerCase();
 
-  const filteredDeliveries = deliveries.filter((d) => {
-    const statusNorm = (d.status || "").toLowerCase();
+  const filteredDeliveries = deliveries.filter(d => {
+    const statusNorm = (d.status || '').toLowerCase();
 
     // Completed filter
-    if (filterMode === "hide" && completedStatuses.has(statusNorm)) return false;
-    if (filterMode === "only" && !completedStatuses.has(statusNorm)) return false;
+    if (filterMode === 'hide' && completedStatuses.has(statusNorm)) return false;
+    if (filterMode === 'only' && !completedStatuses.has(statusNorm)) return false;
 
     // Search filter
     if (!normalizedSearch) return true;
@@ -123,13 +118,7 @@ const PMDeliveriesPage = () => {
     //   - Delivery ID
     //   - Email
     //   - Status
-    const haystack = [
-      d.order_id,
-      d.customer_email,
-      statusNorm,
-    ]
-      .join(" ")
-      .toLowerCase();
+    const haystack = [d.order_id, d.customer_email, statusNorm].join(' ').toLowerCase();
 
     return haystack.includes(normalizedSearch);
   });
@@ -137,8 +126,35 @@ const PMDeliveriesPage = () => {
   // ----------------------
   // Invoice
   // ----------------------
-  const openInvoice = (order) => setInvoiceOrder(order);
-  const closeInvoice = () => setInvoiceOrder(null);
+  const openInvoice = async order => {
+    try {
+      setInvoiceLoading(true);
+      setInvoiceError('');
+      setInvoiceOrder(null);
+      setInvoiceItems([]);
+
+      // calls backend /api/invoice/:id/json
+      const data = await api.get(`/invoice/${order.order_id}/json`);
+
+      setInvoiceOrder(data.invoice || order);
+      setInvoiceItems(Array.isArray(data.items) ? data.items : []);
+    } catch (err) {
+      console.error('Failed to load invoice details:', err);
+      setInvoiceError(err?.response?.data?.message || 'Failed to load invoice details.');
+      // still show at least the summary from the deliveries row
+      setInvoiceOrder(order);
+      setInvoiceItems([]);
+    } finally {
+      setInvoiceLoading(false);
+    }
+  };
+
+  const closeInvoice = () => {
+    setInvoiceOrder(null);
+    setInvoiceItems([]);
+    setInvoiceError('');
+  };
+
   const handlePrintInvoice = () => window.print();
 
   // ----------------------
@@ -170,17 +186,17 @@ const PMDeliveriesPage = () => {
           placeholder="Search by ID, email, status..."
           className={styles.searchInput}
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={e => setSearchTerm(e.target.value)}
         />
 
         <div className={styles.rightControls}>
-          <button className={styles.hideButton} onClick={() => setFilterMode("hide")}>
+          <button className={styles.hideButton} onClick={() => setFilterMode('hide')}>
             Hide Completed
           </button>
-          <button className={styles.hideButton} onClick={() => setFilterMode("only")}>
+          <button className={styles.hideButton} onClick={() => setFilterMode('only')}>
             Show Completed
           </button>
-          <button className={styles.hideButton} onClick={() => setFilterMode("all")}>
+          <button className={styles.hideButton} onClick={() => setFilterMode('all')}>
             Reset
           </button>
         </div>
@@ -190,14 +206,14 @@ const PMDeliveriesPage = () => {
       <div className={styles.pmBulkSection}>
         <div>
           <div className={styles.sortLabel}>Bulk Update Status</div>
-          <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
             <select
               className={styles.bulkSelect}
               value={bulkStatus}
-              onChange={(e) => setBulkStatus(e.target.value)}
+              onChange={e => setBulkStatus(e.target.value)}
             >
               <option value="">Select…</option>
-              {STATUS_OPTIONS.map((s) => (
+              {STATUS_OPTIONS.map(s => (
                 <option key={s} value={s}>
                   {formatStatus(s)}
                 </option>
@@ -214,7 +230,7 @@ const PMDeliveriesPage = () => {
           </div>
         </div>
 
-        <div style={{ marginLeft: "auto" }}>
+        <div style={{ marginLeft: 'auto' }}>
           <span className={styles.pageInfo}>
             {filteredDeliveries.length} deliveries • {selected.size} selected
           </span>
@@ -240,17 +256,13 @@ const PMDeliveriesPage = () => {
           </thead>
 
           <tbody className={styles.tbody}>
-            {filteredDeliveries.map((d) => {
+            {filteredDeliveries.map(d => {
               const isSelected = selected.has(d.order_id);
 
               return (
                 <tr
                   key={d.order_id}
-                  className={
-                    isSelected
-                      ? `${styles.tr} ${styles["pm-selected-row"]}`
-                      : styles.tr
-                  }
+                  className={isSelected ? `${styles.tr} ${styles['pm-selected-row']}` : styles.tr}
                 >
                   <td className={styles.td}>
                     <input
@@ -263,22 +275,18 @@ const PMDeliveriesPage = () => {
                   <td className={styles.td}>{d.order_id}</td>
                   <td className={styles.td}>{d.user_id}</td>
                   <td className={styles.td}>{d.customer_email}</td>
-                  <td className={styles.td}>{d.item_count ?? "N/A"}</td>
+                  <td className={styles.td}>{d.item_count ?? 'N/A'}</td>
                   <td className={styles.td}>
-                    {d.total_price != null ? `$${d.total_price}` : "N/A"}
+                    {d.total_price != null ? `${formatPrice(Number(d.total_price))}` : 'N/A'}
                   </td>
-                  <td className={styles.td}>{d.shipping_address || "N/A"}</td>
+                  <td className={styles.td}>{d.shipping_address || 'N/A'}</td>
 
                   <td className={styles.td}>
-                    <span className={getStatusClassName(d.status)}>
-                      {formatStatus(d.status)}
-                    </span>
+                    <span className={getStatusClassName(d.status)}>{formatStatus(d.status)}</span>
                   </td>
 
                   <td className={styles.td}>
-                    {d.created_at
-                      ? new Date(d.created_at).toLocaleString()
-                      : "N/A"}
+                    {d.created_at ? new Date(d.created_at).toLocaleString() : 'N/A'}
                   </td>
 
                   <td className={styles.td}>
@@ -306,17 +314,13 @@ const PMDeliveriesPage = () => {
         <div className={styles.modalOverlay} onClick={closeInvoice}>
           <div
             className={`${styles.modal} ${styles.pmInvoiceModal} ${styles.printArea}`}
-            onClick={(e) => e.stopPropagation()}
+            onClick={e => e.stopPropagation()}
           >
             {/* Header */}
             <div className={styles.invoiceHeader}>
               <div>
-                <h2 className={styles.invoiceTitle}>
-                  Order Invoice #{invoiceOrder.order_id}
-                </h2>
-                <p className={styles.invoiceId}>
-                  Order ID: {invoiceOrder.order_id}
-                </p>
+                <h2 className={styles.invoiceTitle}>Order Invoice #{invoiceOrder.order_id}</h2>
+                <p className={styles.invoiceId}>Order ID: {invoiceOrder.order_id}</p>
               </div>
 
               <div className={styles.invoiceBrand}>
@@ -331,34 +335,28 @@ const PMDeliveriesPage = () => {
                 <div className={styles.invoiceMetaTitle}>Billed To</div>
                 <div className={styles.invoiceMetaLine}>
                   <span className={styles.invoiceMetaLabel}>Customer ID: </span>
-                  <span className={styles.invoiceMetaValue}>
-                    {invoiceOrder.user_id}
-                  </span>
+                  <span className={styles.invoiceMetaValue}>{invoiceOrder.user_id}</span>
                 </div>
                 <div className={styles.invoiceMetaLine}>
                   <span className={styles.invoiceMetaLabel}>Email: </span>
-                  <span className={styles.invoiceMetaValue}>
-                    {invoiceOrder.customer_email}
-                  </span>
+                  <span className={styles.invoiceMetaValue}>{invoiceOrder.customer_email}</span>
                 </div>
                 <div className={styles.invoiceMetaLine}>
                   <span className={styles.invoiceMetaLabel}>Address: </span>
                   <span className={styles.invoiceMetaValue}>
-                    {invoiceOrder.shipping_address || "N/A"}
+                    {invoiceOrder.shipping_address || 'N/A'}
                   </span>
                 </div>
               </div>
 
-              <div
-                className={`${styles.invoiceMetaBlock} ${styles.invoiceMetaBlockRight}`}
-              >
+              <div className={`${styles.invoiceMetaBlock} ${styles.invoiceMetaBlockRight}`}>
                 <div className={styles.invoiceMetaTitle}>Order Details</div>
                 <div className={styles.invoiceMetaLine}>
                   <span className={styles.invoiceMetaLabel}>Date: </span>
                   <span className={styles.invoiceMetaValue}>
                     {invoiceOrder.created_at
                       ? new Date(invoiceOrder.created_at).toLocaleString()
-                      : "N/A"}
+                      : 'N/A'}
                   </span>
                 </div>
 
@@ -385,32 +383,42 @@ const PMDeliveriesPage = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {invoiceOrder.item_count ? (
+                  {invoiceLoading && (
                     <tr>
-                      <td>Order items</td>
-                      <td>{invoiceOrder.item_count}</td>
-                      <td>
-                        {invoiceOrder.item_count &&
-                        invoiceOrder.total_price != null
-                          ? `$${(
-                              Number(invoiceOrder.total_price) /
-                              Number(invoiceOrder.item_count)
-                            ).toFixed(2)}`
-                          : "N/A"}
-                      </td>
-                      <td>
-                        {invoiceOrder.total_price != null
-                          ? `$${Number(invoiceOrder.total_price).toFixed(2)}`
-                          : "N/A"}
+                      <td colSpan={4} className={styles.invoiceEmptyRow}>
+                        Loading invoice items…
                       </td>
                     </tr>
-                  ) : (
+                  )}
+
+                  {!invoiceLoading &&
+                    invoiceItems.length > 0 &&
+                    invoiceItems.map((item, idx) => (
+                      <tr key={idx}>
+                        <td>{item.product_name}</td>
+                        <td>{item.quantity}</td>
+                        <td>
+                          {item.price_at_purchase != null
+                            ? `${formatPrice(item.price_at_purchase)}`
+                            : 'N/A'}
+                        </td>
+                        <td>
+                          {item.price_at_purchase != null
+                            ? `${formatPrice(Number(item.price_at_purchase) * Number(item.quantity))}`
+                            : 'N/A'}
+                        </td>
+                      </tr>
+                    ))}
+
+                  {!invoiceLoading && invoiceItems.length === 0 && (
                     <tr>
                       <td colSpan={4} className={styles.invoiceEmptyRow}>
                         No item details available for this order.
                       </td>
                     </tr>
                   )}
+
+                  {invoiceError && <div className={styles.errorBanner}>{invoiceError}</div>}
                 </tbody>
               </table>
             </div>
@@ -423,22 +431,22 @@ const PMDeliveriesPage = () => {
                   <span>Subtotal</span>
                   <span>
                     {invoiceOrder.total_price != null
-                      ? `$${Number(invoiceOrder.total_price).toFixed(2)}`
-                      : "N/A"}
+                      ? `${formatPrice(Number(invoiceOrder.total_price))}`
+                      : 'N/A'}
                   </span>
                 </div>
 
                 <div className={styles.invoiceTotalsLine}>
                   <span>Shipping</span>
-                  <span>$0.00</span>
+                  <span>{formatPrice(0)}</span>
                 </div>
 
                 <div className={styles.invoiceTotalsLineStrong}>
                   <span>Total</span>
                   <span>
                     {invoiceOrder.total_price != null
-                      ? `$${Number(invoiceOrder.total_price).toFixed(2)}`
-                      : "N/A"}
+                      ? `${formatPrice(Number(invoiceOrder.total_price))}`
+                      : 'N/A'}
                   </span>
                 </div>
               </div>
@@ -446,10 +454,7 @@ const PMDeliveriesPage = () => {
 
             {/* Buttons */}
             <div className={styles.modalActions}>
-              <button
-                className={`${styles.pmModalButton} ${styles.close}`}
-                onClick={closeInvoice}
-              >
+              <button className={`${styles.pmModalButton} ${styles.close}`} onClick={closeInvoice}>
                 Close
               </button>
 

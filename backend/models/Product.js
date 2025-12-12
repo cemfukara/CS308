@@ -290,6 +290,26 @@ export async function updateProduct(productId, productData) {
 
 // DELETE PRODUCT
 export async function deleteProduct(productId) {
+  // 1) Delete order_items referencing this product
+  await db.query(`DELETE FROM order_items WHERE product_id = ?`, [productId]);
+
+  // 2) Delete reviews for this product
+  await db.query(`DELETE FROM reviews WHERE product_id = ?`, [productId]);
+
+  // 3) Delete wishlist items containing this product
+  await db.query(`DELETE FROM wishlists WHERE product_id = ?`, [productId]);
+
+  // 4) Delete product images
+  await db.query(`DELETE FROM product_images WHERE product_id = ?`, [
+    productId,
+  ]);
+
+  // 5) Delete cart items (if your schema has such table)
+  await db
+    .query(`DELETE FROM cart_items WHERE product_id = ?`, [productId])
+    .catch(() => {});
+
+  // 6) FINALLY delete the product
   const [result] = await db.query(`DELETE FROM products WHERE product_id = ?`, [
     productId,
   ]);

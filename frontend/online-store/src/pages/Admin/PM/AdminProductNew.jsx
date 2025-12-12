@@ -68,7 +68,7 @@ function AdminProductNew() {
     try {
       setSubmitting(true);
       await createProduct(payload);
-      navigate('/admin/products');
+      navigate('/admin/pm/products');
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to create product. Please try again.');
     } finally {
@@ -226,7 +226,7 @@ function AdminProductNew() {
           <button
             type="button"
             className={styles.cancelBtn}
-            onClick={() => navigate('/admin/products')}
+            onClick={() => navigate('/admin/pm/products')}
             disabled={submitting}
           >
             Cancel

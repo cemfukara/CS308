@@ -116,7 +116,7 @@ function AdminStock() {
                       ? styles.lowStock
                       : ''
                 }`}
-                onDoubleClick={() => navigate(`/admin/products/edit/${p.product_id}`)}
+                onDoubleClick={() => navigate(`/admin/pm/products/edit/${p.product_id}`)}
                 style={{ cursor: 'pointer' }}
                 title="Double-click to edit product"
               >

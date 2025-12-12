@@ -107,7 +107,7 @@ function AdminProductEdit() {
     try {
       setSubmitting(true);
       await updateProduct(id, payload);
-      navigate('/admin/products');
+      navigate('/admin/pm/products');
     } catch (err) {
       console.error(err);
       setError('Failed to update product. Please try again.');
@@ -117,7 +117,7 @@ function AdminProductEdit() {
   };
 
   const handleCancel = () => {
-    navigate('/admin/products');
+    navigate('/admin/pm/products');
   };
 
   return (

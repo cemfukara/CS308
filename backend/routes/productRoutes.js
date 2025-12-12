@@ -8,6 +8,10 @@ import {
   updateProductDetails,
   removeProduct,
 } from '../app/controllers/productController.js';
+import {
+  authenticate,
+  authorizeRoles,
+} from '../app/middlewares/authMiddleware.js';
 
 const router = express.Router();
 
@@ -62,11 +66,11 @@ router.get('/:id', fetchProductDetails); // Use the new controller function
  * @desc    Delete product by ID
  * @access  Private/Admin
  */
-/*router.delete(
+router.delete(
   '/:id',
   authenticate,
   authorizeRoles('product manager'),
   removeProduct
-);*/
+);
 
 export default router;
