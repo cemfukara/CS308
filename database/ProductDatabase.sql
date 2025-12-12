@@ -1,3 +1,5 @@
+-- Use below line once for refreshing your database
+-- drop schema mydb; create schema mydb;
 USE mydb;
 
 -- ===================================================================
