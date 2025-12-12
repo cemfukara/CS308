@@ -38,8 +38,6 @@ function Home() {
     featured?.product_images?.[0]?.image_url ||
     new URL('../assets/placeholder.jpg', import.meta.url).href;
 
-  const productId = featured?.serial_number || featured?.product_id || '';
-
   return (
     <div className="home">
       {/* HERO */}
@@ -96,7 +94,7 @@ function Home() {
                 )}
               </div>
 
-              <Link to={`/products/${productId}`} className="featured-btn">
+              <Link to={`/products/${featured.product_id}`} className="featured-btn">
                 View Product
               </Link>
             </div>
