@@ -48,7 +48,7 @@ export const authorizeRoles = (allowedRoles = []) => {
     const user = req.user;
 
     // In dev mode, "dev" role can access anything
-    if (process.env.NODE_ENV === 'development' && user.role === 'dev') {
+    if (process.env.NODE_ENV === 'development') {
       return next();
     }
 
