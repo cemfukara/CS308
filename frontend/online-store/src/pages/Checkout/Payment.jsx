@@ -4,7 +4,7 @@ import styles from './Payment.module.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCcVisa, faCcMastercard } from '@fortawesome/free-brands-svg-icons';
 import useCartStore from '@/store/cartStore';
-import { createOrder } from '@/lib/ordersApi';
+import { createOrder, validatePayment } from '@/lib/ordersApi';
 import { toast } from 'react-hot-toast';
 
 const Payment = () => {
@@ -96,6 +96,35 @@ const Payment = () => {
               last4: digits.slice(-4),
               cardType: getCardType(),
             };
+
+      // 🔐 Validate payment on backend FIRST
+      try {
+        const validationPayload =
+          paymentMethod === 'cod'
+            ? { method: 'Cash on Delivery' }
+            : {
+                method: 'Credit Card',
+                cardName: cardName.trim(),
+                cardNumber: cardNumber,
+                expiry: expiry,
+                cvv: cvv,
+              };
+
+        const validationResult = await validatePayment(validationPayload);
+        
+        if (!validationResult.success) {
+          toast.error(validationResult.message || 'Payment validation failed');
+          setIsPaying(false);
+          return;
+        }
+        
+        toast.success('Payment validated successfully');
+      } catch (validationError) {
+        console.error('Payment validation error:', validationError);
+        toast.error(validationError.message || 'Payment validation failed');
+        setIsPaying(false);
+        return;
+      }
 
       // Save for Confirmation screen
       localStorage.setItem('payInfo', JSON.stringify(payInfo));
