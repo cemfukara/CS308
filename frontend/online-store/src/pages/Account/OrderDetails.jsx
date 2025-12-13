@@ -115,7 +115,7 @@ const OrderDetails = () => {
   const delivery = 0;
   const deliveryAddress =
     order.shipping_address || '123 Main Street, Istanbul, Türkiye (default delivery)';
-  const invoiceAddress = 'Invoice address same as delivery (placeholder)';
+  const invoiceAddress = 'Invoice address same as delivery';
 
   return (
     <div className="order-details-page">
