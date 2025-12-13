@@ -34,7 +34,7 @@ function mapSortValue(value) {
     case 'price_desc':
       return { sortBy: 'price', sortOrder: 'DESC' };
     case 'popularity_desc':
-      return { sortBy: 'product_id', sortOrder: 'DESC' }; // placeholder
+      return { sortBy: 'order_count', sortOrder: 'DESC' };
     default:
       return { sortBy: 'product_id', sortOrder: 'ASC' };
   }

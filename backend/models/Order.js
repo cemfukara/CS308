@@ -286,6 +286,15 @@ export async function createOrder({
         `,
         [qty, it.product_id]
       );
+
+      await db.query(
+        `
+          UPDATE products
+             SET order_count = order_count + ?
+           WHERE product_id = ?
+        `,
+        [qty, it.product_id]
+      );
     }
   }
 
