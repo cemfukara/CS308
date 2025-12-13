@@ -1,5 +1,5 @@
 -- Use below line once for refreshing your database
--- drop schema mydb; create schema mydb;
+ -- drop schema mydb; create schema mydb;
 USE mydb;
 
 -- ===================================================================
@@ -29,6 +29,7 @@ CREATE TABLE products (
     warranty_status VARCHAR(255),
     distributor_info VARCHAR(255),
     currency VARCHAR(10) NOT NULL DEFAULT 'TL',
+    order_count INT DEFAULT 0,
 
     -- Generated column for discount percentage
     discount_ratio DECIMAL(5, 2) AS (
@@ -42,6 +43,8 @@ CREATE TABLE products (
     FOREIGN KEY (category_id) REFERENCES categories(category_id)
 );
 
+-- index for sorting popularity
+CREATE INDEX idx_product_popularity ON products(order_count DESC);
 -- Add an index to make sorting by discount super fast
 CREATE INDEX idx_discount_ratio ON products (discount_ratio);
 
@@ -439,6 +442,27 @@ VALUES
 
 SET SESSION sql_mode = '';
 -- dev insertion ends
+
+
+DELIMITER $$
+
+CREATE TRIGGER trg_UpdatePopularityOnPurchase
+AFTER UPDATE ON orders
+FOR EACH ROW
+BEGIN
+    -- Check if the order status just changed from 'cart' to a confirmed state (like 'processing')
+    IF OLD.status IN ('processing', 'in-transit') AND NEW.status = 'delivered' THEN
+        
+        -- Update the order_count for ALL products in this specific order
+        UPDATE products p
+        INNER JOIN order_items oi ON p.product_id = oi.product_id
+        SET p.order_count = p.order_count + oi.quantity
+        WHERE oi.order_id = NEW.order_id;
+        
+    END IF;
+END$$
+
+DELIMITER ;
 
 
 -- ===================================================================
