@@ -540,3 +540,28 @@ SELECT * FROM reviews;
 SELECT * FROM payment_methods;
 SELECT * FROM orders;
 SELECT * FROM order_items;
+
+-- ===================================================================
+-- PROFILE UPDATE & ACCOUNT DELETION VERIFICATION SYSTEM
+-- ===================================================================
+
+-- Add phone_encrypted field to users table
+ALTER TABLE users 
+ADD COLUMN phone_encrypted BLOB AFTER address_encrypted;
+
+-- Create verification_codes table for email verification
+CREATE TABLE IF NOT EXISTS verification_codes (
+    code_id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT NOT NULL,
+    code VARCHAR(6) NOT NULL,
+    purpose ENUM('profile_update', 'account_deletion') NOT NULL,
+    -- Store pending update data as JSON
+    pending_data TEXT,
+    expires_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    is_used BOOLEAN DEFAULT FALSE,
+    
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    INDEX idx_user_purpose (user_id, purpose),
+    INDEX idx_expires (expires_at)
+);

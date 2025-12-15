@@ -2,4 +2,9 @@
 // Email service using Gmail SMTP (Mailjet removed)
 
 // Re-export Gmail service functions
-export { sendInvoiceEmail, testEmailConfig } from './gmailService.js';
+export {
+  sendInvoiceEmail,
+  testEmailConfig,
+  sendVerificationEmail,
+  sendAccountDeletionEmail,
+} from './gmailService.js';
