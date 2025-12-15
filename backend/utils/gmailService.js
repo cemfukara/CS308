@@ -3,7 +3,7 @@
 
 import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
-import { formatPrice } from '../../frontend/online-store/src/utils/formatPrice.js';  
+import { formatPrice } from '../../frontend/online-store/src/utils/formatPrice.js';
 
 dotenv.config();
 
@@ -34,9 +34,9 @@ export async function sendInvoiceEmail(
   pdfBuffer,
   orderDetails = {}
 ) {
-  const senderName = process.env.MAILJET_SENDER_NAME || 'Online Store';
+  const senderName = process.env.SENDER_NAME || 'Online Store';
   const senderEmail = process.env.GMAIL_USER;
-  
+
   // Get customer name and currency
   const customerName = orderDetails.customerName || 'Customer';
   const currencySymbol = orderDetails.currency === 'TRY' ? '₺' : '$';
