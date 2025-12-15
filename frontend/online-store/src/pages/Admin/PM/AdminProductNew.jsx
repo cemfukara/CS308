@@ -70,7 +70,16 @@ function AdminProductNew() {
       await createProduct(payload);
       navigate('/admin/pm/products');
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to create product. Please try again.');
+      // Handle structured validation errors from backend
+      const errorData = err.response?.data;
+      if (errorData?.errors && Array.isArray(errorData.errors)) {
+        // Format validation errors as a list
+        const errorMessages = errorData.errors.map(e => `${e.field}: ${e.message}`).join('\n');
+        setError(errorMessages);
+      } else {
+        // Fall back to simple error message
+        setError(errorData?.message || 'Failed to create product. Please try again.');
+      }
     } finally {
       setSubmitting(false);
     }

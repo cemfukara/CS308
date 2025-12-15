@@ -13,6 +13,7 @@ import {
   authenticate,
   authorizeRoles,
 } from '../app/middlewares/authMiddleware.js';
+import { validateProductInput } from '../app/middlewares/validationMiddleware.js';
 
 const router = express.Router();
 
@@ -40,28 +41,26 @@ router.get('/:id', fetchProductDetails); // Use the new controller function
  * @desc    Add a new product
  * @access  Private/Admin
  */
-
-/*router.post(
+router.post(
   '/',
   authenticate,
   authorizeRoles('product manager'),
   validateProductInput,
   addProduct
-);*/
+);
 
 /**
  * @route   PUT /api/products/:id
  * @desc    Update product by ID
  * @access  Private/Admin
  */
-// Added validation middleware here
-/*router.put(
+router.put(
   '/:id',
   authenticate,
   authorizeRoles('product manager'),
   validateProductInput,
   updateProductDetails
-);*/
+);
 
 /**
  * @route   DELETE /api/products/:id
