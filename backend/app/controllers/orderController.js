@@ -8,6 +8,8 @@ import {
   getOrderById,
   getAllOrders,
   updateOrderStatus,
+  cancelOrder,
+  refundOrder,
 } from '../../models/Order.js';
 import { findById as findUserById } from '../../models/User.js';
 // Email services when mailjet is working
@@ -122,7 +124,7 @@ export async function createOrderController(req, res) {
       if (orderDetails && orderDetails.customer_email) {
         // Determine currency from items (use first item's currency or default to TRY)
         const currency = normalizedItems[0]?.currency || 'TRY';
-        
+
         // Get customer name
         const customerName = userInfo
           ? `${userInfo.first_name || ''} ${userInfo.last_name || ''}`.trim() || 'Customer'
@@ -147,7 +149,7 @@ export async function createOrderController(req, res) {
           orderDetails.customer_email,
           order_id,
           pdfBuffer,
-          { 
+          {
             totalPrice,
             currency,
             customerName,
@@ -237,3 +239,67 @@ export const updateOrderStatusController = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+
+// ==========================================================
+// POST /api/orders/:id/cancel
+//  - Cancel an order (only if status is 'processing')
+// ==========================================================
+export async function cancelOrderController(req, res) {
+  try {
+    const userId = req.user.user_id;
+    const orderId = parseInt(req.params.id);
+
+    if (isNaN(orderId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid order ID',
+      });
+    }
+
+    const result = await cancelOrder(orderId, userId);
+
+    if (!result.success) {
+      return res.status(400).json(result);
+    }
+
+    res.status(200).json(result);
+  } catch (err) {
+    console.error('❌ Error cancelling order:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+    });
+  }
+}
+
+// ==========================================================
+// POST /api/orders/:id/refund
+//  - Refund an order (only if status is 'delivered')
+// ==========================================================
+export async function refundOrderController(req, res) {
+  try {
+    const userId = req.user.user_id;
+    const orderId = parseInt(req.params.id);
+
+    if (isNaN(orderId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid order ID',
+      });
+    }
+
+    const result = await refundOrder(orderId, userId);
+
+    if (!result.success) {
+      return res.status(400).json(result);
+    }
+
+    res.status(200).json(result);
+  } catch (err) {
+    console.error('❌ Error refunding order:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+    });
+  }
+}

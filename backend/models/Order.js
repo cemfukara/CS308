@@ -300,3 +300,161 @@ export async function createOrder({
 
   return { order_id: orderId };
 }
+
+// --------------------------------------------------
+// Cancel an order (only if status is 'processing')
+// --------------------------------------------------
+export async function cancelOrder(orderId, userId) {
+  // 1) Get the order and verify it belongs to the user
+  const [orderRows] = await db.query(
+    `
+      SELECT order_id, user_id, status
+      FROM orders
+      WHERE order_id = ?
+        AND user_id = ?
+    `,
+    [orderId, userId]
+  );
+
+  if (orderRows.length === 0) {
+    return { success: false, message: 'Order not found' };
+  }
+
+  const order = orderRows[0];
+
+  // 2) Check if the order can be cancelled (must be in 'processing' status)
+  if (order.status !== 'processing') {
+    return {
+      success: false,
+      message: `Cannot cancel order. Order status is '${order.status}', but must be 'processing' to cancel.`,
+    };
+  }
+
+  // 3) Get the order items to restore stock
+  const [items] = await db.query(
+    `
+      SELECT product_id, quantity
+      FROM order_items
+      WHERE order_id = ?
+    `,
+    [orderId]
+  );
+
+  // 4) Restore stock for each product
+  for (const item of items) {
+    // Increase quantity_in_stock
+    await db.query(
+      `
+        UPDATE products
+        SET quantity_in_stock = quantity_in_stock + ?
+        WHERE product_id = ?
+      `,
+      [item.quantity, item.product_id]
+    );
+
+    // Decrease order_count
+    await db.query(
+      `
+        UPDATE products
+        SET order_count = GREATEST(order_count - ?, 0)
+        WHERE product_id = ?
+      `,
+      [item.quantity, item.product_id]
+    );
+  }
+
+  // 5) Update order status to 'cancelled'
+  const [result] = await db.query(
+    `
+      UPDATE orders
+      SET status = 'cancelled'
+      WHERE order_id = ?
+    `,
+    [orderId]
+  );
+
+  if (result.affectedRows > 0) {
+    return { success: true, message: 'Order cancelled successfully' };
+  }
+
+  return { success: false, message: 'Failed to cancel order' };
+}
+
+// --------------------------------------------------
+// Refund an order (only if status is 'delivered')
+// --------------------------------------------------
+export async function refundOrder(orderId, userId) {
+  // 1) Get the order and verify it belongs to the user
+  const [orderRows] = await db.query(
+    `
+      SELECT order_id, user_id, status
+      FROM orders
+      WHERE order_id = ?
+        AND user_id = ?
+    `,
+    [orderId, userId]
+  );
+
+  if (orderRows.length === 0) {
+    return { success: false, message: 'Order not found' };
+  }
+
+  const order = orderRows[0];
+
+  // 2) Check if the order can be refunded (must be in 'delivered' status)
+  if (order.status !== 'delivered') {
+    return {
+      success: false,
+      message: `Cannot refund order. Order status is '${order.status}', but must be 'delivered' to refund.`,
+    };
+  }
+
+  // 3) Get the order items to restore stock
+  const [items] = await db.query(
+    `
+      SELECT product_id, quantity
+      FROM order_items
+      WHERE order_id = ?
+    `,
+    [orderId]
+  );
+
+  // 4) Restore stock for each product
+  for (const item of items) {
+    // Increase quantity_in_stock
+    await db.query(
+      `
+        UPDATE products
+        SET quantity_in_stock = quantity_in_stock + ?
+        WHERE product_id = ?
+      `,
+      [item.quantity, item.product_id]
+    );
+
+    // Decrease order_count
+    await db.query(
+      `
+        UPDATE products
+        SET order_count = GREATEST(order_count - ?, 0)
+        WHERE product_id = ?
+      `,
+      [item.quantity, item.product_id]
+    );
+  }
+
+  // 5) Update order status to 'refunded'
+  const [result] = await db.query(
+    `
+      UPDATE orders
+      SET status = 'refunded'
+      WHERE order_id = ?
+    `,
+    [orderId]
+  );
+
+  if (result.affectedRows > 0) {
+    return { success: true, message: 'Order refunded successfully' };
+  }
+
+  return { success: false, message: 'Failed to refund order' };
+}
