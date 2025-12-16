@@ -1,5 +1,5 @@
 -- Use below line once for refreshing your database
- -- drop schema mydb; create schema mydb;
+-- drop schema mydb; create schema mydb;
 USE mydb;
 
 -- ===================================================================
@@ -564,4 +564,59 @@ CREATE TABLE IF NOT EXISTS verification_codes (
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
     INDEX idx_user_purpose (user_id, purpose),
     INDEX idx_expires (expires_at)
+);
+
+-- ===================================================================
+-- 11. SUPPORT CHAT SYSTEM TABLES
+-- ===================================================================
+
+-- Support chats table: tracks customer-agent conversations
+CREATE TABLE support_chats (
+    chat_id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT NULL, -- NULL for guest users
+    guest_identifier VARCHAR(255) NULL, -- Cookie/session ID for guests
+    agent_user_id INT NULL, -- Agent who claimed the chat
+    status ENUM(
+        'waiting',
+        'active',
+        'resolved',
+        'closed'
+    ) NOT NULL DEFAULT 'waiting',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    claimed_at TIMESTAMP NULL, -- When agent claimed the chat
+    closed_at TIMESTAMP NULL,
+    FOREIGN KEY (user_id) REFERENCES users (user_id) ON DELETE SET NULL,
+    FOREIGN KEY (agent_user_id) REFERENCES users (user_id) ON DELETE SET NULL,
+    INDEX idx_status (status),
+    INDEX idx_agent (agent_user_id),
+    INDEX idx_user (user_id),
+    INDEX idx_guest (guest_identifier)
+);
+
+-- Support messages table: individual messages within a chat
+CREATE TABLE support_messages (
+    message_id INT PRIMARY KEY AUTO_INCREMENT,
+    chat_id INT NOT NULL,
+    sender_type ENUM('customer', 'agent') NOT NULL,
+    sender_user_id INT NULL, -- User ID if authenticated
+    message_text TEXT, -- NULL if attachment-only
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    is_read BOOLEAN DEFAULT FALSE,
+    FOREIGN KEY (chat_id) REFERENCES support_chats (chat_id) ON DELETE CASCADE,
+    FOREIGN KEY (sender_user_id) REFERENCES users (user_id) ON DELETE SET NULL,
+    INDEX idx_chat (chat_id),
+    INDEX idx_created (created_at)
+);
+
+-- Support attachments table: file attachments in messages
+CREATE TABLE support_attachments (
+    attachment_id INT PRIMARY KEY AUTO_INCREMENT,
+    message_id INT NOT NULL,
+    file_name VARCHAR(255) NOT NULL,
+    file_path VARCHAR(512) NOT NULL, -- Local path or URL
+    file_type VARCHAR(100) NOT NULL, -- MIME type  
+    file_size INT NOT NULL, -- Bytes
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (message_id) REFERENCES support_messages (message_id) ON DELETE CASCADE,
+    INDEX idx_message (message_id)
 );

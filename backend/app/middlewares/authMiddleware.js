@@ -41,6 +41,45 @@ export const authenticate = async (req, res, next) => {
   }
 };
 
+// Optional authentication - sets req.user if token exists, but doesn't fail if not
+// Useful for routes that support both authenticated and guest users
+export const optionalAuthenticate = async (req, res, next) => {
+  // Dev shortcut: AUTH_DISABLED + NODE_ENV=development → always log in as dev user (id 0)
+  if (
+    process.env.AUTH_DISABLED === 'true' &&
+    process.env.NODE_ENV == 'development'
+  ) {
+    let dev = await findById(0); // fetch dev user info
+    req.user = {
+      user_id: 0,
+      first_name: dev.first_name,
+      last_name: dev.last_name,
+      email: dev.email,
+      address: dev.address,
+      tax_id: dev.tax_id,
+      role: dev.role,
+    };
+    return next();
+  }
+
+  const token = req.cookies.token; // read from cookie
+
+  // If no token, just continue without setting req.user
+  if (!token) {
+    return next();
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = decoded;
+    return next();
+  } catch {
+    // If token is invalid, just continue without setting req.user
+    // (Don't fail the request - allow guest access)
+    return next();
+  }
+};
+
 // check auth for specified roles. "allowedRoles" could be "customer",
 // "product manager", "sales manager", "support agent" or "dev".
 export const authorizeRoles = (allowedRoles = []) => {

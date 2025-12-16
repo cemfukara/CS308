@@ -14,6 +14,7 @@ import {
   invoiceRoutes,
   reviewRoutes,
   paymentRoutes,
+  supportChatRoutes,
 } from '../routes/index.js';
 const app = express();
 
@@ -40,5 +41,6 @@ app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/invoice', invoiceRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/payment', paymentRoutes);
+app.use('/api/support', supportChatRoutes);
 
 export default app;

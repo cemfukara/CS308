@@ -29,9 +29,12 @@
     "express-validator": "^7.3.1",
     "fund": "^1.0.0",
     "jsonwebtoken": "^9.0.2",
+    "multer": "^2.0.2",
     "mysql2": "^3.15.3",
     "nodemailer": "^7.0.11",
     "pdfkit": "^0.15.0",
+    "socket.io": "^4.8.1",
+    "uuid": "^13.0.0",
     "winston": "^3.18.3"
   },
   "devDependencies": {
