@@ -177,6 +177,16 @@ export async function createOrderController(req, res) {
     });
   } catch (err) {
     console.error('❌ Error creating order:', err);
+
+    // Check if it's a stock validation error
+    if (err.stockErrors && Array.isArray(err.stockErrors)) {
+      return res.status(400).json({
+        success: false,
+        message: err.message,
+        stockErrors: err.stockErrors,
+      });
+    }
+
     res.status(500).json({ success: false, message: 'Server error' });
   }
 }

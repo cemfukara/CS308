@@ -22,20 +22,35 @@ const useCartStore = create((set, get) => ({
     const cart = [...get().cart];
     const existing = cart.find(p => p.product_id === item.product_id);
 
+    const currentQty = existing ? existing.quantity : 0;
+    const newQty = currentQty + qty;
+
+    // Check stock limit
+    const stockLimit = item.quantity_in_stock ?? 0;
+    if (newQty > stockLimit) {
+      // Return false to indicate failure
+      return false;
+    }
+
     if (existing) {
-      existing.quantity += qty;
+      existing.quantity = newQty;
     } else {
       cart.push({ ...item, quantity: qty });
     }
 
     saveCart(cart);
     set({ cart });
+    return true;
   },
 
   updateQuantity: (id, quantity) => {
-    const cart = get().cart.map(p =>
-      p.product_id === id ? { ...p, quantity: Math.max(1, quantity) } : p
-    );
+    const cart = get().cart.map(p => {
+      if (p.product_id === id) {
+        const stockLimit = p.quantity_in_stock ?? 999999;
+        return { ...p, quantity: Math.max(1, Math.min(quantity, stockLimit)) };
+      }
+      return p;
+    });
 
     saveCart(cart);
     set({ cart });

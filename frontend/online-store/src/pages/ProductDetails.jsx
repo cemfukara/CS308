@@ -299,8 +299,24 @@ function ProductDetails() {
     if (!product || (product.quantity_in_stock ?? 0) <= 0) return;
 
     const prevQty = cart.find(item => item.product_id === product.product_id)?.quantity ?? 0;
+    const stockLimit = product.quantity_in_stock ?? 0;
 
-    addToCart(product, 1);
+    // Check if we can add one more
+    if (prevQty >= stockLimit) {
+      toast.error(`Cannot add more. Only ${stockLimit} in stock.`, {
+        position: 'top-right',
+      });
+      return;
+    }
+
+    const success = addToCart(product, 1);
+
+    if (!success) {
+      toast.error(`Cannot add more. Only ${stockLimit} in stock.`, {
+        position: 'top-right',
+      });
+      return;
+    }
 
     const qtyInCart = prevQty + 1;
     toast.custom(

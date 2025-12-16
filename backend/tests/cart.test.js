@@ -17,8 +17,8 @@ vi.mock('../app/middlewares/authMiddleware.js', () => ({
   // We return a function that calls next() immediately, bypassing the role check.
   authorizeRoles:
     (...roles) =>
-    (req, res, next) =>
-      next(),
+      (req, res, next) =>
+        next(),
 }));
 
 describe('Cart Controller', () => {
@@ -123,5 +123,46 @@ describe('Cart Controller', () => {
     expect(res.status).toBe(200);
     expect(res.body.message).toMatch(/cart cleared/i);
     expect(CartModel.clearCart).toHaveBeenCalledWith(5);
+  });
+
+  // Test 8: Stock Validation - Insufficient Stock
+  it('POST /api/cart/add - should fail when adding exceeds stock', async () => {
+    const mockCart = { order_id: 5, user_id: 123, status: 'cart' };
+
+    CartModel.getOrCreateCart.mockResolvedValue(mockCart);
+    CartModel.addToCart.mockResolvedValue({
+      error: 'Insufficient stock. Available: 5, In cart: 3',
+      stockError: true,
+      availableStock: 5,
+      currentCartQuantity: 3,
+    });
+
+    const res = await request(app).post('/api/cart/add').send({
+      productId: 99,
+      quantity: 3,
+    });
+
+    expect(res.status).toBe(400);
+    expect(res.body.success).toBe(false);
+    expect(res.body.stockError).toBe(true);
+    expect(res.body.availableStock).toBe(5);
+    expect(res.body.currentCartQuantity).toBe(3);
+  });
+
+  // Test 9: Stock Validation - Adding within stock limit
+  it('POST /api/cart/add - should succeed when stock is sufficient', async () => {
+    const mockCart = { order_id: 5, user_id: 123, status: 'cart' };
+
+    CartModel.getOrCreateCart.mockResolvedValue(mockCart);
+    CartModel.addToCart.mockResolvedValue([{}]); // Success returns DB result
+
+    const res = await request(app).post('/api/cart/add').send({
+      productId: 99,
+      quantity: 1,
+    });
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.message).toMatch(/added to cart/i);
   });
 });

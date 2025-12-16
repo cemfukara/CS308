@@ -49,7 +49,18 @@ export async function addItemToCart(req, res) {
     const cart = await getOrCreateCart(userId);
 
     // Add item to cart
-    await addToCart(cart.order_id, productId, quantity ?? 1);
+    const result = await addToCart(cart.order_id, productId, quantity ?? 1);
+
+    // Check if there was a stock error
+    if (result && result.stockError) {
+      return res.status(400).json({
+        success: false,
+        message: result.error,
+        stockError: true,
+        availableStock: result.availableStock,
+        currentCartQuantity: result.currentCartQuantity,
+      });
+    }
 
     res.status(200).json({
       success: true,

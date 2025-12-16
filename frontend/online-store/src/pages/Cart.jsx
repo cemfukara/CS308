@@ -40,51 +40,56 @@ const Cart = () => {
             {cart.map(item => {
               const placeholder = new URL('../assets/placeholder.jpg', import.meta.url).href;
               const imageSrc = item.product_images?.[0]?.image_url || placeholder;
-              
+
               return (
-              <div key={item.product_id} className="cart-item">
-                <img
-                  src={imageSrc}
-                  alt={item.name}
-                />
+                <div key={item.product_id} className="cart-item">
+                  <img
+                    src={imageSrc}
+                    alt={item.name}
+                  />
 
-                <div className="info">
-                  <h3>{item.name}</h3>
-                  <p>{formatPrice(item.price, item.currency)}</p>
+                  <div className="info">
+                    <h3>{item.name}</h3>
+                    <p>{formatPrice(item.price, item.currency)}</p>
 
-                  <div className="quantity-control">
-                    <button
-                      onClick={() =>
-                        updateQuantity(item.product_id, Math.max(1, item.quantity - 1))
-                      }
-                    >
-                      −
-                    </button>
-                    <input
-                      type="number"
-                      value={item.quantity}
-                      onChange={e =>
-                        updateQuantity(
-                          item.product_id,
-                          Math.min(Number(e.target.value), item.quantity_in_stock)
-                        )
-                      }
-                    />
-                    <button
-                      onClick={() =>
-                        updateQuantity(
-                          item.product_id,
-                          Math.min(item.quantity_in_stock, item.quantity + 1)
-                        )
-                      }
-                    >
-                      +
-                    </button>
+                    <div className="quantity-control">
+                      <button
+                        onClick={() =>
+                          updateQuantity(item.product_id, Math.max(1, item.quantity - 1))
+                        }
+                      >
+                        −
+                      </button>
+                      <input
+                        type="number"
+                        value={item.quantity}
+                        onChange={e =>
+                          updateQuantity(
+                            item.product_id,
+                            Math.min(Number(e.target.value), item.quantity_in_stock)
+                          )
+                        }
+                      />
+                      <button
+                        onClick={() =>
+                          updateQuantity(
+                            item.product_id,
+                            Math.min(item.quantity_in_stock, item.quantity + 1)
+                          )
+                        }
+                      >
+                        +
+                      </button>
+                    </div>
+                    {item.quantity >= item.quantity_in_stock && (
+                      <p style={{ color: '#ff9800', fontSize: '12px', marginTop: '4px' }}>
+                        Maximum quantity reached
+                      </p>
+                    )}
                   </div>
-                </div>
 
-                <button onClick={() => removeFromCart(item.product_id)}>Remove</button>
-              </div>
+                  <button onClick={() => removeFromCart(item.product_id)}>Remove</button>
+                </div>
               );
             })}
           </div>
