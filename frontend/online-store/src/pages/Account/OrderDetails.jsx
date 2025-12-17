@@ -34,7 +34,7 @@ const OrderDetails = () => {
     };
   }, [id]);
 
-  const handleRepurchase = item => {
+  const handleRepurchase = async item => {
     const cartItem = {
       product_id: item.product_id,
       name: item.name,
@@ -43,7 +43,7 @@ const OrderDetails = () => {
       quantity: 1,
     };
 
-    addToCart(cartItem);
+    await addToCart(cartItem);
 
     toast.custom(t => (
       <div

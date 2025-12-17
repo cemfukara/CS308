@@ -295,7 +295,7 @@ function ProductDetails() {
     }
   };
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (!product || (product.quantity_in_stock ?? 0) <= 0) return;
 
     const prevQty = cart.find(item => item.product_id === product.product_id)?.quantity ?? 0;
@@ -309,7 +309,7 @@ function ProductDetails() {
       return;
     }
 
-    const success = addToCart(product, 1);
+    const success = await addToCart(product, 1);
 
     if (!success) {
       toast.error(`Cannot add more. Only ${stockLimit} in stock.`, {

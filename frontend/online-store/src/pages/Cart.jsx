@@ -28,6 +28,36 @@ const Cart = () => {
     navigate('/checkout');
   };
 
+  // Handle quantity update with error handling
+  const handleUpdateQuantity = async (productId, newQuantity) => {
+    try {
+      await updateQuantity(productId, newQuantity);
+    } catch (error) {
+      console.error('Failed to update quantity:', error);
+      toast.error('Failed to update quantity');
+    }
+  };
+
+  // Handle remove with error handling
+  const handleRemove = async (productId) => {
+    try {
+      await removeFromCart(productId);
+    } catch (error) {
+      console.error('Failed to remove item:', error);
+      toast.error('Failed to remove item from cart');
+    }
+  };
+
+  // Handle clear cart with error handling
+  const handleClearCart = async () => {
+    try {
+      await clearCart();
+    } catch (error) {
+      console.error('Failed to clear cart:', error);
+      toast.error('Failed to clear cart');
+    }
+  };
+
   return (
     <div className="cart-page">
       <h1>Your Shopping Cart</h1>
@@ -39,7 +69,7 @@ const Cart = () => {
           <div className="cart-items">
             {cart.map(item => {
               const placeholder = new URL('../assets/placeholder.jpg', import.meta.url).href;
-              const imageSrc = item.product_images?.[0]?.image_url || placeholder;
+              const imageSrc = item.image_url || item.product_images?.[0]?.image_url || placeholder;
 
               return (
                 <div key={item.product_id} className="cart-item">
@@ -55,7 +85,7 @@ const Cart = () => {
                     <div className="quantity-control">
                       <button
                         onClick={() =>
-                          updateQuantity(item.product_id, Math.max(1, item.quantity - 1))
+                          handleUpdateQuantity(item.product_id, Math.max(1, item.quantity - 1))
                         }
                       >
                         −
@@ -64,7 +94,7 @@ const Cart = () => {
                         type="number"
                         value={item.quantity}
                         onChange={e =>
-                          updateQuantity(
+                          handleUpdateQuantity(
                             item.product_id,
                             Math.min(Number(e.target.value), item.quantity_in_stock)
                           )
@@ -72,7 +102,7 @@ const Cart = () => {
                       />
                       <button
                         onClick={() =>
-                          updateQuantity(
+                          handleUpdateQuantity(
                             item.product_id,
                             Math.min(item.quantity_in_stock, item.quantity + 1)
                           )
@@ -88,7 +118,7 @@ const Cart = () => {
                     )}
                   </div>
 
-                  <button onClick={() => removeFromCart(item.product_id)}>Remove</button>
+                  <button onClick={() => handleRemove(item.product_id)}>Remove</button>
                 </div>
               );
             })}
@@ -99,7 +129,7 @@ const Cart = () => {
             <button className="checkout-btn" onClick={handleCheckout}>
               Proceed to Checkout
             </button>
-            <button className="clear-btn" onClick={clearCart}>
+            <button className="clear-btn" onClick={handleClearCart}>
               Clear Cart
             </button>
           </div>
@@ -110,3 +140,4 @@ const Cart = () => {
 };
 
 export default Cart;
+

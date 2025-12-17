@@ -5,6 +5,7 @@ import {
   addItemToCart,
   deleteCartItem,
   clearUserCart,
+  updateCartItem,
 } from '../app/controllers/cartController.js';
 import { authenticate } from '../app/middlewares/authMiddleware.js';
 
@@ -25,15 +26,11 @@ router.get('/', authenticate, getCart);
 router.post('/add', authenticate, addItemToCart);
 
 /**
- * @route   PUT /api/cart/update
- * @desc    Update quantity of item in cart (optional future feature)
+ * @route   PATCH /api/cart/items/:productId
+ * @desc    Update quantity of item in cart
  * @access  Private
  */
-router.put('/update', (req, res) => {
-  res.status(501).json({
-    message: 'Update cart quantity not implemented yet',
-  });
-});
+router.patch('/items/:productId', authenticate, updateCartItem);
 
 /**
  * @route   DELETE /api/cart/remove/:productId

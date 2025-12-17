@@ -6,6 +6,7 @@ import {
   addToCart,
   removeFromCart,
   clearCart,
+  updateCartItemQuantity,
 } from '../../models/Cart.js';
 
 //------------------------------------------------------
@@ -110,6 +111,48 @@ export async function deleteCartItem(req, res) {
 }
 
 //------------------------------------------------------
+// PATCH /cart/items/:productId  → Update item quantity
+//------------------------------------------------------
+export async function updateCartItem(req, res) {
+  try {
+    const userId = req.user.user_id;
+    const { productId } = req.params;
+    const { quantity } = req.body;
+
+    if (!productId || !quantity) {
+      return res.status(400).json({
+        success: false,
+        message: 'productId and quantity required',
+      });
+    }
+
+    // Get or create cart
+    const cart = await getOrCreateCart(userId);
+
+    // Update item quantity
+    const result = await updateCartItemQuantity(cart.order_id, productId, quantity);
+
+    // Check if there was a stock error
+    if (result && result.stockError) {
+      return res.status(400).json({
+        success: false,
+        message: result.error,
+        stockError: true,
+        availableStock: result.availableStock,
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Cart item updated',
+    });
+  } catch (error) {
+    console.error('Error updating cart item:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+}
+
+//------------------------------------------------------
 // DELETE /cart/clear  → Remove all items from current cart
 //------------------------------------------------------
 export async function clearUserCart(req, res) {
@@ -129,3 +172,4 @@ export async function clearUserCart(req, res) {
     res.status(500).json({ success: false, message: 'Server error' });
   }
 }
+

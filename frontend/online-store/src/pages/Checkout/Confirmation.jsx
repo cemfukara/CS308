@@ -49,7 +49,7 @@ const Confirmation = () => {
   useEffect(() => {
     // clear cart when leaving confirmation page
     return () => {
-      clearCart();
+      clearCart().catch(err => console.error('Failed to clear cart:', err));
     };
   }, [clearCart]);
 
