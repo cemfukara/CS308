@@ -103,14 +103,25 @@ describe('Auth Middleware Tests', () => {
       // Mock jwt.verify to return payload
       jwt.verify.mockReturnValue(mockUserPayload);
 
+      // Mock findById to return the full user object from database
+      UserModel.findById.mockResolvedValue({
+        user_id: mockUserPayload.user_id,
+        email: mockUserPayload.email,
+        first_name: 'Test',
+        last_name: 'User',
+        role: mockUserPayload.role,
+      });
+
       const response = await request(app)
         .get('/test/auth')
         .set('Cookie', ['token=valid_token']);
 
       expect(response.status).toBe(200);
       expect(response.body.message).toBe('Authenticated');
-      expect(response.body.user).toEqual(mockUserPayload);
+      expect(response.body.user.user_id).toBe(mockUserPayload.user_id);
+      expect(response.body.user.role).toBe(mockUserPayload.role);
       expect(jwt.verify).toHaveBeenCalledWith('valid_token', 'testsecret');
+      expect(UserModel.findById).toHaveBeenCalledWith(mockUserPayload.user_id);
     });
   });
 
@@ -121,6 +132,15 @@ describe('Auth Middleware Tests', () => {
     it('should return 403 if user has wrong role', async () => {
       // 1. Authenticate as 'customer'
       jwt.verify.mockReturnValue(mockUserPayload); // role: customer
+
+      // Mock findById to return customer user
+      UserModel.findById.mockResolvedValue({
+        user_id: mockUserPayload.user_id,
+        email: mockUserPayload.email,
+        first_name: 'Test',
+        last_name: 'User',
+        role: mockUserPayload.role,
+      });
 
       // 2. Try to access PM route
       const response = await request(app)
@@ -135,6 +155,15 @@ describe('Auth Middleware Tests', () => {
       // 1. Authenticate as 'product manager'
       jwt.verify.mockReturnValue(mockPmPayload); // role: product manager
 
+      // Mock findById to return PM user
+      UserModel.findById.mockResolvedValue({
+        user_id: mockPmPayload.user_id,
+        email: mockPmPayload.email,
+        first_name: 'Product',
+        last_name: 'Manager',
+        role: mockPmPayload.role,
+      });
+
       // 2. Try to access PM route
       const response = await request(app)
         .get('/test/pm-only')
@@ -148,6 +177,15 @@ describe('Auth Middleware Tests', () => {
       // 1. Authenticate as 'product manager'
       jwt.verify.mockReturnValue(mockPmPayload);
 
+      // Mock findById to return PM user
+      UserModel.findById.mockResolvedValue({
+        user_id: mockPmPayload.user_id,
+        email: mockPmPayload.email,
+        first_name: 'Product',
+        last_name: 'Manager',
+        role: mockPmPayload.role,
+      });
+
       // 2. Try to access Staff route (allows PM or Sales)
       const response = await request(app)
         .get('/test/staff')
@@ -158,15 +196,15 @@ describe('Auth Middleware Tests', () => {
     });
 
     it('should return 401 if req.user is missing (Auth middleware failed or skipped)', async () => {
-        // This simulates a scenario where authorizeRoles is called but user isn't set
-        // We create a specific route for this test case bypassing 'authenticate'
-        const appNoAuth = express();
-        appNoAuth.get('/test/no-user', authorizeRoles(['admin']), (req, res) => res.send('OK'));
+      // This simulates a scenario where authorizeRoles is called but user isn't set
+      // We create a specific route for this test case bypassing 'authenticate'
+      const appNoAuth = express();
+      appNoAuth.get('/test/no-user', authorizeRoles(['admin']), (req, res) => res.send('OK'));
 
-        const response = await request(appNoAuth).get('/test/no-user');
-        
-        expect(response.status).toBe(401);
-        expect(response.body.message).toBe('Unauthorized');
+      const response = await request(appNoAuth).get('/test/no-user');
+
+      expect(response.status).toBe(401);
+      expect(response.body.message).toBe('Unauthorized');
     });
   });
 
