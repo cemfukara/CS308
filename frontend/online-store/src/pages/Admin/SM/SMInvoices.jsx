@@ -154,11 +154,12 @@ export default function SMInvoices() {
   }
 
   // ---------------------------------------------------------
-  // SAVE PDF
-  // Uses backend route:
+  // VIEW/DOWNLOAD PDF
+  // Uses backend route to ensure consistent PDF generation:
   //     /api/invoice/:orderId/pdf
+  // Both Print and Save PDF use the same backend-generated PDF
   // ---------------------------------------------------------
-  const savePDF = () => {
+  const viewPDF = () => {
     if (!selectedInvoice?.order_id) return;
     window.open(`/api/invoice/${selectedInvoice.order_id}/pdf`, "_blank");
   };
@@ -239,9 +240,8 @@ export default function SMInvoices() {
                 <td className={styles.td}>{formatDate(inv.date)}</td>
                 <td className={styles.td}>
                   <span
-                    className={`${styles.statusBadge} ${
-                      styles["status_" + inv.status] || ""
-                    }`}
+                    className={`${styles.statusBadge} ${styles["status_" + inv.status] || ""
+                      }`}
                   >
                     {inv.status}
                   </span>
@@ -406,12 +406,12 @@ export default function SMInvoices() {
               </button>
               <button
                 className={styles.editBtn}
-                onClick={() => window.print()}
+                onClick={viewPDF}
               >
-                Print
+                View PDF
               </button>
-              <button className={styles.confirmDeleteBtn} onClick={savePDF}>
-                Save PDF
+              <button className={styles.confirmDeleteBtn} onClick={viewPDF}>
+                Download PDF
               </button>
             </div>
           </div>
