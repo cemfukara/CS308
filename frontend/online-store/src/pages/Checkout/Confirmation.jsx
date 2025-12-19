@@ -67,7 +67,10 @@ const Confirmation = () => {
       : paymentInfo.method;
 
   const handleDownloadInvoice = () => {
-    window.print();
+    if (order?.id) {
+      // Use backend-generated professional PDF
+      window.open(`/api/invoice/${order.id}/pdf`, '_blank');
+    }
   };
 
   return (

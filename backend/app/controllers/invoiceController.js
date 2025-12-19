@@ -1,4 +1,5 @@
-import PDFDocument from 'pdfkit';
+import { generateInvoicePDF as generateProfessionalInvoice } from '../../utils/pdfGenerator.js';
+import { findById as findUserById } from '../../models/User.js';
 import {
   getInvoicesByDateRange as modelGetInvoicesByDateRange,
   getInvoiceById as modelGetInvoiceById,
@@ -46,6 +47,7 @@ export async function getInvoicesByDateRange(req, res) {
 
 // -----------------------------------------------
 // GET /api/invoices/:orderId/pdf
+// Generate professional PDF invoice with customer details
 // -----------------------------------------------
 export async function generateInvoicePDF(req, res) {
   try {
@@ -61,57 +63,48 @@ export async function generateInvoicePDF(req, res) {
 
     const items = await modelGetInvoiceItems(orderId);
 
-    // Create the PDF
-    const doc = new PDFDocument({ margin: 40 });
+    // Get user information for customer details (tax ID, address)
+    // Handle cases where user_id might not be available (e.g., in tests)
+    let userInfo = null;
+    if (invoice.user_id) {
+      try {
+        userInfo = await findUserById(invoice.user_id);
+      } catch (err) {
+        console.warn(`Could not fetch user info for user_id ${invoice.user_id}:`, err.message);
+      }
+    }
 
+    // Prepare customer name
+    const customerName = userInfo
+      ? `${userInfo.first_name || ''} ${userInfo.last_name || ''}`.trim() || 'Customer'
+      : 'Customer';
+
+    // Generate professional PDF using our unified generator
+    const pdfBuffer = await generateProfessionalInvoice(
+      {
+        order_id: orderId,
+        customer_email: invoice.user_email,
+        customer_name: customerName,
+        customer_tax_id: userInfo?.tax_id || null,
+        customer_address: userInfo?.address || null,
+        shipping_address: invoice.shipping_address || null,
+        status: invoice.status,
+        total_price: invoice.total_price,
+        order_date: invoice.order_date,
+        currency: invoice.currency || 'TRY',
+      },
+      items
+    );
+
+    // Send PDF as response
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader(
       'Content-Disposition',
       `attachment; filename=invoice-${orderId}.pdf`
     );
-
-    doc.pipe(res);
-
-    // Header
-    doc.fontSize(20).text('INVOICE', { underline: true });
-    doc.moveDown();
-
-    // Invoice details
-    doc.fontSize(12).text(`Order ID: ${invoice.order_id}`);
-    doc.text(`Customer Email: ${invoice.user_email}`);
-    doc.text(`Status: ${invoice.status}`);
-    doc.text(
-      `Order Date: ${
-        invoice.order_date
-          ? new Date(invoice.order_date).toLocaleString()
-          : 'N/A'
-      }`
-    );
-
-    doc.moveDown();
-
-    // Items
-    doc.fontSize(14).text('Items:');
-    doc.moveDown(0.5);
-
-    items.forEach((i) => {
-      doc
-        .fontSize(12)
-        .text(
-          `${i.product_name} (x${i.quantity}) — $${Number(
-            i.price_at_purchase
-          ).toFixed(2)} each`
-        );
-    });
-
-    doc.moveDown();
-    doc
-      .fontSize(14)
-      .text(`Total: $${Number(invoice.total_price || 0).toFixed(2)}`);
-
-    doc.end();
+    res.send(pdfBuffer);
   } catch (err) {
-    console.error(err);
+    console.error('PDF generation error:', err);
     return res.status(500).json({ message: 'Internal server error' });
   }
 }
