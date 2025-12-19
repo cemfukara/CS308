@@ -1,0 +1,208 @@
+/* Floating button */
+.fab {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  width: 56px;
+  height: 56px;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  font-size: 20px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+  z-index: 1000;
+}
+
+/* Overlay */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  padding: 20px;
+  z-index: 9999;
+}
+
+/* Modal */
+.modal {
+  width: 360px;
+  height: 520px;
+  background: #111;
+  border-radius: 16px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Header */
+.header {
+  padding: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.title {
+  font-weight: 700;
+  font-size: 16px;
+  color: #fff;
+}
+
+.sub {
+  font-size: 12px;
+  opacity: 0.8;
+  color: #ddd;
+}
+
+.headerBtn {
+  border: none;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+/* Error */
+.error {
+  padding: 10px;
+  font-size: 12px;
+  color: #ffb4b4;
+  background: rgba(255, 0, 0, 0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Messages */
+.messages {
+  flex: 1;
+  padding: 12px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Composer */
+.composer {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 10px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.attachBtn {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  user-select: none;
+}
+
+.input {
+  flex: 1;
+  height: 34px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  padding: 0 10px;
+  outline: none;
+}
+
+.sendBtn {
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+}
+
+/* File chip */
+.fileChip {
+  padding: 8px 12px;
+  font-size: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  color: #ddd;
+}
+
+.fileChipRemove {
+  margin-left: 8px;
+  font-size: 12px;
+  cursor: pointer;
+  background: transparent;
+  color: #fff;
+  border: none;
+  text-decoration: underline;
+}
+
+/* Footer hint */
+.footerHint {
+  padding: 6px 12px;
+  font-size: 11px;
+  opacity: 0.7;
+  color: #ddd;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Message bubbles */
+.bubbleRow {
+  display: flex;
+}
+
+.mine {
+  justify-content: flex-end;
+}
+
+.theirs {
+  justify-content: flex-start;
+}
+
+.bubble {
+  max-width: 80%;
+  padding: 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.bubbleMine {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.bubbleTheirs {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.text {
+  color: #fff;
+  font-size: 13px;
+  white-space: pre-wrap;
+}
+
+.meta {
+  margin-top: 6px;
+  font-size: 10px;
+  opacity: 0.65;
+  color: #ddd;
+}
+
+/* Attachments */
+.attachments {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.attachmentLink {
+  font-size: 12px;
+  color: #c7d2fe;
+  text-decoration: underline;
+}

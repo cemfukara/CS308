@@ -28,6 +28,7 @@
   },
   "dependencies": {
     "fund": "^1.0.0",
-    "pdfkit": "^0.17.2"
+    "pdfkit": "^0.17.2",
+    "socket.io-client": "^4.8.1"
   }
 }

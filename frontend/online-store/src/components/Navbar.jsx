@@ -19,8 +19,8 @@ const Navbar = () => {
   const cart = useCartStore(state => state.cart);
 
   // Calculate total items safely (prevents crash if cart is null/undefined/not array)
-  const cartItemCount = Array.isArray(cart) 
-    ? cart.reduce((acc, item) => acc + (item.quantity || 0), 0) 
+  const cartItemCount = Array.isArray(cart)
+    ? cart.reduce((acc, item) => acc + (item.quantity || 0), 0)
     : 0;
 
   const location = useLocation();
@@ -228,6 +228,8 @@ const Navbar = () => {
                 </Link>
               ) : null}
 
+              {user.role === 'support agent' && <Link to="/admin/support/queue">Support</Link>}
+
               <button onClick={handleLogout}>Logout</button>
             </div>
           )}
@@ -236,9 +238,7 @@ const Navbar = () => {
           <Link to="/cart" className="nav-link" aria-label="Cart">
             <span className="nav-icon cart-icon-container">
               <FontAwesomeIcon icon={faCartShopping} />
-              {cartItemCount > 0 && (
-                <span className="cart-badge">{cartItemCount}</span>
-              )}
+              {cartItemCount > 0 && <span className="cart-badge">{cartItemCount}</span>}
             </span>
           </Link>
         </div>

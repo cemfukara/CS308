@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 
 import RequireAdmin from './components/Auth/RequireAdmin.jsx';
 import RequireAuth from './components/Auth/RequireAuth.jsx';
+import RequireSupportAgent from './components/Auth/RequireSupportAgent.jsx';
 import useAuthStore from './store/authStore';
 
 // Layout
@@ -49,6 +50,11 @@ import AdminComments from './pages/Admin/PM/AdminComments.jsx';
 import SMDiscounts from './pages/Admin/SM/SMDiscounts.jsx';
 import SMInvoices from './pages/Admin/SM/SMInvoices.jsx';
 import SMRevenue from './pages/Admin/SM/SMRevenue.jsx';
+
+// Support Agent (SA) -– note the folder is ./pages/Admin/SA/
+import SupportQueuePage from './pages/Admin/SA/SupportQueuePage.jsx';
+import SupportActiveChatsPage from './pages/Admin/SA/SupportActiveChatsPage.jsx';
+import SupportAgentChatPage from './pages/Admin/SA/SupportAgentChatPage.jsx';
 
 export function AppContent() {
   const location = useLocation();
@@ -123,6 +129,19 @@ export function AppContent() {
           <Route path="sm/discounts" element={<SMDiscounts />} />
           <Route path="sm/invoices" element={<SMInvoices />} />
           <Route path="sm/revenue" element={<SMRevenue />} />
+        </Route>
+
+        <Route
+          path="/admin/support"
+          element={
+            <RequireSupportAgent>
+              <AdminLayout />
+            </RequireSupportAgent>
+          }
+        >
+          <Route path="queue" element={<SupportQueuePage />} />
+          <Route path="active" element={<SupportActiveChatsPage />} />
+          <Route path="chat/:chatId" element={<SupportAgentChatPage />} />
         </Route>
 
         {/* Fallback */}
