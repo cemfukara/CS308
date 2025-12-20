@@ -65,7 +65,6 @@ CREATE TABLE users (
     -- Fields for encrypted Personally Identifiable Information (PII)
     first_name_encrypted BLOB,
     last_name_encrypted BLOB,
-    address_encrypted BLOB,
     tax_id_encrypted BLOB, -- Added for sensitive tax ID
 
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -112,25 +111,23 @@ CREATE TABLE payment_methods (
 );
 
 -- ===================================================================
--- 6. ORDERS TABLE
+-- 6. ORDERS TABLE (Updated to store address Snapshot)
 -- ===================================================================
 CREATE TABLE orders (
     order_id INT PRIMARY KEY AUTO_INCREMENT,
     user_id INT NOT NULL,
-
-    -- 'cart' is the active shopping cart
-    status ENUM('cart', 'processing', 'in-transit', 'delivered', 'cancelled', 'refunded') NOT NULL DEFAULT 'cart',
-
-    -- Final total price, can be NULL for an active 'cart'
+    status ENUM('cart', 'processing', 'in-transit', 'delivered', 'cancelled') NOT NULL DEFAULT 'cart',
     total_price DECIMAL(10, 2),
-
-    -- Store the shipping address used *for this specific order*
+    
+    -- SNAPSHOT: We store the address *at the time of purchase* here.
+    -- If user changes their address later, old orders remain accurate.
+    shipping_country VARCHAR(100),
+    shipping_city VARCHAR(100),
     shipping_address_encrypted BLOB,
-
+    
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    -- 'order_date' is set when status changes from 'cart' to 'processing'
     order_date TIMESTAMP NULL,
-
+    
     FOREIGN KEY (user_id) REFERENCES users(user_id)
 );
 
@@ -197,6 +194,25 @@ CREATE TABLE notifications (
 );
 
 -- ===================================================================
+-- 11. USER ADDRESSES TABLE (NEW)
+-- ===================================================================
+CREATE TABLE user_addresses (
+    address_id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT NOT NULL,
+    
+    address_title VARCHAR(50) NOT NULL, -- e.g., "Home", "Office"
+    country VARCHAR(100) NOT NULL,
+    city VARCHAR(100) NOT NULL,
+    postal_code INT NOT NULL,
+    
+    -- We only encrypt the specific street address for privacy, 
+    -- keeping City/Country visible for shipping/analytics.
+    address_line_encrypted BLOB, 
+    
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
+
+-- ===================================================================
 -- DATA INSERTION
 -- ===================================================================
 -- (Note: Data is inserted in order of dependency)
@@ -242,15 +258,20 @@ VALUES
 -- 10. Apple 20W USB-C Fast Charger (NEW - Category 4: Accessories)
 (10, 4, 'Apple 20W USB-C Fast Charger', 'MHJE3TU/A', 'SN-APP-20W-CHG', 'Apple 20W USB-C Power Adapter offers fast, efficient charging at home, in the office, or on the go.', 200, 729.00, 799.00, '2 Years Apple Turkey', 'Apple Inc.');
 
--- 3. Insert users
+
 -- (Note: '..._encrypted' fields are placeholders for your app's encrypted binary data)
 -- (Note: 'password_hash' fields are placeholders for a real bcrypt hash)
-INSERT INTO users (email, password_hash, role, first_name_encrypted, last_name_encrypted, address_encrypted, tax_id_encrypted)
-VALUES
-    ('john.doe@example.com', '$2b$10$fakehash.for.john.doe', 'customer', 'ENCRYPTED_FIRST_NAME', 'ENCRYPTED_LAST_NAME', 'ENCRYPTED_ADDRESS', 'ENCRYPTED_TAX_ID'),
-    ('jane.smith@example.com', '$2b$10$fakehash.for.jane.smith', 'customer', 'ENCRYPTED_FIRST_NAME', 'ENCRYPTED_LAST_NAME', 'ENCRYPTED_ADDRESS', 'ENCRYPTED_TAX_ID'),
-    ('sales@shop.com', '$2b$10$fakehash.for.sales.mgr', 'sales manager', 'ENCRYPTED_FIRST_NAME', 'ENCRYPTED_LAST_NAME', 'ENCRYPTED_ADDRESS', 'ENCRYPTED_TAX_ID'),
-    ('product@shop.com', '$2b$10$fakehash.for.prod.mgr', 'product manager', 'ENCRYPTED_FIRST_NAME', 'ENCRYPTED_LAST_NAME', 'ENCRYPTED_ADDRESS', 'ENCRYPTED_TAX_ID');
+-- 3. Users (Removed address_encrypted from insert)
+INSERT INTO users (email, password_hash, role, first_name_encrypted, last_name_encrypted, tax_id_encrypted) VALUES
+('john.doe@example.com', '$2b$10$hash1', 'customer', 'ENC_JOHN', 'ENC_DOE', 'ENC_TAX_1'),
+('jane.smith@example.com', '$2b$10$hash2', 'customer', 'ENC_JANE', 'ENC_SMITH', 'ENC_TAX_2'),
+('sales@shop.com', '$2b$10$hash3', 'sales manager', 'ENC_SALES', 'ENC_MAN', 'ENC_TAX_3');
+
+-- 3.5. User Addresses (NEW DATA)
+INSERT INTO user_addresses (user_id, address_title, country, city, postal_code, address_line_encrypted) VALUES
+(1, 'Home', 'Turkey', 'Istanbul', '34000', 'ENC_HOME_ADDR_JOHN'),
+(1, 'Work', 'Turkey', 'Ankara', '06000', 'ENC_WORK_ADDR_JOHN'),
+(2, 'Home', 'Turkey', 'Izmir', '35000', 'ENC_HOME_ADDR_JANE');
 
 -- 4. Insert reviews
 -- (Depends on users and products)
@@ -268,16 +289,11 @@ VALUES
     (1, 'cus_tok_john456', 'Mastercard', '1234', false),
     (2, 'cus_tok_jane789', 'Visa', '8888', true);
 
--- 6. Insert orders
--- (Depends on users)
-INSERT INTO orders (user_id, status, total_price, shipping_address_encrypted, order_date)
-VALUES
-    -- A delivered order for user 1 (john_doe)
-    (1, 'delivered', 1199.99, 'ENCRYPTED_SHIPPING_ADDRESS', NOW() - INTERVAL 7 DAY),
-    -- An active cart for user 1 (john_doe)
-    (1, 'cart', NULL, NULL, NULL),
-    -- A processing order for user 2 (jane_smith)
-    (2, 'processing', 899.50, 'ENCRYPTED_SHIPPING_ADDRESS', NOW() - INTERVAL 1 DAY);
+-- 6. Orders (Updated to include City/Country snapshot)
+INSERT INTO orders (user_id, status, total_price, shipping_country, shipping_city, shipping_address_encrypted, order_date) VALUES
+(1, 'delivered', 89999.00, 'Turkey', 'Istanbul', 'ENC_HOME_ADDR_JOHN', NOW() - INTERVAL 7 DAY),
+(1, 'cart', NULL, NULL, NULL, NULL, NULL), -- Cart has no address yet
+(2, 'processing', 111579.00, 'Turkey', 'Izmir', 'ENC_HOME_ADDR_JANE', NOW() - INTERVAL 1 DAY);
 
 -- 7. Insert order items
 -- (Depends on orders and products)
