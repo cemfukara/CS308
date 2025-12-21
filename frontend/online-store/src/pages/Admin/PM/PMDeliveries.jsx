@@ -5,8 +5,8 @@ import styles from '../Admin.module.css';
 import { formatPrice } from '@/utils/formatPrice';
 
 // Includes "refunded"
-const STATUS_OPTIONS = ['processing', 'in-transit', 'delivered', 'refunded'];
-const STATUS_FLOW = ['processing', 'in-transit', 'delivered', 'refunded'];
+const STATUS_OPTIONS = ['processing', 'in-transit', 'delivered'];
+const STATUS_FLOW = ['processing', 'in-transit', 'delivered'];
 const TERMINAL_STATUSES = new Set(['cancelled', 'refunded']);
 const completedStatuses = new Set(['delivered', 'cancelled', 'refunded']);
 
@@ -35,8 +35,8 @@ const PMDeliveriesPage = () => {
   };
   const NEXT_STATUS_MAP = {
     processing: 'in-transit',
-    'in-transit': 'delivered',
-    delivered: 'refunded'
+    'in-transit': 'delivered'
+    // NO delivered → refunded
   };
 
   const getStatusClassName = status => {
@@ -83,24 +83,20 @@ const PMDeliveriesPage = () => {
     setSelected(copy);
   };
   const isValidTransition = (current, target) => {
-    // allow keeping the same status (no-op)
+    // allow no-op
     if (current === target) return true;
   
-    // refunded is terminal (cannot move to anything else)
-    if (current === 'refunded') return false;
-  
-    // special allowed case
-    if (current === 'delivered' && target === 'refunded') return true;
+    // block terminal states entirely
+    if (TERMINAL_STATUSES.has(current)) return false;
   
     const currentIndex = STATUS_FLOW.indexOf(current);
     const targetIndex = STATUS_FLOW.indexOf(target);
   
     if (currentIndex === -1 || targetIndex === -1) return false;
   
-    // normal forward-only, one-step rule
+    // forward-only, one step
     return targetIndex === currentIndex + 1;
   };
-
   // ----------------------
   // Apply Status (uses api.patch)
   // ----------------------
@@ -132,7 +128,7 @@ const PMDeliveriesPage = () => {
         setErrorMsg(
           `Invalid status transition for order(s): ${invalidOrders.join(
             ', '
-          )}. Status flow must be: processing → in-transit → delivered → refunded.`
+          )}. Status flow must be: processing → in-transit → delivered.`
         );
         return;
       }
