@@ -2,119 +2,104 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import styles from '../Admin.module.css';
-import { Chart as ChartJS } from 'chart.js/auto'; // FIX FOR REACT 19
+import { Chart as ChartJS } from 'chart.js/auto';
 import { Line } from 'react-chartjs-2';
 import { api } from '@/lib/api';
 import { Link } from 'react-router-dom';
-import { DatePicker } from 'react-datepicker';
+import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { formatPrice } from '@/utils/formatPrice';
 
 export default function SMRevenue() {
-  const [orders, setOrders] = useState([]);
-  const [filtered, setFiltered] = useState([]);
-
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
+  const toLocalISODate = (date) => {
+    if (!date) return null;
+  
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+  
+    return `${year}-${month}-${day}`;
+  };
+  const [summary, setSummary] = useState({
+    revenue: 0,
+    cost: 0,
+    profit: 0,
+  });
+
+  const [chartData, setChartData] = useState([]);
 
   const [showRevenueChart, setShowRevenueChart] = useState(false);
   const [showProfitChart, setShowProfitChart] = useState(false);
-
-  // --------------------------------------------------------
-  // LOAD ORDERS FROM BACKEND
-  // --------------------------------------------------------
-  useEffect(() => {
-    loadOrders();
-  }, []);
-
-  useEffect(() => {
-    filterOrders();
-  }, [orders, startDate, endDate]);
-
-  const loadOrders = async () => {
-    try {
-      const res = await api.get('/orders');
-      const list = res?.orders ?? [];
-
-      // For each order, fetch its items
-      const ordersWithItems = await Promise.all(
-        list.map(async o => {
-          const details = await api.get(`/orders/${o.order_id}`);
-
-          return {
-            order_id: o.order_id,
-            order_date: new Date(o.created_at), // FIXED DATE
-            total_price: Number(o.total_price),
-            items: details.items.map(it => ({
-              quantity: it.quantity,
-              price_at_purchase: Number(it.price_at_purchase),
-              product_cost: Number(it.price_at_purchase) * 0.5, // Default cost = 50%
-            })),
-          };
-        })
-      );
-
-      setOrders(ordersWithItems);
-    } catch (err) {
-      console.error('Error loading revenue data:', err);
-    }
+  const formatDate = (iso) => {
+    const [y, m, d] = iso.split('-');
+    return `${d}/${m}/${y}`;
   };
-
   // --------------------------------------------------------
-  // DATE FILTERING
+  // FETCH REVENUE SUMMARY (BACKEND)
   // --------------------------------------------------------
-  const filterOrders = () => {
-    const result = orders.filter(o => {
-      if (!o.order_date) return false;
+  useEffect(() => {
+    if (!startDate || !endDate) return;
+    if (startDate > endDate) return;
 
-      const orderDate = o.order_date;
-      const orderDay = new Date(orderDate.getFullYear(), orderDate.getMonth(), orderDate.getDate());
+    const fetchSummary = async () => {
+      try {
+        const start = toLocalISODate(startDate);
+        const end = toLocalISODate(endDate);
 
-      let afterStart = true;
-      let beforeEnd = true;
-
-      if (startDate) {
-        const startDay = new Date(
-          startDate.getFullYear(),
-          startDate.getMonth(),
-          startDate.getDate()
+        const res = await api.get(
+          `/invoice/revenue?start=${start}&end=${end}`
         );
-        afterStart = orderDay >= startDay; // inclusive
+
+        setSummary({
+          revenue: Number(res.revenue || 0),
+          cost: Number(res.cost || 0),
+          profit: Number(res.profit || 0),
+        });
+      } catch (err) {
+        console.error('Failed to load revenue summary', err);
       }
+    };
 
-      if (endDate) {
-        const endDay = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
-        beforeEnd = orderDay <= endDay; // inclusive
+    fetchSummary();
+  }, [startDate, endDate]);
+
+  // --------------------------------------------------------
+  // FETCH CHART DATA (BACKEND)
+  // --------------------------------------------------------
+  useEffect(() => {
+    if (!startDate || !endDate) return;
+    if (startDate > endDate) return;
+
+    const fetchChart = async () => {
+      try {
+        const start = toLocalISODate(startDate);
+        const end = toLocalISODate(endDate);
+
+        const res = await api.get(
+          `/invoice/chart?start=${start}&end=${end}`
+        );
+
+        setChartData(res || []);
+      } catch (err) {
+        console.error('Failed to load revenue chart', err);
       }
+    };
 
-      return afterStart && beforeEnd;
-    });
-
-    setFiltered(result);
-  };
+    fetchChart();
+  }, [startDate, endDate]);
 
   // --------------------------------------------------------
-  // REVENUE & PROFIT CALCULATIONS
-  // --------------------------------------------------------
-  const totalRevenue = filtered.reduce((sum, o) => sum + o.total_price, 0);
-
-  const totalCost = filtered.reduce(
-    (sum, o) => sum + o.items.reduce((s, item) => s + item.product_cost * item.quantity, 0),
-    0
-  );
-
-  const totalProfit = totalRevenue - totalCost;
-
-  // --------------------------------------------------------
-  // CHART DATA (WITH FIXED DATE LABELS)
+  // CHART CONFIGS
   // --------------------------------------------------------
   const revenueChartData = useMemo(
     () => ({
-      labels: filtered.map(o => o.order_date.toLocaleDateString('en-GB')),
+      labels: chartData.map(d => d.day),
       datasets: [
         {
           label: 'Revenue',
-          data: filtered.map(o => o.total_price),
+          data: chartData.map(d => d.revenue),
           borderColor: '#2563eb',
           backgroundColor: 'rgba(37, 99, 235, 0.3)',
           tension: 0.3,
@@ -123,32 +108,30 @@ export default function SMRevenue() {
         },
       ],
     }),
-    [filtered]
+    [chartData]
   );
 
   const profitChartData = useMemo(
     () => ({
-      labels: filtered.map(o => o.order_date.toLocaleDateString('en-GB')),
+      labels: chartData.map(d => d.day),
       datasets: [
         {
           label: 'Profit',
-          data: filtered.map(o => {
-            const cost = o.items.reduce((s, it) => s + it.product_cost * it.quantity, 0);
-            return o.total_price - cost;
-          }),
+          data: chartData.map(d => d.profit),
           borderColor: '#16a34a',
-          backgroundColor: 'rgba(22, 163, 74, 0.2)',
+          backgroundColor: 'rgba(22, 163, 74, 0.3)',
           tension: 0.3,
           borderWidth: 3,
           pointRadius: 4,
         },
       ],
     }),
-    [filtered]
+    [chartData]
   );
 
   return (
     <div className={styles.wrapper}>
+      {/* Breadcrumbs */}
       <div className={styles.breadcrumbs}>
         <Link to="/admin" className={styles.crumbLink}>
           Admin
@@ -157,19 +140,16 @@ export default function SMRevenue() {
         <span className={styles.crumbCurrent}>Revenue Dashboard</span>
       </div>
 
-      <div className={styles.titleRow}>
-        <h1 className={styles.title}>Revenue Dashboard</h1>
-      </div>
+      <h1 className={styles.title}>Revenue Dashboard</h1>
 
-      {/* FILTERS */}
+      {/* DATE FILTERS */}
       <div className={styles.controlsRow}>
         <div className={styles.filterGroup}>
           <label className={styles.label}>From:</label>
           <DatePicker
             selected={startDate}
-            onChange={date => setStartDate(date)}
+            onChange={setStartDate}
             className={styles.datePickerInput}
-            wrapperClassName={styles.datePickerInput}
             dateFormat="dd/MM/yyyy"
             placeholderText="dd/mm/yyyy"
           />
@@ -179,9 +159,8 @@ export default function SMRevenue() {
           <label className={styles.label}>To:</label>
           <DatePicker
             selected={endDate}
-            onChange={date => setEndDate(date)}
+            onChange={setEndDate}
             className={styles.datePickerInput}
-            wrapperClassName={styles.datePickerInput}
             dateFormat="dd/MM/yyyy"
             placeholderText="dd/mm/yyyy"
           />
@@ -192,17 +171,17 @@ export default function SMRevenue() {
       <div className={styles.cards}>
         <div className={styles.card}>
           <h3>Total Revenue</h3>
-          <p className={styles.number}>{formatPrice(totalRevenue, filtered[0]?.currency)}</p>
+          <p className={styles.number}>{formatPrice(summary.revenue)}</p>
         </div>
 
         <div className={styles.card}>
           <h3>Total Cost</h3>
-          <p className={styles.number}>{formatPrice(totalCost, filtered[0]?.currency)}</p>
+          <p className={styles.number}>{formatPrice(summary.cost)}</p>
         </div>
 
         <div className={styles.card}>
           <h3>Total Profit</h3>
-          <p className={styles.number}>{formatPrice(totalProfit, filtered[0]?.currency)}</p>
+          <p className={styles.number}>{formatPrice(summary.profit)}</p>
         </div>
       </div>
 
@@ -255,26 +234,21 @@ export default function SMRevenue() {
           <thead className={styles.thead}>
             <tr className={styles.tr}>
               <th className={styles.th}>Date</th>
-              <th className={styles.th}>Total Revenue</th>
-              <th className={styles.th}>Total Cost</th>
+              <th className={styles.th}>Revenue</th>
+              <th className={styles.th}>Cost</th>
               <th className={styles.th}>Profit</th>
             </tr>
           </thead>
 
           <tbody className={styles.tbody}>
-            {filtered.map(o => {
-              const cost = o.items.reduce((s, it) => s + it.product_cost * it.quantity, 0);
-              const profit = o.total_price - cost;
-
-              return (
-                <tr key={o.order_id} className={styles.tr}>
-                  <td className={styles.td}>{o.order_date.toLocaleDateString('en-GB')}</td>
-                  <td className={styles.td}>{formatPrice(o.total_price, o.currency)}</td>
-                  <td className={styles.td}>{formatPrice(cost, o.currency)}</td>
-                  <td className={styles.td}>{formatPrice(profit, o.currency)}</td>
-                </tr>
-              );
-            })}
+            {chartData.map(d => (
+              <tr key={d.day} className={styles.tr}>
+                <td className={styles.td}>{formatDate(d.day)}</td>
+                <td className={styles.td}>{formatPrice(d.revenue)}</td>
+                <td className={styles.td}>{formatPrice(d.cost)}</td>
+                <td className={styles.td}>{formatPrice(d.profit)}</td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>

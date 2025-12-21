@@ -105,7 +105,8 @@ export async function getRevenueProfitBetweenDates(startDate, endDate) {
     FROM order_items oi
     JOIN orders o ON o.order_id = oi.order_id
     WHERE o.status != 'cart'
-      AND o.order_date BETWEEN ? AND ?;
+      AND o.order_date >= ?
+      AND o.order_date < DATE_ADD(?, INTERVAL 1 DAY)
   `;
 
   const [rows] = await query(sql, [startDate, endDate]);
@@ -113,11 +114,11 @@ export async function getRevenueProfitBetweenDates(startDate, endDate) {
 }
 
 export async function getRevenueProfitChart(startDate, endDate) {
-  const COST_RATIO = 0.5; // 50% default cost
+  const COST_RATIO = 0.5;
 
   const sql = `
     SELECT 
-      DATE(o.order_date) AS day,
+      DATE_FORMAT(o.order_date, '%Y-%m-%d') AS day,
       COALESCE(SUM(oi.quantity * oi.price_at_purchase), 0) AS revenue,
       COALESCE(SUM(oi.quantity * oi.price_at_purchase * ${COST_RATIO}), 0) AS cost,
       COALESCE(SUM(
@@ -127,8 +128,9 @@ export async function getRevenueProfitChart(startDate, endDate) {
     FROM order_items oi
     JOIN orders o ON o.order_id = oi.order_id
     WHERE o.status != 'cart'
-      AND o.order_date BETWEEN ? AND ?
-    GROUP BY DATE(o.order_date)
+      AND o.order_date >= ?
+      AND o.order_date < DATE_ADD(?, INTERVAL 1 DAY)
+    GROUP BY day
     ORDER BY day ASC;
   `;
 

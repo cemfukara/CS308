@@ -1,3 +1,4 @@
+
 import { useEffect, useState, useCallback } from 'react';
 import styles from '../Admin.module.css';
 import { Link } from 'react-router-dom';
@@ -5,6 +6,8 @@ import Dropdown from '@/components/Dropdown.jsx';
 import { getAllProducts } from '@/lib/productsApi.js';
 import { getCategories } from '@/lib/categoriesApi.js';
 import { formatPrice } from '@/utils/formatPrice.js';
+import { api } from '@/lib/api';
+import toast from 'react-hot-toast';
 
 const CATEGORY_COLORS = [
   { bg: '#eff6ff', color: '#1e40af', border: '#bfdbfe' },
@@ -47,7 +50,6 @@ export default function SMDiscounts() {
         page: 1,
         limit: 500,
       });
-
       setProducts(data.products ?? data);
     } catch (err) {
       console.error(err);
@@ -127,33 +129,43 @@ export default function SMDiscounts() {
   };
 
   // ============= APPLY DISCOUNT (FRONTEND ONLY) =============
-  const applyDiscount = () => {
+  const applyDiscount = async () => {
     const discountNum = Number(discountValue);
-
+  
     if (isNaN(discountNum) || discountNum < 0 || discountNum > 100) {
-      alert('Enter a valid percentage (0–100).');
+      toast.error('Enter a valid percentage (0–100).');
       return;
     }
-
+  
     if (selected.length === 0) {
-      alert('Select at least one product.');
+      toast.error('Select at least one product.');
       return;
     }
-
-    const updated = products.map(p =>
-      selected.includes(p.product_id)
-        ? {
-            ...p,
-            discount_ratio: discountNum,
-            price: (p.list_price * (1 - discountNum / 100)).toFixed(2),
-          }
-        : p
-    );
-
-    setProducts(updated);
-    alert('Discount applied (frontend only).');
-    setSelected([]);
-    setDiscountValue('');
+  
+    try {
+      setLoading(true);
+  
+      // Call backend for each selected product
+      for (const productId of selected) {
+        await api.patch('/discount', {
+          productId,
+          discountRate: discountNum,
+        });
+      }
+  
+      toast.success('Discount applied successfully.');
+  
+      // IMPORTANT: reload products from database
+      await fetchProducts();
+  
+      setSelected([]);
+      setDiscountValue('');
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to apply discount.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
