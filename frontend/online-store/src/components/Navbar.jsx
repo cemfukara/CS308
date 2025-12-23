@@ -6,6 +6,7 @@ import './Navbar.css';
 import useAuthStore from '../store/authStore';
 import useCartStore from '../store/cartStore'; //
 import Dropdown from '@/components/Dropdown';
+import CurrencySelector from '@/components/CurrencySelector';
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -19,8 +20,8 @@ const Navbar = () => {
   const cart = useCartStore(state => state.cart);
 
   // Calculate total items safely (prevents crash if cart is null/undefined/not array)
-  const cartItemCount = Array.isArray(cart) 
-    ? cart.reduce((acc, item) => acc + (item.quantity || 0), 0) 
+  const cartItemCount = Array.isArray(cart)
+    ? cart.reduce((acc, item) => acc + (item.quantity || 0), 0)
     : 0;
 
   const location = useLocation();
@@ -221,8 +222,8 @@ const Navbar = () => {
 
               {/* 🛠 Admin link only for PM / dev */}
               {user.role === 'product manager' ||
-              user.role === 'dev' ||
-              user.role === 'sales manager' ? (
+                user.role === 'dev' ||
+                user.role === 'sales manager' ? (
                 <Link to="/admin" onClick={() => setShowDropdown(false)}>
                   Admin Panel
                 </Link>
@@ -231,6 +232,9 @@ const Navbar = () => {
               <button onClick={handleLogout}>Logout</button>
             </div>
           )}
+
+          {/* Currency Selector */}
+          <CurrencySelector />
 
           {/* 🛒 Cart Icon */}
           <Link to="/cart" className="nav-link" aria-label="Cart">

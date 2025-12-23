@@ -1,9 +1,19 @@
 import { Link } from 'react-router-dom';
 import './ProductDisplay.css';
 import { useState } from 'react';
+import useCurrencyStore from '@/store/currencyStore';
+import { formatPrice } from '@/utils/formatPrice';
+
 function ProductDisplay({ image, name, currency, price, serialNo, productId, model }) {
   const [fitMode, setFitMode] = useState('cover');
   const [loaded, setLoaded] = useState(false);
+
+  // Get currency conversion functions
+  const { selectedCurrency, convertAmount } = useCurrencyStore();
+
+  // Convert price to selected currency
+  const convertedPrice = convertAmount(price, currency, selectedCurrency);
+
   const handleImageLoad = e => {
     e.target.naturalWidth > e.target.naturalHeight ? setFitMode('contain') : setFitMode('cover');
     setLoaded(true);
@@ -33,8 +43,7 @@ function ProductDisplay({ image, name, currency, price, serialNo, productId, mod
           </p>
           <p className="product-name">{name}</p>
           <p className="product-price">
-            {currency}
-            {price}
+            {formatPrice(convertedPrice, selectedCurrency)}
           </p>
         </div>
       </div>

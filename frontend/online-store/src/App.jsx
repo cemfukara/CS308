@@ -5,6 +5,7 @@ import { useEffect } from 'react';
 import RequireAdmin from './components/Auth/RequireAdmin.jsx';
 import RequireAuth from './components/Auth/RequireAuth.jsx';
 import useAuthStore from './store/authStore';
+import useCurrencyStore from './store/currencyStore';
 
 // Layout
 import Navbar from './components/Navbar';
@@ -55,11 +56,17 @@ export function AppContent() {
   const isAdminRoute = location.pathname.startsWith('/admin');
 
   const fetchProfile = useAuthStore(state => state.fetchProfile);
+  const initializeCurrency = useCurrencyStore(state => state.initialize);
 
   // Fetch logged-in user on app start
   useEffect(() => {
     fetchProfile();
-  }, [fetchProfile]);
+    // Initialize currency store (fetch currencies and exchange rates)
+    initializeCurrency().catch(err => {
+      console.error('Failed to initialize currency store:', err);
+      // Continue even if currency fetch fails - don't block the app
+    });
+  }, [fetchProfile, initializeCurrency]);
 
   return (
     <>

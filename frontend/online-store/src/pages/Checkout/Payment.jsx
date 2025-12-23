@@ -4,6 +4,7 @@ import styles from './Payment.module.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCcVisa, faCcMastercard } from '@fortawesome/free-brands-svg-icons';
 import useCartStore from '@/store/cartStore';
+import useCurrencyStore from '@/store/currencyStore';
 import { createOrder, validatePayment } from '@/lib/ordersApi';
 import { toast } from 'react-hot-toast';
 
@@ -17,6 +18,7 @@ const Payment = () => {
   const [cvv, setCvv] = useState('');
   const [isPaying, setIsPaying] = useState(false);
   const cart = useCartStore(state => state.cart || []);
+  const { selectedCurrency, getExchangeRate, convertAmount } = useCurrencyStore();
 
   useEffect(() => {
     const stored = localStorage.getItem('selectedAddress');
@@ -91,11 +93,11 @@ const Payment = () => {
         paymentMethod === 'cod'
           ? { method: 'Cash on Delivery' }
           : {
-              method: 'Credit Card',
-              cardName: cardName.trim(),
-              last4: digits.slice(-4),
-              cardType: getCardType(),
-            };
+            method: 'Credit Card',
+            cardName: cardName.trim(),
+            last4: digits.slice(-4),
+            cardType: getCardType(),
+          };
 
       // 🔐 Validate payment on backend FIRST
       try {
@@ -103,21 +105,21 @@ const Payment = () => {
           paymentMethod === 'cod'
             ? { method: 'Cash on Delivery' }
             : {
-                method: 'Credit Card',
-                cardName: cardName.trim(),
-                cardNumber: cardNumber,
-                expiry: expiry,
-                cvv: cvv,
-              };
+              method: 'Credit Card',
+              cardName: cardName.trim(),
+              cardNumber: cardNumber,
+              expiry: expiry,
+              cvv: cvv,
+            };
 
         const validationResult = await validatePayment(validationPayload);
-        
+
         if (!validationResult.success) {
           toast.error(validationResult.message || 'Payment validation failed');
           setIsPaying(false);
           return;
         }
-        
+
         toast.success('Payment validated successfully');
       } catch (validationError) {
         console.error('Payment validation error:', validationError);
@@ -129,17 +131,23 @@ const Payment = () => {
       // Save for Confirmation screen
       localStorage.setItem('payInfo', JSON.stringify(payInfo));
 
-      // Build items from cart (include product_id for backend)
-      const items = cart.map(item => ({
-        product_id: item.product_id,
-        name: item.name,
-        price: Number(item.price) || 0,
-        quantity: item.quantity || 1,
-        currency: item.currency,
-        image: item.image || null,
-      }));
+      // Build items from cart with converted prices in selected currency
+      const items = cart.map(item => {
+        const convertedPrice = convertAmount(item.price, item.currency, selectedCurrency);
+        return {
+          product_id: item.product_id,
+          name: item.name,
+          price: convertedPrice, // Price in selected currency
+          quantity: item.quantity || 1,
+          currency: selectedCurrency,
+          image: item.image || null,
+        };
+      });
 
       const total = items.reduce((sum, it) => sum + it.price * it.quantity, 0);
+
+      // Get exchange rate from TRY (base currency) to selected currency
+      const exchangeRate = getExchangeRate('TRY', selectedCurrency);
 
       // 🔗 Call backend via ordersApi
       const res = await createOrder({
@@ -148,8 +156,10 @@ const Payment = () => {
         items: items.map(it => ({
           product_id: it.product_id,
           quantity: it.quantity,
-          price: it.price,
+          price: it.price, // Already converted price
         })),
+        currency: selectedCurrency, // Add currency to order
+        exchange_rate: exchangeRate, // Add exchange rate to order
       });
 
       const orderId = res.order_id ?? res.order?.order_id ?? `TEMP-${Date.now()}`;

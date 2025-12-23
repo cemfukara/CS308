@@ -3,12 +3,16 @@ import { Link } from 'react-router-dom';
 import HeroSlider from '@/components/HeroSlider';
 import { getFeaturedProduct } from '@/lib/productsApi';
 import { formatPrice } from '@/utils/formatPrice';
+import useCurrencyStore from '@/store/currencyStore';
 import './Home.css';
 
 function Home() {
   const [featured, setFeatured] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  // Get currency conversion
+  const { selectedCurrency, convertAmount } = useCurrencyStore();
 
   useEffect(() => {
     let cancelled = false;
@@ -79,17 +83,26 @@ function Home() {
               <div className="featured-price">
                 {featured.list_price > featured.price && (
                   <span className="featured-old-price">
-                    {formatPrice(featured.list_price, featured.currency)}
+                    {formatPrice(
+                      convertAmount(featured.list_price, featured.currency, selectedCurrency),
+                      selectedCurrency
+                    )}
                   </span>
                 )}
 
                 <span className="featured-new-price">
-                  {formatPrice(featured.price, featured.currency)}
+                  {formatPrice(
+                    convertAmount(featured.price, featured.currency, selectedCurrency),
+                    selectedCurrency
+                  )}
                 </span>
 
                 {featured.discount_amount > 0 && (
                   <span className="featured-save">
-                    You save {formatPrice(featured.discount_amount, featured.currency)}
+                    You save {formatPrice(
+                      convertAmount(featured.discount_amount, featured.currency, selectedCurrency),
+                      selectedCurrency
+                    )}
                   </span>
                 )}
               </div>

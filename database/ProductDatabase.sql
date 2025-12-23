@@ -531,17 +531,6 @@ END$$
 DELIMITER ;
 
 -- ===================================================================
--- VERIFICATION SELECTS (Optional)
--- ===================================================================
-SELECT * FROM categories;
-SELECT * FROM products;
-SELECT * FROM users;
-SELECT * FROM reviews;
-SELECT * FROM payment_methods;
-SELECT * FROM orders;
-SELECT * FROM order_items;
-
--- ===================================================================
 -- PROFILE UPDATE & ACCOUNT DELETION VERIFICATION SYSTEM
 -- ===================================================================
 
@@ -620,3 +609,209 @@ CREATE TABLE support_attachments (
     FOREIGN KEY (message_id) REFERENCES support_messages (message_id) ON DELETE CASCADE,
     INDEX idx_message (message_id)
 );
+
+-- ===================================================================
+-- 12. CURRENCIES TABLE - MULTI-CURRENCY SUPPORT
+-- ===================================================================
+
+CREATE TABLE IF NOT EXISTS currencies (
+    currency_id INT PRIMARY KEY AUTO_INCREMENT,
+    code VARCHAR(3) NOT NULL UNIQUE,
+    symbol VARCHAR(10) NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    exchange_rate DECIMAL(15, 6) NOT NULL DEFAULT 1.000000,
+    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    is_active BOOLEAN DEFAULT TRUE,
+    INDEX idx_code (code),
+    INDEX idx_active (is_active)
+);
+
+-- Add currency tracking to orders table
+-- Check if columns exist before adding them (compatible with all MySQL versions)
+SET @col_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS 
+                   WHERE TABLE_SCHEMA = 'mydb' AND TABLE_NAME = 'orders' AND COLUMN_NAME = 'currency');
+
+SET @sql = IF(@col_exists = 0, 
+    'ALTER TABLE orders ADD COLUMN currency VARCHAR(3) DEFAULT ''TL'' AFTER total_price, ADD COLUMN exchange_rate DECIMAL(15, 6) DEFAULT 1.000000 AFTER currency;',
+    'SELECT ''Columns already exist'' AS message;');
+
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- Seed currencies table with 160+ world currencies
+INSERT IGNORE INTO currencies (code, symbol, name, exchange_rate, is_active) VALUES
+-- Major Currencies
+('TRY', '₺', 'Turkish Lira', 1.000000, TRUE),
+('USD', '$', 'US Dollar', 0.030000, TRUE),
+('EUR', '€', 'Euro', 0.028000, TRUE),
+('GBP', '£', 'British Pound', 0.024000, TRUE),
+('JPY', '¥', 'Japanese Yen', 4.500000, TRUE),
+('CHF', 'Fr', 'Swiss Franc', 0.027000, TRUE),
+('CAD', 'C$', 'Canadian Dollar', 0.042000, TRUE),
+('AUD', 'A$', 'Australian Dollar', 0.047000, TRUE),
+('CNY', '¥', 'Chinese Yuan', 0.220000, TRUE),
+('INR', '₹', 'Indian Rupee', 2.550000, TRUE),
+-- European Currencies
+('SEK', 'kr', 'Swedish Krona', 0.320000, TRUE),
+('NOK', 'kr', 'Norwegian Krone', 0.330000, TRUE),
+('DKK', 'kr', 'Danish Krone', 0.210000, TRUE),
+('PLN', 'zł', 'Polish Zloty', 0.120000, TRUE),
+('CZK', 'Kč', 'Czech Koruna', 0.700000, TRUE),
+('HUF', 'Ft', 'Hungarian Forint', 11.500000, TRUE),
+('RON', 'lei', 'Romanian Leu', 0.140000, TRUE),
+('BGN', 'лв', 'Bulgarian Lev', 0.055000, TRUE),
+('HRK', 'kn', 'Croatian Kuna', 0.210000, TRUE),
+('RUB', '₽', 'Russian Ruble', 2.900000, TRUE),
+('UAH', '₴', 'Ukrainian Hryvnia', 1.250000, TRUE),
+-- Middle East & Africa
+('SAR', 'ر.س', 'Saudi Riyal', 0.115000, TRUE),
+('AED', 'د.إ', 'UAE Dirham', 0.112000, TRUE),
+('ILS', '₪', 'Israeli Shekel', 0.110000, TRUE),
+('EGP', 'E£', 'Egyptian Pound', 1.500000, TRUE),
+('ZAR', 'R', 'South African Rand', 0.565000, TRUE),
+('NGN', '₦', 'Nigerian Naira', 46.500000, TRUE),
+('KES', 'KSh', 'Kenyan Shilling', 3.950000, TRUE),
+-- Asia Pacific
+('KRW', '₩', 'South Korean Won', 41.500000, TRUE),
+('SGD', 'S$', 'Singapore Dollar', 0.041000, TRUE),
+('HKD', 'HK$', 'Hong Kong Dollar', 0.239000, TRUE),
+('TWD', 'NT$', 'Taiwan Dollar', 0.980000, TRUE),
+('THB', '฿', 'Thai Baht', 1.050000, TRUE),
+('MYR', 'RM', 'Malaysian Ringgit', 0.137000, TRUE),
+('IDR', 'Rp', 'Indonesian Rupiah', 485.000000, TRUE),
+('PHP', '₱', 'Philippine Peso', 1.750000, TRUE),
+('VND', '₫', 'Vietnamese Dong', 772.000000, TRUE),
+('PKR', '₨', 'Pakistani Rupee', 8.500000, TRUE),
+('BDT', '৳', 'Bangladeshi Taka', 3.350000, TRUE),
+('LKR', 'Rs', 'Sri Lankan Rupee', 9.200000, TRUE),
+-- Americas
+('MXN', 'Mex$', 'Mexican Peso', 0.620000, TRUE),
+('BRL', 'R$', 'Brazilian Real', 0.155000, TRUE),
+('ARS', '$', 'Argentine Peso', 30.500000, TRUE),
+('CLP', '$', 'Chilean Peso', 29.500000, TRUE),
+('COP', '$', 'Colombian Peso', 133.000000, TRUE),
+('PEN', 'S/', 'Peruvian Sol', 0.115000, TRUE),
+-- Oceania
+('NZD', 'NZ$', 'New Zealand Dollar', 0.051000, TRUE),
+-- Other Major Economies
+('QAR', 'ر.ق', 'Qatari Riyal', 0.111000, TRUE),
+('KWD', 'د.ك', 'Kuwaiti Dinar', 0.009400, TRUE),
+('OMR', 'ر.ع.', 'Omani Rial', 0.012000, TRUE),
+('BHD', 'د.ب', 'Bahraini Dinar', 0.012000, TRUE),
+('JOD', 'د.ا', 'Jordanian Dinar', 0.022000, TRUE),
+('LBP', 'ل.ل', 'Lebanese Pound', 2740.000000, TRUE),
+('IQD', 'ع.د', 'Iraqi Dinar', 40.000000, TRUE),
+('IRR', '﷼', 'Iranian Rial', 1290.000000, TRUE),
+('AFN', '؋', 'Afghan Afghani', 2.150000, TRUE),
+('KZT', '₸', 'Kazakhstani Tenge', 14.200000, TRUE),
+('UZS', 'so\'m', 'Uzbekistani Som', 390.000000, TRUE),
+('AZN', '₼', 'Azerbaijani Manat', 0.052000, TRUE),
+('GEL', '₾', 'Georgian Lari', 0.083000, TRUE),
+('AMD', '֏', 'Armenian Dram', 12.000000, TRUE),
+('BYN', 'Br', 'Belarusian Ruble', 0.100000, TRUE),
+('MDL', 'L', 'Moldovan Leu', 0.550000, TRUE),
+('ALL', 'L', 'Albanian Lek', 2.850000, TRUE),
+('MKD', 'ден', 'Macedonian Denar', 1.680000, TRUE),
+('RSD', 'дин', 'Serbian Dinar', 3.200000, TRUE),
+('BAM', 'KM', 'Bosnia-Herzegovina Mark', 0.053000, TRUE),
+-- African Currencies
+('DZD', 'د.ج', 'Algerian Dinar', 4.100000, TRUE),
+('MAD', 'د.م.', 'Moroccan Dirham', 0.305000, TRUE),
+('TND', 'د.ت', 'Tunisian Dinar', 0.095000, TRUE),
+('LYD', 'ل.د', 'Libyan Dinar', 0.148000, TRUE),
+('SDG', 'ج.س.', 'Sudanese Pound', 18.400000, TRUE),
+('ETB', 'Br', 'Ethiopian Birr', 3.750000, TRUE),
+('GHS', '₵', 'Ghanaian Cedi', 0.470000, TRUE),
+('XOF', 'CFA', 'West African CFA franc', 17.900000, TRUE),
+('XAF', 'FCFA', 'Central African CFA franc', 17.900000, TRUE),
+('UGX', 'USh', 'Ugandan Shilling', 112.000000, TRUE),
+('TZS', 'TSh', 'Tanzanian Shilling', 76.500000, TRUE),
+('ZMW', 'ZK', 'Zambian Kwacha', 0.820000, TRUE),
+('BWP', 'P', 'Botswana Pula', 0.420000, TRUE),
+('MUR', '₨', 'Mauritian Rupee', 1.410000, TRUE),
+('SCR', '₨', 'Seychellois Rupee', 0.416000, TRUE),
+-- Caribbean & Central America
+('JMD', 'J$', 'Jamaican Dollar', 4.750000, TRUE),
+('TTD', 'TT$', 'Trinidad & Tobago Dollar', 0.207000, TRUE),
+('BBD', 'Bds$', 'Barbadian Dollar', 0.061000, TRUE),
+('BSD', 'B$', 'Bahamian Dollar', 0.031000, TRUE),
+('BZD', 'BZ$', 'Belize Dollar', 0.062000, TRUE),
+('XCD', 'EC$', 'East Caribbean Dollar', 0.083000, TRUE),
+('GTQ', 'Q', 'Guatemalan Quetzal', 0.238000, TRUE),
+('HNL', 'L', 'Honduran Lempira', 0.770000, TRUE),
+('NIO', 'C$', 'Nicaraguan Córdoba', 1.130000, TRUE),
+('CRC', '₡', 'Costa Rican Colón', 15.600000, TRUE),
+('PAB', 'B/.', 'Panamanian Balboa', 0.031000, TRUE),
+('DOP', 'RD$', 'Dominican Peso', 1.850000, TRUE),
+('HTG', 'G', 'Haitian Gourde', 4.030000, TRUE),
+-- South America (Additional)
+('UYU', '$U', 'Uruguayan Peso', 1.310000, TRUE),
+('PYG', '₲', 'Paraguayan Guarani', 225.000000, TRUE),
+('BOB', 'Bs', 'Bolivian Boliviano', 0.212000, TRUE),
+('VES', 'Bs.S', 'Venezuelan Bolívar', 1100.000000, TRUE),
+('GYD', 'G$', 'Guyanese Dollar', 6.420000, TRUE),
+('SRD', '$', 'Surinamese Dollar', 1.090000, TRUE),
+-- Pacific
+('FJD', 'FJ$', 'Fijian Dollar', 0.070000, TRUE),
+('PGK', 'K', 'Papua New Guinean Kina', 0.122000, TRUE),
+('SBD', 'SI$', 'Solomon Islands Dollar', 0.257000, TRUE),
+('TOP', 'T$', 'Tongan Paʻanga', 0.073000, TRUE),
+('WST', 'WS$', 'Samoan Tala', 0.086000, TRUE),
+('VUV', 'VT', 'Vanuatu Vatu', 3.640000, TRUE),
+-- Asian (Additional)
+('NPR', '₨', 'Nepalese Rupee', 4.080000, TRUE),
+('BTN', 'Nu.', 'Bhutanese Ngultrum', 2.560000, TRUE),
+('MVR', 'Rf', 'Maldivian Rufiyaa', 0.473000, TRUE),
+('MMK', 'K', 'Myanmar Kyat', 64.400000, TRUE),
+('KHR', '៛', 'Cambodian Riel', 124.000000, TRUE),
+('LAK', '₭', 'Lao Kip', 670.000000, TRUE),
+('BND', 'B$', 'Brunei Dollar', 0.041000, TRUE),
+('MNT', '₮', 'Mongolian Tugrik', 104.000000, TRUE),
+('KGS', 'с', 'Kyrgyzstani Som', 2.730000, TRUE),
+('TJS', 'ЅМ', 'Tajikistani Somoni', 0.330000, TRUE),
+('TMT', 'm', 'Turkmenistani Manat', 0.107000, TRUE),
+-- Special & Historical Interest
+('ISK', 'kr', 'Icelandic Króna', 4.230000, TRUE),
+('MOP', 'MOP$', 'Macanese Pataca', 0.246000, TRUE),
+('AOA', 'Kz', 'Angolan Kwanza', 25.400000, TRUE),
+('MZN', 'MT', 'Mozambican Metical', 1.960000, TRUE),
+('MWK', 'MK', 'Malawian Kwacha', 53.200000, TRUE),
+('RWF', 'FRw', 'Rwandan Franc', 42.000000, TRUE),
+('BIF', 'FBu', 'Burundian Franc', 89.500000, TRUE),
+('DJF', 'Fdj', 'Djiboutian Franc', 5.450000, TRUE),
+('KMF', 'CF', 'Comorian Franc', 13.400000, TRUE),
+('MGA', 'Ar', 'Malagasy Ariary', 139.000000, TRUE),
+('SLL', 'Le', 'Sierra Leonean Leone', 610.000000, TRUE),
+('GMD', 'D', 'Gambian Dalasi', 2.090000, TRUE),
+('GNF', 'FG', 'Guinean Franc', 264.000000, TRUE),
+('LRD', 'L$', 'Liberian Dollar', 5.960000, TRUE),
+('SOS', 'Sh.So.', 'Somali Shilling', 17.500000, TRUE),
+('ERN', 'Nfk', 'Eritrean Nakfa', 0.460000, TRUE),
+('SZL', 'E', 'Swazi Lilangeni', 0.565000, TRUE),
+('LSL', 'L', 'Lesotho Loti', 0.565000, TRUE),
+('NAD', 'N$', 'Namibian Dollar', 0.565000, TRUE)
+ON DUPLICATE KEY UPDATE
+    symbol = VALUES(symbol),
+    name = VALUES(name),
+    exchange_rate = VALUES(exchange_rate),
+    is_active = VALUES(is_active);
+    
+-- ===================================================================
+-- VERIFICATION SELECTS (Optional)
+-- ===================================================================
+SELECT * FROM categories;
+SELECT * FROM products;
+SELECT * FROM users;
+SELECT * FROM reviews;
+SELECT * FROM payment_methods;
+SELECT * FROM orders;
+SELECT * FROM order_items;
+SELECT * FROM wishlists;
+SELECT * FROM product_images;
+SELECT * FROM notifications;
+SELECT * FROM verification_codes;
+SELECT * FROM support_chats;
+SELECT * FROM support_messages;
+SELECT * FROM support_attachments;
+SELECT * FROM currencies;

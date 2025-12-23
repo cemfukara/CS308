@@ -224,7 +224,8 @@ function Products() {
               key={product.product_id || product.serial_number || product.name}
               image={primaryImage}
               name={product.name}
-              price={formatPrice(product.price, product.currency)}
+              currency={product.currency}
+              price={product.price}
               serialNo={product.serial_number}
               productId={product.product_id}
               model={product.model}

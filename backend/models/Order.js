@@ -12,6 +12,8 @@ function mapOrderRow(row) {
     user_id: row.user_id,
     status: row.status,
     total_price: row.total_price,
+    currency: row.currency || 'TL',
+    exchange_rate: row.exchange_rate || 1.0,
     created_at: row.created_at,
     order_date: row.order_date,
     customer_email: row.customer_email || null,
@@ -34,6 +36,8 @@ export async function getAllOrders() {
         o.user_id,
         o.status,
         o.total_price,
+        o.currency,
+        o.exchange_rate,
         o.shipping_address_encrypted,
         o.created_at,
         o.order_date,
@@ -127,6 +131,8 @@ export async function getUserOrders(userId) {
         o.user_id,
         o.status,
         o.total_price,
+        o.currency,
+        o.exchange_rate,
         o.shipping_address_encrypted,
         o.created_at,
         o.order_date,
@@ -181,6 +187,8 @@ export async function getOrderById(orderId, userId) {
         o.user_id,
         o.status,
         o.total_price,
+        o.currency,
+        o.exchange_rate,
         o.shipping_address_encrypted,
         o.created_at,
         o.order_date,
@@ -206,6 +214,8 @@ export async function createOrder({
   items,
   shippingAddress,
   totalPrice,
+  currency = 'TL',
+  exchangeRate = 1.0,
 }) {
   const encryptedAddress = shippingAddress ? encrypt(shippingAddress) : null;
 
@@ -233,6 +243,8 @@ export async function createOrder({
         UPDATE orders
            SET status = 'processing',
                total_price = ?,
+               currency = ?,
+               exchange_rate = ?,
                shipping_address_encrypted = ?,
                order_date = CASE
                  WHEN order_date IS NULL THEN NOW()
@@ -240,7 +252,7 @@ export async function createOrder({
                END
          WHERE order_id = ?
       `,
-      [totalPrice, encryptedAddress, orderId]
+      [totalPrice, currency, exchangeRate, encryptedAddress, orderId]
     );
 
     // Optional safety: clear any old cart items for this order
@@ -249,10 +261,10 @@ export async function createOrder({
     // No cart row in DB → create a fresh processing order as fallback
     const [orderResult] = await db.query(
       `
-        INSERT INTO orders (user_id, status, total_price, shipping_address_encrypted, order_date)
-        VALUES (?, 'processing', ?, ?, NOW())
+        INSERT INTO orders (user_id, status, total_price, currency, exchange_rate, shipping_address_encrypted, order_date)
+        VALUES (?, 'processing', ?, ?, ?, ?, NOW())
       `,
-      [userId, totalPrice, encryptedAddress]
+      [userId, totalPrice, currency, exchangeRate, encryptedAddress]
     );
     orderId = orderResult.insertId;
   }

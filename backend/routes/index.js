@@ -14,6 +14,8 @@ import reviewRoutes from './reviewRoutes.js';
 import paymentRoutes from './paymentRoutes.js';
 import supportChatRoutes from './supportChatRoutes.js';
 
+import currencyRoutes from './currencyRoutes.js';
+
 export {
   adminRoutes,
   cartRoutes,
@@ -26,5 +28,6 @@ export {
   reviewRoutes,
   paymentRoutes,
   supportChatRoutes,
+  currencyRoutes,
 };
 

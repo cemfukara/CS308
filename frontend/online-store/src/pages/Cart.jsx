@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import useCartStore from '../store/cartStore';
 import useAuthStore from '../store/authStore';
+import useCurrencyStore from '../store/currencyStore';
 import { toast } from 'react-hot-toast';
 import './Cart.css';
 import { formatPrice } from '@/utils/formatPrice';
@@ -10,9 +11,13 @@ const Cart = () => {
   const { cart, updateQuantity, removeFromCart, clearCart } = useCartStore();
   const navigate = useNavigate();
   const user = useAuthStore(state => state.user);
+  const { selectedCurrency, convertAmount } = useCurrencyStore();
 
-  // 🧮 Calculate total cost
-  const total = cart.reduce((sum, item) => sum + Number(item.price || 0) * item.quantity, 0);
+  // 🧮 Calculate total cost (convert each item to selected currency)
+  const total = cart.reduce((sum, item) => {
+    const convertedPrice = convertAmount(item.price, item.currency, selectedCurrency);
+    return sum + convertedPrice * item.quantity;
+  }, 0);
 
   // 🧾 Handle checkout — login check, save order, clear cart
   const handleCheckout = () => {
@@ -80,7 +85,12 @@ const Cart = () => {
 
                   <div className="info">
                     <h3>{item.name}</h3>
-                    <p>{formatPrice(item.price, item.currency)}</p>
+                    <p>
+                      {formatPrice(
+                        convertAmount(item.price, item.currency, selectedCurrency),
+                        selectedCurrency
+                      )}
+                    </p>
 
                     <div className="quantity-control">
                       <button
@@ -125,7 +135,7 @@ const Cart = () => {
           </div>
 
           <div className="cart-summary">
-            <h3>Total: {formatPrice(total, cart[0]?.currency)}</h3>
+            <h3>Total: {formatPrice(total, selectedCurrency)}</h3>
             <button className="checkout-btn" onClick={handleCheckout}>
               Proceed to Checkout
             </button>

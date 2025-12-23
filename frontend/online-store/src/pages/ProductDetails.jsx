@@ -15,6 +15,7 @@ import {
   updateReview,
 } from '../lib/reviewApi';
 import useAuthStore from '../store/authStore';
+import useCurrencyStore from '../store/currencyStore';
 import { fetchWishlist, addToWishlist, removeFromWishlist } from '@/lib/wishlistApi';
 
 function ProductDetails() {
@@ -22,6 +23,7 @@ function ProductDetails() {
   const addToCart = useCartStore(state => state.addToCart);
   const cart = useCartStore(state => state.cart);
   const user = useAuthStore(state => state.user);
+  const { selectedCurrency, convertAmount } = useCurrencyStore();
   const isAuthenticated = !!user;
   const autoSlideRef = useRef(null);
 
@@ -389,7 +391,10 @@ function ProductDetails() {
               color: '#00e676',
             }}
           >
-            {formatPrice(product.price, product.currency)}
+            {formatPrice(
+              convertAmount(product.price, product.currency, selectedCurrency),
+              selectedCurrency
+            )}
           </p>
         </div>
       ),
@@ -499,16 +504,27 @@ function ProductDetails() {
           )}
 
           <div className="price-main">
-            <h1 className="price-now">{formatPrice(product.price, product.currency)}</h1>
+            <h1 className="price-now">
+              {formatPrice(
+                convertAmount(product.price, product.currency, selectedCurrency),
+                selectedCurrency
+              )}
+            </h1>
 
             {product.discount_ratio !== '0.00' && (
               <div className="price-meta">
                 <span className="price-was">
-                  {formatPrice(product.list_price, product.currency)}
+                  {formatPrice(
+                    convertAmount(product.list_price, product.currency, selectedCurrency),
+                    selectedCurrency
+                  )}
                 </span>
 
                 <span className="price-save">
-                  You save {formatPrice(product.list_price - product.price, product.currency)}
+                  You save {formatPrice(
+                    convertAmount(product.list_price - product.price, product.currency, selectedCurrency),
+                    selectedCurrency
+                  )}
                 </span>
               </div>
             )}
