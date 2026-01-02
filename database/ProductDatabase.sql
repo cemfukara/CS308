@@ -196,6 +196,51 @@ CREATE TABLE notifications (
     FOREIGN KEY (product_id) REFERENCES products(product_id)
 );
 
+
+
+CREATE TABLE refunds (
+  refund_id INT AUTO_INCREMENT PRIMARY KEY,
+
+  -- What is being refunded
+  order_item_id INT NOT NULL,
+  order_id INT NOT NULL,
+  user_id INT NOT NULL,
+
+  -- Refund details
+  quantity INT NOT NULL,
+  refund_amount DECIMAL(10,2) NOT NULL,
+  -- refund_amount MUST be calculated as:
+  -- order_items.price_at_purchase * quantity
+
+  -- Refund workflow
+  status ENUM('requested','approved','rejected')
+    NOT NULL DEFAULT 'requested',
+
+  -- Customer-provided reason
+  reason VARCHAR(255),
+
+  -- Timestamps
+  requested_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  decided_at DATETIME NULL,
+
+  -- Sales manager who approved/rejected
+  decided_by INT NULL,
+
+  -- Constraints
+  UNIQUE KEY uniq_refund_item (order_item_id),
+
+  -- Indexes
+  INDEX idx_refunds_status (status),
+  INDEX idx_refunds_user (user_id),
+
+  -- Foreign keys
+  FOREIGN KEY (order_item_id) REFERENCES order_items(order_item_id),
+  FOREIGN KEY (order_id) REFERENCES orders(order_id),
+  FOREIGN KEY (user_id) REFERENCES users(user_id),
+  FOREIGN KEY (decided_by) REFERENCES users(user_id)
+);
+
+
 -- ===================================================================
 -- DATA INSERTION
 -- ===================================================================
