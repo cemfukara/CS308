@@ -155,8 +155,7 @@ CS308/
 │       └── package.json
 │
 ├── 📁 database/             # Database files
-│   ├── schema.sql           # Database schema
-│   └── migrations/          # Database migrations
+│   └── ProductDatabase.sql   # Database         
 │
 ├── 📁 docs/                 # Project documentation
 │
