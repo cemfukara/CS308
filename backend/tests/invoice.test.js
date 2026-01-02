@@ -14,7 +14,16 @@ import {
 import * as InvoiceModel from '../models/Invoice.js';
 vi.mock('../models/Invoice.js');
 
-// 2. Mock PDFKit to prevent actual PDF generation and verify stream logic
+// 2. Mock the User Model (needed for customer details)
+import * as UserModel from '../models/User.js';
+vi.mock('../models/User.js');
+
+// 3. Mock the PDF Generator to avoid actual PDF generation
+vi.mock('../utils/pdfGenerator.js', () => ({
+  generateInvoicePDF: vi.fn(() => Promise.resolve(Buffer.from('fake-pdf-content'))),
+}));
+
+// 4. Mock PDFKit to prevent actual PDF generation and verify stream logic
 vi.mock('pdfkit', () => {
   return {
     default: class PDFDocument {
@@ -128,6 +137,7 @@ describe('Invoice Controller Tests', () => {
 
       InvoiceModel.getInvoiceById.mockResolvedValue(mockInvoice);
       InvoiceModel.getInvoiceItems.mockResolvedValue(mockItems);
+      UserModel.findById.mockResolvedValue(null); // No user data in test
 
       const response = await request(app).get(`/invoices/${orderId}/pdf`);
 

@@ -40,6 +40,7 @@ export async function getCartItems(orderId) {
       p.name,
       p.model,
       p.price,
+      p.quantity_in_stock,
 
       -- image
       (
@@ -72,12 +73,35 @@ export async function getCartItems(orderId) {
 // Add product to cart
 // --------------------------------------------
 export async function addToCart(orderId, productId, quantity = 1) {
-  // Check if item already exists
+  // Fetch product info including stock
+  const [[product]] = await db.query(
+    `SELECT price, quantity_in_stock FROM products WHERE product_id = ?`,
+    [productId]
+  );
+
+  if (!product) {
+    return { error: 'Product not found', stockError: true };
+  }
+
+  // Check if item already exists in cart
   const [rows] = await db.query(
     `SELECT * FROM order_items
          WHERE order_id = ? AND product_id = ?`,
     [orderId, productId]
   );
+
+  const currentCartQuantity = rows.length > 0 ? rows[0].quantity : 0;
+  const newTotalQuantity = currentCartQuantity + quantity;
+
+  // Validate stock
+  if (newTotalQuantity > product.quantity_in_stock) {
+    return {
+      error: `Insufficient stock. Available: ${product.quantity_in_stock}, In cart: ${currentCartQuantity}`,
+      stockError: true,
+      availableStock: product.quantity_in_stock,
+      currentCartQuantity: currentCartQuantity,
+    };
+  }
 
   if (rows.length > 0) {
     // Increase quantity
@@ -88,12 +112,6 @@ export async function addToCart(orderId, productId, quantity = 1) {
       [quantity, orderId, productId]
     );
   }
-
-  // Fetch current price for price_at_purchase
-  const [[product]] = await db.query(
-    `SELECT price FROM products WHERE product_id = ?`,
-    [productId]
-  );
 
   // Insert new row
   return db.query(
@@ -127,3 +145,41 @@ export async function removeFromCart(userId, productId) {
 export async function clearCart(orderId) {
   return db.query(`DELETE FROM order_items WHERE order_id = ?`, [orderId]);
 }
+
+// --------------------------------------------
+// Update cart item quantity
+// --------------------------------------------
+export async function updateCartItemQuantity(orderId, productId, newQuantity) {
+  // Validate newQuantity
+  if (newQuantity < 1) {
+    return { error: 'Quantity must be at least 1' };
+  }
+
+  // Fetch product info including stock
+  const [[product]] = await db.query(
+    `SELECT price, quantity_in_stock FROM products WHERE product_id = ?`,
+    [productId]
+  );
+
+  if (!product) {
+    return { error: 'Product not found', stockError: true };
+  }
+
+  // Validate stock
+  if (newQuantity > product.quantity_in_stock) {
+    return {
+      error: `Insufficient stock. Available: ${product.quantity_in_stock}`,
+      stockError: true,
+      availableStock: product.quantity_in_stock,
+    };
+  }
+
+  // Update the quantity directly
+  return db.query(
+    `UPDATE order_items 
+     SET quantity = ?
+     WHERE order_id = ? AND product_id = ?`,
+    [newQuantity, orderId, productId]
+  );
+}
+

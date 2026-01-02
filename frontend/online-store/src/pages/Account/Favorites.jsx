@@ -55,8 +55,8 @@ const Favorites = () => {
     }
   };
 
-  const handleAddToCart = product => {
-    addToCart(product, 1);
+  const handleAddToCart = async product => {
+    await addToCart(product, 1);
     toast.success(`${product.name} added to cart!`, { position: 'top-right' });
   };
 

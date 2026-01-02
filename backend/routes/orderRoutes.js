@@ -6,6 +6,8 @@ import {
   getOrders,
   getOrderDetails,
   createOrderController,
+  cancelOrderController,
+  refundOrderController,
 } from '../app/controllers/orderController.js';
 import { authenticate } from '../app/middlewares/authMiddleware.js';
 
@@ -33,12 +35,17 @@ router.get('/:id', authenticate, getOrderDetails);
 router.post('/', authenticate, createOrderController);
 
 /**
- * @route   DELETE /api/orders/:id
- * @desc    Cancel an order (future implementation)
+ * @route   POST /api/orders/:id/cancel
+ * @desc    Cancel an order (only if status is 'processing')
  * @access  Private
  */
-router.delete('/:id', authenticate, (req, res) => {
-  res.status(501).json({ message: 'Cancel order not implemented yet' });
-});
+router.post('/:id/cancel', authenticate, cancelOrderController);
+
+/**
+ * @route   POST /api/orders/:id/refund
+ * @desc    Refund an order (only if status is 'delivered')
+ * @access  Private
+ */
+router.post('/:id/refund', authenticate, refundOrderController);
 
 export default router;

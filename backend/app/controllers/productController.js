@@ -79,7 +79,7 @@ export async function fetchFeaturedProduct(req, res) {
 ---------------------------------------------------
 */
 
-export async function setDiscount(req, res, next) {
+export async function setDiscount(req, res) {
   try {
     const { productId, discountRate } = req.body;
 
@@ -89,19 +89,28 @@ export async function setDiscount(req, res, next) {
         .json({ message: 'productId and discountRate are required' });
     }
 
-    // 1) Update product price
+    // 1) Apply discount (THIS is the critical operation)
     const updatedProduct = await applyDiscount(productId, discountRate);
 
-    // 2) Find impacted users
-    const wishlistedUsers = await getWishlistedUsers(productId);
+    let wishlistedUsers = [];
 
-    // 3) Notify them
-    await notifyUsers(wishlistedUsers, productId, discountRate);
+    try {
+      // 2) Try to notify users (non-critical)
+      wishlistedUsers = await getWishlistedUsers(productId);
+      await notifyUsers(wishlistedUsers, productId, discountRate);
+    } catch (notifyErr) {
+      console.error(
+        `Discount applied but notification failed for product ${productId}`,
+        notifyErr
+      );
+      // IMPORTANT: do NOT throw
+    }
 
+    // 3) Always return success if discount was applied
     return res.json({
-      message: 'Discount applied & users notified',
+      message: 'Discount applied',
       product: updatedProduct,
-      notifiedUsers: wishlistedUsers.length,
+      notifiedUsers: wishlistedUsers.length || 0,
     });
   } catch (err) {
     console.error(err);

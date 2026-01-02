@@ -11,6 +11,7 @@ const validSortColumns = [
   'list_price',
   'quantity_in_stock',
   'discount_ratio',
+  'order_count',
 ];
 
 // GET ALL PRODUCTS (pagination, search, sorting, category filter)

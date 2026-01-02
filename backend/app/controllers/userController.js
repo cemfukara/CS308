@@ -102,6 +102,7 @@ export const getProfile = async (req, res) => {
       email: user.email,
       firstName: user.first_name,
       lastName: user.last_name,
+      phone: user.phone,
       taxId: user.tax_id,
       address: user.address,
       role: user.role,

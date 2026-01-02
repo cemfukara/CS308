@@ -20,6 +20,7 @@ import { fetchWishlist, addToWishlist, removeFromWishlist } from '@/lib/wishlist
 function ProductDetails() {
   const { id: idParam = '' } = useParams();
   const addToCart = useCartStore(state => state.addToCart);
+  const cart = useCartStore(state => state.cart);
   const user = useAuthStore(state => state.user);
   const isAuthenticated = !!user;
   const autoSlideRef = useRef(null);
@@ -294,9 +295,30 @@ function ProductDetails() {
     }
   };
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (!product || (product.quantity_in_stock ?? 0) <= 0) return;
-    addToCart(product, 1);
+
+    const prevQty = cart.find(item => item.product_id === product.product_id)?.quantity ?? 0;
+    const stockLimit = product.quantity_in_stock ?? 0;
+
+    // Check if we can add one more
+    if (prevQty >= stockLimit) {
+      toast.error(`Cannot add more. Only ${stockLimit} in stock.`, {
+        position: 'top-right',
+      });
+      return;
+    }
+
+    const success = await addToCart(product, 1);
+
+    if (!success) {
+      toast.error(`Cannot add more. Only ${stockLimit} in stock.`, {
+        position: 'top-right',
+      });
+      return;
+    }
+
+    const qtyInCart = prevQty + 1;
     toast.custom(
       t => (
         <div
@@ -335,8 +357,9 @@ function ProductDetails() {
                 fontFamily: 'Exo 2',
               }}
             >
-              Added to cart
+              {qtyInCart === 1 ? '1 item in cart' : `${qtyInCart} items in cart`}
             </p>
+
             <button
               style={{
                 backgroundColor: '#2337eedb',

@@ -55,6 +55,7 @@ export const findById = async (user_id) => {
     user.address = user.address_encrypted
       ? decrypt(user.address_encrypted)
       : null;
+    user.phone = user.phone_encrypted ? decrypt(user.phone_encrypted) : null;
     user.tax_id = user.tax_id_encrypted ? decrypt(user.tax_id_encrypted) : null;
 
     return user;
@@ -84,4 +85,13 @@ export const updateUserProfile = async (userId, fields) => {
   const [result] = await db.query(sql, values);
 
   return result.affectedRows > 0; // boolean success
+};
+
+// Delete user account permanently
+export const deleteUser = async (userId) => {
+  const [result] = await db.query('DELETE FROM users WHERE user_id = ?', [
+    userId,
+  ]);
+
+  return result.affectedRows > 0;
 };

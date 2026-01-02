@@ -28,6 +28,36 @@ const Cart = () => {
     navigate('/checkout');
   };
 
+  // Handle quantity update with error handling
+  const handleUpdateQuantity = async (productId, newQuantity) => {
+    try {
+      await updateQuantity(productId, newQuantity);
+    } catch (error) {
+      console.error('Failed to update quantity:', error);
+      toast.error('Failed to update quantity');
+    }
+  };
+
+  // Handle remove with error handling
+  const handleRemove = async (productId) => {
+    try {
+      await removeFromCart(productId);
+    } catch (error) {
+      console.error('Failed to remove item:', error);
+      toast.error('Failed to remove item from cart');
+    }
+  };
+
+  // Handle clear cart with error handling
+  const handleClearCart = async () => {
+    try {
+      await clearCart();
+    } catch (error) {
+      console.error('Failed to clear cart:', error);
+      toast.error('Failed to clear cart');
+    }
+  };
+
   return (
     <div className="cart-page">
       <h1>Your Shopping Cart</h1>
@@ -39,52 +69,57 @@ const Cart = () => {
           <div className="cart-items">
             {cart.map(item => {
               const placeholder = new URL('../assets/placeholder.jpg', import.meta.url).href;
-              const imageSrc = item.product_images?.[0]?.image_url || placeholder;
-              
+              const imageSrc = item.image_url || item.product_images?.[0]?.image_url || placeholder;
+
               return (
-              <div key={item.product_id} className="cart-item">
-                <img
-                  src={imageSrc}
-                  alt={item.name}
-                />
+                <div key={item.product_id} className="cart-item">
+                  <img
+                    src={imageSrc}
+                    alt={item.name}
+                  />
 
-                <div className="info">
-                  <h3>{item.name}</h3>
-                  <p>{formatPrice(item.price, item.currency)}</p>
+                  <div className="info">
+                    <h3>{item.name}</h3>
+                    <p>{formatPrice(item.price, item.currency)}</p>
 
-                  <div className="quantity-control">
-                    <button
-                      onClick={() =>
-                        updateQuantity(item.product_id, Math.max(1, item.quantity - 1))
-                      }
-                    >
-                      −
-                    </button>
-                    <input
-                      type="number"
-                      value={item.quantity}
-                      onChange={e =>
-                        updateQuantity(
-                          item.product_id,
-                          Math.min(Number(e.target.value), item.quantity_in_stock)
-                        )
-                      }
-                    />
-                    <button
-                      onClick={() =>
-                        updateQuantity(
-                          item.product_id,
-                          Math.min(item.quantity_in_stock, item.quantity + 1)
-                        )
-                      }
-                    >
-                      +
-                    </button>
+                    <div className="quantity-control">
+                      <button
+                        onClick={() =>
+                          handleUpdateQuantity(item.product_id, Math.max(1, item.quantity - 1))
+                        }
+                      >
+                        −
+                      </button>
+                      <input
+                        type="number"
+                        value={item.quantity}
+                        onChange={e =>
+                          handleUpdateQuantity(
+                            item.product_id,
+                            Math.min(Number(e.target.value), item.quantity_in_stock)
+                          )
+                        }
+                      />
+                      <button
+                        onClick={() =>
+                          handleUpdateQuantity(
+                            item.product_id,
+                            Math.min(item.quantity_in_stock, item.quantity + 1)
+                          )
+                        }
+                      >
+                        +
+                      </button>
+                    </div>
+                    {item.quantity >= item.quantity_in_stock && (
+                      <p style={{ color: '#ff9800', fontSize: '12px', marginTop: '4px' }}>
+                        Maximum quantity reached
+                      </p>
+                    )}
                   </div>
-                </div>
 
-                <button onClick={() => removeFromCart(item.product_id)}>Remove</button>
-              </div>
+                  <button onClick={() => handleRemove(item.product_id)}>Remove</button>
+                </div>
               );
             })}
           </div>
@@ -94,7 +129,7 @@ const Cart = () => {
             <button className="checkout-btn" onClick={handleCheckout}>
               Proceed to Checkout
             </button>
-            <button className="clear-btn" onClick={clearCart}>
+            <button className="clear-btn" onClick={handleClearCart}>
               Clear Cart
             </button>
           </div>
@@ -105,3 +140,4 @@ const Cart = () => {
 };
 
 export default Cart;
+

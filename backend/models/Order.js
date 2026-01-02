@@ -257,8 +257,48 @@ export async function createOrder({
     orderId = orderResult.insertId;
   }
 
-  // 2) Insert order_items from checkout payload
+  // 2) Validate stock for all items before processing
   if (items.length > 0) {
+    // Fetch current stock for all products
+    const productIds = items.map((it) => it.product_id);
+    const [stockRows] = await db.query(
+      `SELECT product_id, name, quantity_in_stock 
+       FROM products 
+       WHERE product_id IN (?)`,
+      [productIds]
+    );
+
+    // Create a map for easy lookup
+    const stockMap = {};
+    for (const row of stockRows) {
+      stockMap[row.product_id] = row;
+    }
+
+    // Validate each item
+    const stockErrors = [];
+    for (const it of items) {
+      const product = stockMap[it.product_id];
+      if (!product) {
+        stockErrors.push(`Product ID ${it.product_id} not found`);
+        continue;
+      }
+
+      const requestedQty = it.quantity || 1;
+      if (requestedQty > product.quantity_in_stock) {
+        stockErrors.push(
+          `${product.name}: requested ${requestedQty}, but only ${product.quantity_in_stock} in stock`
+        );
+      }
+    }
+
+    // If any stock errors, throw to prevent order creation
+    if (stockErrors.length > 0) {
+      const error = new Error('Insufficient stock for one or more items');
+      error.stockErrors = stockErrors;
+      throw error;
+    }
+
+    // 3) Insert order_items
     const values = items.map((it) => [
       orderId,
       it.product_id,
@@ -274,7 +314,7 @@ export async function createOrder({
       [values]
     );
 
-    // 3) Decrease stock for each product
+    // 4) Decrease stock for each product
     for (const it of items) {
       const qty = it.quantity || 1;
 
@@ -286,8 +326,175 @@ export async function createOrder({
         `,
         [qty, it.product_id]
       );
+
+      await db.query(
+        `
+          UPDATE products
+             SET order_count = order_count + ?
+           WHERE product_id = ?
+        `,
+        [qty, it.product_id]
+      );
     }
   }
 
   return { order_id: orderId };
+}
+
+// --------------------------------------------------
+// Cancel an order (only if status is 'processing')
+// --------------------------------------------------
+export async function cancelOrder(orderId, userId) {
+  // 1) Get the order and verify it belongs to the user
+  const [orderRows] = await db.query(
+    `
+      SELECT order_id, user_id, status
+      FROM orders
+      WHERE order_id = ?
+        AND user_id = ?
+    `,
+    [orderId, userId]
+  );
+
+  if (orderRows.length === 0) {
+    return { success: false, message: 'Order not found' };
+  }
+
+  const order = orderRows[0];
+
+  // 2) Check if the order can be cancelled (must be in 'processing' status)
+  if (order.status !== 'processing') {
+    return {
+      success: false,
+      message: `Cannot cancel order. Order status is '${order.status}', but must be 'processing' to cancel.`,
+    };
+  }
+
+  // 3) Get the order items to restore stock
+  const [items] = await db.query(
+    `
+      SELECT product_id, quantity
+      FROM order_items
+      WHERE order_id = ?
+    `,
+    [orderId]
+  );
+
+  // 4) Restore stock for each product
+  for (const item of items) {
+    // Increase quantity_in_stock
+    await db.query(
+      `
+        UPDATE products
+        SET quantity_in_stock = quantity_in_stock + ?
+        WHERE product_id = ?
+      `,
+      [item.quantity, item.product_id]
+    );
+
+    // Decrease order_count
+    await db.query(
+      `
+        UPDATE products
+        SET order_count = GREATEST(order_count - ?, 0)
+        WHERE product_id = ?
+      `,
+      [item.quantity, item.product_id]
+    );
+  }
+
+  // 5) Update order status to 'cancelled'
+  const [result] = await db.query(
+    `
+      UPDATE orders
+      SET status = 'cancelled'
+      WHERE order_id = ?
+    `,
+    [orderId]
+  );
+
+  if (result.affectedRows > 0) {
+    return { success: true, message: 'Order cancelled successfully' };
+  }
+
+  return { success: false, message: 'Failed to cancel order' };
+}
+
+// --------------------------------------------------
+// Refund an order (only if status is 'delivered')
+// --------------------------------------------------
+export async function refundOrder(orderId, userId) {
+  // 1) Get the order and verify it belongs to the user
+  const [orderRows] = await db.query(
+    `
+      SELECT order_id, user_id, status
+      FROM orders
+      WHERE order_id = ?
+        AND user_id = ?
+    `,
+    [orderId, userId]
+  );
+
+  if (orderRows.length === 0) {
+    return { success: false, message: 'Order not found' };
+  }
+
+  const order = orderRows[0];
+
+  // 2) Check if the order can be refunded (must be in 'delivered' status)
+  if (order.status !== 'delivered') {
+    return {
+      success: false,
+      message: `Cannot refund order. Order status is '${order.status}', but must be 'delivered' to refund.`,
+    };
+  }
+
+  // 3) Get the order items to restore stock
+  const [items] = await db.query(
+    `
+      SELECT product_id, quantity
+      FROM order_items
+      WHERE order_id = ?
+    `,
+    [orderId]
+  );
+
+  // 4) Restore stock for each product
+  for (const item of items) {
+    // Increase quantity_in_stock
+    await db.query(
+      `
+        UPDATE products
+        SET quantity_in_stock = quantity_in_stock + ?
+        WHERE product_id = ?
+      `,
+      [item.quantity, item.product_id]
+    );
+
+    // Decrease order_count
+    await db.query(
+      `
+        UPDATE products
+        SET order_count = GREATEST(order_count - ?, 0)
+        WHERE product_id = ?
+      `,
+      [item.quantity, item.product_id]
+    );
+  }
+
+  // 5) Update order status to 'refunded'
+  const [result] = await db.query(
+    `
+      UPDATE orders
+      SET status = 'refunded'
+      WHERE order_id = ?
+    `,
+    [orderId]
+  );
+
+  if (result.affectedRows > 0) {
+    return { success: true, message: 'Order refunded successfully' };
+  }
+
+  return { success: false, message: 'Failed to refund order' };
 }

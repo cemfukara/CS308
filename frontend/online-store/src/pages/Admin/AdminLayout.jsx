@@ -81,6 +81,17 @@ export default function AdminLayout() {
           ) : null}
         </nav>
 
+        {user?.role === 'support agent' && (
+          <>
+            <NavLink to="/admin/support/queue" className={styles.link}>
+              Support Queue
+            </NavLink>
+            <NavLink to="/admin/support/active" className={styles.link}>
+              Active Chats
+            </NavLink>
+          </>
+        )}
+
         <div className={styles.backToStoreWrapper}>
           <Link to="/" className={styles.backToStore}>
             Back to Store

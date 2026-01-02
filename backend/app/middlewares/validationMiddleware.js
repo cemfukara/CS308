@@ -47,6 +47,50 @@ export const validateProductInput = [
     .isInt({ min: 0 })
     .withMessage('Popularity must be a non-negative integer.'),
 
+  // Optional field: model
+  body('model')
+    .optional({ checkFalsy: true })
+    .isString()
+    .withMessage('Model must be a string.')
+    .isLength({ max: 100 })
+    .withMessage('Model cannot exceed 100 characters.'),
+
+  // Optional field: serial_number
+  body('serial_number')
+    .optional({ checkFalsy: true })
+    .isString()
+    .withMessage('Serial number must be a string.')
+    .isLength({ max: 100 })
+    .withMessage('Serial number cannot exceed 100 characters.'),
+
+  // Optional field: list_price (must be >= price if provided)
+  body('list_price')
+    .optional({ checkFalsy: true })
+    .isFloat({ gt: 0 })
+    .withMessage('List price must be a positive number.')
+    .custom((value, { req }) => {
+      if (value && req.body.price && parseFloat(value) < parseFloat(req.body.price)) {
+        throw new Error('List price must be greater than or equal to price.');
+      }
+      return true;
+    }),
+
+  // Optional field: warranty_status
+  body('warranty_status')
+    .optional({ checkFalsy: true })
+    .isString()
+    .withMessage('Warranty status must be a string.')
+    .isLength({ max: 255 })
+    .withMessage('Warranty status cannot exceed 255 characters.'),
+
+  // Optional field: distributor_info
+  body('distributor_info')
+    .optional({ checkFalsy: true })
+    .isString()
+    .withMessage('Distributor info must be a string.')
+    .isLength({ max: 255 })
+    .withMessage('Distributor info cannot exceed 255 characters.'),
+
   // Run the error handler
   (req, res, next) => {
     const errors = validationResult(req);

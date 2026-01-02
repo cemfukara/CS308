@@ -5,8 +5,9 @@ import styles from '../Admin.module.css';
 import { formatPrice } from '@/utils/formatPrice';
 
 // Includes "refunded"
-const STATUS_OPTIONS = ['processing', 'in-transit', 'delivered', 'cancelled', 'refunded'];
-
+const STATUS_OPTIONS = ['processing', 'in-transit', 'delivered'];
+const STATUS_FLOW = ['processing', 'in-transit', 'delivered'];
+const TERMINAL_STATUSES = new Set(['cancelled', 'refunded']);
 const completedStatuses = new Set(['delivered', 'cancelled', 'refunded']);
 
 const PMDeliveriesPage = () => {
@@ -31,6 +32,11 @@ const PMDeliveriesPage = () => {
     if (s === 'in-transit') return 'In transit';
     if (s === 'refunded') return 'Refunded';
     return s.charAt(0).toUpperCase() + s.slice(1);
+  };
+  const NEXT_STATUS_MAP = {
+    processing: 'in-transit',
+    'in-transit': 'delivered'
+    // NO delivered → refunded
   };
 
   const getStatusClassName = status => {
@@ -76,26 +82,87 @@ const PMDeliveriesPage = () => {
     else copy.add(orderId);
     setSelected(copy);
   };
-
+  const isValidTransition = (current, target) => {
+    // allow no-op
+    if (current === target) return true;
+  
+    // block terminal states entirely
+    if (TERMINAL_STATUSES.has(current)) return false;
+  
+    const currentIndex = STATUS_FLOW.indexOf(current);
+    const targetIndex = STATUS_FLOW.indexOf(target);
+  
+    if (currentIndex === -1 || targetIndex === -1) return false;
+  
+    // forward-only, one step
+    return targetIndex === currentIndex + 1;
+  };
   // ----------------------
   // Apply Status (uses api.patch)
   // ----------------------
   const applyStatus = async () => {
     if (!bulkStatus || selected.size === 0) return;
-
+  
     try {
       setErrorMsg('');
-
+  
+      const invalidOrders = [];
+  
+      for (const id of selected) {
+        const order = deliveries.find(o => o.order_id === id);
+        if (!order) continue;
+  
+        // block only terminal states
+        if (TERMINAL_STATUSES.has(order.status)) {
+          invalidOrders.push(id);
+          continue;
+        }
+  
+        // enforce strict flow (incl delivered → refunded)
+        if (!isValidTransition(order.status, bulkStatus)) {
+          invalidOrders.push(id);
+        }
+      }
+  
+      if (invalidOrders.length > 0) {
+        setErrorMsg(
+          `Invalid status transition for order(s): ${invalidOrders.join(
+            ', '
+          )}. Status flow must be: processing → in-transit → delivered.`
+        );
+        return;
+      }
+  
       for (const id of selected) {
         await api.patch(`/deliveries/${id}/status`, { status: bulkStatus });
       }
-
+  
       await fetchDeliveries();
       setSelected(new Set());
       setBulkStatus('');
     } catch (err) {
       console.error('Update error:', err);
-      setErrorMsg('Failed to update one or more deliveries.');
+      setErrorMsg(
+        err?.response?.data?.message || 'Failed to update one or more deliveries.'
+      );
+    }
+  };
+
+  const advanceStatus = async order => {
+    const current = order.status;
+    const nextStatus = NEXT_STATUS_MAP[current];
+  
+    if (!nextStatus) return;
+  
+    try {
+      setErrorMsg('');
+      await api.patch(`/deliveries/${order.order_id}/status`, {
+        status: nextStatus
+      });
+      await fetchDeliveries();
+    } catch (err) {
+      console.error('Failed to advance status:', err);
+      setErrorMsg('Failed to update delivery status.');
     }
   };
 
@@ -124,30 +191,13 @@ const PMDeliveriesPage = () => {
   });
 
   // ----------------------
-  // Invoice
-  // ----------------------
-  const openInvoice = async order => {
-    try {
-      setInvoiceLoading(true);
-      setInvoiceError('');
-      setInvoiceOrder(null);
-      setInvoiceItems([]);
-
-      // calls backend /api/invoice/:id/json
-      const data = await api.get(`/invoice/${order.order_id}/json`);
-
-      setInvoiceOrder(data.invoice || order);
-      setInvoiceItems(Array.isArray(data.items) ? data.items : []);
-    } catch (err) {
-      console.error('Failed to load invoice details:', err);
-      setInvoiceError(err?.response?.data?.message || 'Failed to load invoice details.');
-      // still show at least the summary from the deliveries row
-      setInvoiceOrder(order);
-      setInvoiceItems([]);
-    } finally {
-      setInvoiceLoading(false);
-    }
-  };
+// Invoice
+// ----------------------
+const openInvoice = order => {
+  setInvoiceError('');
+  setInvoiceOrder(order);
+  setInvoiceItems(Array.isArray(order.products) ? order.products : []);
+};
 
   const closeInvoice = () => {
     setInvoiceOrder(null);
@@ -246,62 +296,80 @@ const PMDeliveriesPage = () => {
               <th className={styles.th}>Delivery ID</th>
               <th className={styles.th}>Customer ID</th>
               <th className={styles.th}>Email</th>
-              <th className={styles.th}>Quantity</th>
               <th className={styles.th}>Total</th>
               <th className={styles.th}>Address</th>
               <th className={styles.th}>Status</th>
               <th className={styles.th}>Created</th>
               <th className={styles.th}>Invoice</th>
+              <th className={styles.th}>Mark Status</th>
             </tr>
           </thead>
 
           <tbody className={styles.tbody}>
-            {filteredDeliveries.map(d => {
-              const isSelected = selected.has(d.order_id);
+  {filteredDeliveries.map(d => {
+    const isSelected = selected.has(d.order_id);
 
-              return (
-                <tr
-                  key={d.order_id}
-                  className={isSelected ? `${styles.tr} ${styles['pm-selected-row']}` : styles.tr}
-                >
-                  <td className={styles.td}>
-                    <input
-                      type="checkbox"
-                      checked={isSelected}
-                      onChange={() => toggleSelect(d.order_id)}
-                    />
-                  </td>
+    return (
+      <tr
+        key={d.order_id}
+        className={isSelected ? `${styles.tr} ${styles['pm-selected-row']}` : styles.tr}
+      >
+        <td className={styles.td}>
+          <input
+            type="checkbox"
+            checked={isSelected}
+            onChange={() => toggleSelect(d.order_id)}
+          />
+        </td>
 
-                  <td className={styles.td}>{d.order_id}</td>
-                  <td className={styles.td}>{d.user_id}</td>
-                  <td className={styles.td}>{d.customer_email}</td>
-                  <td className={styles.td}>{d.item_count ?? 'N/A'}</td>
-                  <td className={styles.td}>
-                    {d.total_price != null ? `${formatPrice(Number(d.total_price))}` : 'N/A'}
-                  </td>
-                  <td className={styles.td}>{d.shipping_address || 'N/A'}</td>
+        <td className={styles.td}>{d.order_id}</td>
+        <td className={styles.td}>{d.user_id}</td>
+        <td className={styles.td}>{d.customer_email}</td>
 
-                  <td className={styles.td}>
-                    <span className={getStatusClassName(d.status)}>{formatStatus(d.status)}</span>
-                  </td>
+        <td className={styles.td}>
+          {d.total_price != null ? formatPrice(Number(d.total_price)) : 'N/A'}
+        </td>
 
-                  <td className={styles.td}>
-                    {d.created_at ? new Date(d.created_at).toLocaleString() : 'N/A'}
-                  </td>
+        <td className={styles.td}>{d.shipping_address || 'N/A'}</td>
 
-                  <td className={styles.td}>
-                    <button
-                      type="button"
-                      className={styles.pmViewBtn}
-                      onClick={() => openInvoice(d)}
-                    >
-                      View
-                    </button>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
+        <td className={styles.td}>
+          <span className={getStatusClassName(d.status)}>
+            {formatStatus(d.status)}
+          </span>
+        </td>
+
+        <td className={styles.td}>
+          {d.created_at ? new Date(d.created_at).toLocaleString() : 'N/A'}
+        </td>
+
+        <td className={styles.td}>
+          <button
+            type="button"
+            className={styles.pmViewBtn}
+            onClick={() => openInvoice(d)}
+          >
+            View
+          </button>
+        </td>
+
+        {/* 👇 MARK STATUS COLUMN */}
+        <td className={styles.td}>
+          {NEXT_STATUS_MAP[d.status] ? (
+            <button
+              type="button"
+              className={styles.pmViewBtn}
+              onClick={() => advanceStatus(d)}
+            >
+              Mark as {formatStatus(NEXT_STATUS_MAP[d.status])}
+            </button>
+          ) : (
+            <span className={styles.muted}>—</span>
+          )}
+        </td>
+      </tr>
+    );
+  })}
+</tbody>
         </table>
 
         {filteredDeliveries.length === 0 && !loading && (
@@ -378,14 +446,12 @@ const PMDeliveriesPage = () => {
                   <tr>
                     <th>Item</th>
                     <th>Quantity</th>
-                    <th>Unit Price</th>
-                    <th>Line Total</th>
                   </tr>
                 </thead>
                 <tbody>
                   {invoiceLoading && (
                     <tr>
-                      <td colSpan={4} className={styles.invoiceEmptyRow}>
+                      <td colSpan={2} className={styles.invoiceEmptyRow}>
                         Loading invoice items…
                       </td>
                     </tr>
@@ -397,22 +463,12 @@ const PMDeliveriesPage = () => {
                       <tr key={idx}>
                         <td>{item.product_name}</td>
                         <td>{item.quantity}</td>
-                        <td>
-                          {item.price_at_purchase != null
-                            ? `${formatPrice(item.price_at_purchase)}`
-                            : 'N/A'}
-                        </td>
-                        <td>
-                          {item.price_at_purchase != null
-                            ? `${formatPrice(Number(item.price_at_purchase) * Number(item.quantity))}`
-                            : 'N/A'}
-                        </td>
                       </tr>
                     ))}
 
                   {!invoiceLoading && invoiceItems.length === 0 && (
                     <tr>
-                      <td colSpan={4} className={styles.invoiceEmptyRow}>
+                      <td colSpan={2} className={styles.invoiceEmptyRow}>
                         No item details available for this order.
                       </td>
                     </tr>
@@ -473,3 +529,4 @@ const PMDeliveriesPage = () => {
 };
 
 export default PMDeliveriesPage;
+

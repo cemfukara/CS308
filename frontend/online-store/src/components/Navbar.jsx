@@ -4,6 +4,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUser, faCartShopping } from '@fortawesome/free-solid-svg-icons';
 import './Navbar.css';
 import useAuthStore from '../store/authStore';
+import useCartStore from '../store/cartStore'; //
 import Dropdown from '@/components/Dropdown';
 
 const Navbar = () => {
@@ -13,6 +14,14 @@ const Navbar = () => {
 
   const user = useAuthStore(state => state.user);
   const logout = useAuthStore(state => state.logout);
+
+  // Get cart from store with safety check
+  const cart = useCartStore(state => state.cart);
+
+  // Calculate total items safely (prevents crash if cart is null/undefined/not array)
+  const cartItemCount = Array.isArray(cart)
+    ? cart.reduce((acc, item) => acc + (item.quantity || 0), 0)
+    : 0;
 
   const location = useLocation();
   const [searchQuery, setSearchQuery] = useState('');
@@ -124,28 +133,28 @@ const Navbar = () => {
               <path
                 d="M14 16H24C26 16 28 14 30 14H34"
                 stroke="white"
-                stroke-width="2.4"
-                stroke-linecap="round"
+                strokeWidth="2.4"
+                strokeLinecap="round"
               />
               <circle cx="36" cy="14" r="2.6" fill="white" />
 
               <path
                 d="M14 24H26C28 24 30 26 32 26H36"
                 stroke="white"
-                stroke-width="2.4"
-                stroke-linecap="round"
+                strokeWidth="2.4"
+                strokeLinecap="round"
               />
               <circle cx="38" cy="26" r="2.6" fill="white" />
 
-              <path d="M14 32H22" stroke="white" stroke-width="2.4" stroke-linecap="round" />
+              <path d="M14 32H22" stroke="white" strokeWidth="2.4" strokeLinecap="round" />
               <circle cx="24" cy="32" r="2.6" fill="white" />
 
               <text
                 x="64"
                 y="32"
-                font-size="26"
-                font-weight="700"
-                font-family="Inter, system-ui, -apple-system, BlinkMacSystemFont, sans-serif"
+                fontSize="26"
+                fontWeight="700"
+                fontFamily="Inter, system-ui, -apple-system, BlinkMacSystemFont, sans-serif"
                 fill="#111"
               >
                 TechZone
@@ -160,8 +169,8 @@ const Navbar = () => {
                   y2="48"
                   gradientUnits="userSpaceOnUse"
                 >
-                  <stop offset="0%" stop-color="#3B82F6" />
-                  <stop offset="100%" stop-color="#2563EB" />
+                  <stop offset="0%" stopColor="#3B82F6" />
+                  <stop offset="100%" stopColor="#2563EB" />
                 </linearGradient>
               </defs>
             </svg>
@@ -219,14 +228,17 @@ const Navbar = () => {
                 </Link>
               ) : null}
 
+              {user.role === 'support agent' && <Link to="/admin/support/queue">Support</Link>}
+
               <button onClick={handleLogout}>Logout</button>
             </div>
           )}
 
           {/* 🛒 Cart Icon */}
           <Link to="/cart" className="nav-link" aria-label="Cart">
-            <span className="nav-icon">
+            <span className="nav-icon cart-icon-container">
               <FontAwesomeIcon icon={faCartShopping} />
+              {cartItemCount > 0 && <span className="cart-badge">{cartItemCount}</span>}
             </span>
           </Link>
         </div>
