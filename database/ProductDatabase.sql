@@ -2,20 +2,17 @@
 -- drop schema mydb; create schema mydb;
 USE mydb;
 
--- ===================================================================
--- 1. CATEGORIES TABLE
--- ===================================================================
+-- 01_schema.sql
+-- Definitions of tables, indexes, and constraints
 
+-- 1. CATEGORIES
 CREATE TABLE categories (
     category_id INT PRIMARY KEY AUTO_INCREMENT,
     name VARCHAR(100) NOT NULL UNIQUE,
     description TEXT
 );
 
--- ===================================================================
--- 2. PRODUCTS TABLE
--- ===================================================================
-
+-- 2. PRODUCTS
 CREATE TABLE products (
     product_id INT PRIMARY KEY AUTO_INCREMENT,
     category_id INT,
@@ -30,7 +27,6 @@ CREATE TABLE products (
     distributor_info VARCHAR(255),
     currency VARCHAR(10) NOT NULL DEFAULT 'TL',
     order_count INT DEFAULT 0,
-
     -- Generated column for discount percentage
     discount_ratio DECIMAL(5, 2) AS (
         CASE
@@ -39,134 +35,88 @@ CREATE TABLE products (
             ELSE 0
         END
     ) STORED,
-
     FOREIGN KEY (category_id) REFERENCES categories(category_id)
 );
 
--- index for sorting popularity
 CREATE INDEX idx_product_popularity ON products(order_count DESC);
--- Add an index to make sorting by discount super fast
 CREATE INDEX idx_discount_ratio ON products (discount_ratio);
 
--- ===================================================================
--- 3. USERS TABLE
--- ===================================================================
-
+-- 3. USERS
+-- Note: 'phone_encrypted' added here (consolidated from ALTER statement)
 CREATE TABLE users (
     user_id INT PRIMARY KEY AUTO_INCREMENT,
     email VARCHAR(255) NOT NULL UNIQUE,
-
-    -- Stores the bcrypt hash of the password
     password_hash VARCHAR(255) NOT NULL,
-
-    -- 'customer' is the default value
     role ENUM('customer', 'sales manager', 'product manager', 'support agent', 'dev') NOT NULL DEFAULT 'customer',
-
-    -- Fields for encrypted Personally Identifiable Information (PII)
     first_name_encrypted BLOB,
     last_name_encrypted BLOB,
-    tax_id_encrypted BLOB, -- Added for sensitive tax ID
-
+    tax_id_encrypted BLOB,
+    phone_encrypted BLOB, 
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- ===================================================================
--- 4. REVIEWS TABLE (Links Users and Products)
--- ===================================================================
-
+-- 4. REVIEWS
 CREATE TABLE reviews (
     review_id INT PRIMARY KEY AUTO_INCREMENT,
     product_id INT NOT NULL,
     user_id INT NOT NULL,
-    rating INT NOT NULL, -- e.g., a number from 1 to 5
+    rating INT NOT NULL,
     comment_text TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     status ENUM('pending', 'approved', 'rejected') NOT NULL DEFAULT 'pending',
     FOREIGN KEY (product_id) REFERENCES products(product_id),
     FOREIGN KEY (user_id) REFERENCES users(user_id),
-
-    -- User can only review a product once
     CONSTRAINT uq_user_product_review UNIQUE(user_id, product_id)
 );
 
--- ===================================================================
--- 5. PAYMENT METHODS TABLE (Secure PCI-compliant design)
--- ===================================================================
-
+-- 5. PAYMENT METHODS
 CREATE TABLE payment_methods (
     payment_method_id INT PRIMARY KEY AUTO_INCREMENT,
     user_id INT NOT NULL,
-
-    -- This is the token from Stripe/PayPal. Safe to store.
     gateway_customer_id VARCHAR(255) NOT NULL,
-
-    -- These are for display. Safe to store.
-    card_brand VARCHAR(50), -- e.g., 'Visa'
-    last_four_digits CHAR(4), -- e.g., '4242'
-
-    -- Marks which card to auto-select at checkout
+    card_brand VARCHAR(50),
+    last_four_digits CHAR(4),
     is_default BOOLEAN DEFAULT false,
-
     FOREIGN KEY (user_id) REFERENCES users(user_id)
 );
 
--- ===================================================================
--- 6. ORDERS TABLE (Updated to store address Snapshot)
--- ===================================================================
+-- 6. ORDERS
 CREATE TABLE orders (
     order_id INT PRIMARY KEY AUTO_INCREMENT,
     user_id INT NOT NULL,
     status ENUM('cart', 'processing', 'in-transit', 'delivered', 'cancelled') NOT NULL DEFAULT 'cart',
     total_price DECIMAL(10, 2),
-    
-    -- SNAPSHOT: We store the address *at the time of purchase* here.
-    -- If user changes their address later, old orders remain accurate.
     shipping_country VARCHAR(100),
     shipping_city VARCHAR(100),
     shipping_address_encrypted BLOB,
-    
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     order_date TIMESTAMP NULL,
-    
     FOREIGN KEY (user_id) REFERENCES users(user_id)
 );
 
--- ===================================================================
--- 7. ORDER_ITEMS TABLE
--- ===================================================================
+-- 7. ORDER_ITEMS
 CREATE TABLE order_items (
     order_item_id INT PRIMARY KEY AUTO_INCREMENT,
     order_id INT NOT NULL,
     product_id INT NOT NULL,
     quantity INT NOT NULL,
-
-    -- Store the price at time of purchase, as product.price can change
     price_at_purchase DECIMAL(10, 2) NOT NULL,
-
     FOREIGN KEY (order_id) REFERENCES orders(order_id),
     FOREIGN KEY (product_id) REFERENCES products(product_id)
 );
 
--- ===================================================================
--- 8. WISHLISTS TABLE (NEW)
--- ===================================================================
+-- 8. WISHLISTS
 CREATE TABLE wishlists (
     wishlist_id INT PRIMARY KEY AUTO_INCREMENT,
     user_id INT NOT NULL,
     product_id INT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
     FOREIGN KEY (user_id) REFERENCES users(user_id),
     FOREIGN KEY (product_id) REFERENCES products(product_id),
-
-    -- Prevent duplicate entries: A user can only wishlist a product once
     CONSTRAINT uq_user_product_wishlist UNIQUE(user_id, product_id)
 );
 
-
--- ===================================================================
--- 9. PRODUCT IMAGES TABLE
--- ===================================================================
+-- 9. PRODUCT IMAGES
 CREATE TABLE product_images (
     image_id INT PRIMARY KEY AUTO_INCREMENT,
     product_id INT NOT NULL,
@@ -174,14 +124,10 @@ CREATE TABLE product_images (
     alt_text VARCHAR(255),
     is_primary BOOLEAN DEFAULT false,
     display_order INT DEFAULT 0,
-
     FOREIGN KEY (product_id) REFERENCES products(product_id)
 );
 
--- ==================================================================
--- 10. NOTIFICATIONS TABLE
--- ==================================================================
-
+-- 10. NOTIFICATIONS
 CREATE TABLE notifications (
     notification_id INT PRIMARY KEY AUTO_INCREMENT,
     user_id INT NOT NULL,
@@ -193,347 +139,281 @@ CREATE TABLE notifications (
     FOREIGN KEY (product_id) REFERENCES products(product_id)
 );
 
-
-
+-- 11. REFUNDS
 CREATE TABLE refunds (
   refund_id INT AUTO_INCREMENT PRIMARY KEY,
-
-  -- What is being refunded
   order_item_id INT NOT NULL,
   order_id INT NOT NULL,
   user_id INT NOT NULL,
-
-  -- Refund details
   quantity INT NOT NULL,
   refund_amount DECIMAL(10,2) NOT NULL,
-  -- refund_amount MUST be calculated as:
-  -- order_items.price_at_purchase * quantity
-
-  -- Refund workflow
-  status ENUM('requested','approved','rejected')
-    NOT NULL DEFAULT 'requested',
-
-  -- Customer-provided reason
+  status ENUM('requested','approved','rejected') NOT NULL DEFAULT 'requested',
   reason VARCHAR(255),
-
-  -- Timestamps
   requested_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   decided_at DATETIME NULL,
-
-  -- Sales manager who approved/rejected
   decided_by INT NULL,
-
-  -- Constraints
   UNIQUE KEY uniq_refund_item (order_item_id),
-
-  -- Indexes
   INDEX idx_refunds_status (status),
   INDEX idx_refunds_user (user_id),
-
-  -- Foreign keys
   FOREIGN KEY (order_item_id) REFERENCES order_items(order_item_id),
   FOREIGN KEY (order_id) REFERENCES orders(order_id),
   FOREIGN KEY (user_id) REFERENCES users(user_id),
   FOREIGN KEY (decided_by) REFERENCES users(user_id)
 );
 
-
--- ===================================================================
--- 11. USER ADDRESSES TABLE (NEW)
--- ===================================================================
+-- 12. USER ADDRESSES
 CREATE TABLE user_addresses (
     address_id INT PRIMARY KEY AUTO_INCREMENT,
     user_id INT NOT NULL,
-    
-    address_title VARCHAR(50) NOT NULL, -- e.g., "Home", "Office"
+    address_title VARCHAR(50) NOT NULL,
     country VARCHAR(100) NOT NULL,
     city VARCHAR(100) NOT NULL,
     postal_code INT NOT NULL,
-    
-    -- We only encrypt the specific street address for privacy, 
-    -- keeping City/Country visible for shipping/analytics.
     address_line_encrypted BLOB, 
-    
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
--- ===================================================================
--- DATA INSERTION
--- ===================================================================
--- (Note: Data is inserted in order of dependency)
+-- 13. VERIFICATION CODES
+CREATE TABLE IF NOT EXISTS verification_codes (
+    code_id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT NOT NULL,
+    code VARCHAR(6) NOT NULL,
+    purpose ENUM('profile_update', 'account_deletion') NOT NULL,
+    pending_data TEXT,
+    expires_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    is_used BOOLEAN DEFAULT FALSE,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    INDEX idx_user_purpose (user_id, purpose),
+    INDEX idx_expires (expires_at)
+);
 
--- 1. Insert categories
-INSERT INTO categories (name, description)
-VALUES
-    ('Smartphones', 'Mobile phones with advanced computing capabilities.'),
-    ('Laptops', 'Portable personal computers.'),
-    ('Audio', 'Headphones, speakers, and audio equipment.'),
-    ('Accessories', 'Chargers, cases, and other peripherals.');
+-- 14. SUPPORT CHATS
+CREATE TABLE support_chats (
+    chat_id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT NULL,
+    guest_identifier VARCHAR(255) NULL,
+    agent_user_id INT NULL,
+    status ENUM('waiting', 'active', 'resolved', 'closed') NOT NULL DEFAULT 'waiting',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    claimed_at TIMESTAMP NULL,
+    closed_at TIMESTAMP NULL,
+    FOREIGN KEY (user_id) REFERENCES users (user_id) ON DELETE SET NULL,
+    FOREIGN KEY (agent_user_id) REFERENCES users (user_id) ON DELETE SET NULL,
+    INDEX idx_status (status),
+    INDEX idx_agent (agent_user_id),
+    INDEX idx_user (user_id),
+    INDEX idx_guest (guest_identifier)
+);
 
--- 2. Insert products
-INSERT INTO products (product_id, category_id, name, model, serial_number, description, quantity_in_stock, price, list_price, warranty_status, distributor_info)
-VALUES
--- 1. iPhone 17 Pro Max
+-- 15. SUPPORT MESSAGES
+CREATE TABLE support_messages (
+    message_id INT PRIMARY KEY AUTO_INCREMENT,
+    chat_id INT NOT NULL,
+    sender_type ENUM('customer', 'agent') NOT NULL,
+    sender_user_id INT NULL,
+    message_text TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    is_read BOOLEAN DEFAULT FALSE,
+    FOREIGN KEY (chat_id) REFERENCES support_chats (chat_id) ON DELETE CASCADE,
+    FOREIGN KEY (sender_user_id) REFERENCES users (user_id) ON DELETE SET NULL,
+    INDEX idx_chat (chat_id),
+    INDEX idx_created (created_at)
+);
+
+-- 16. SUPPORT ATTACHMENTS
+CREATE TABLE support_attachments (
+    attachment_id INT PRIMARY KEY AUTO_INCREMENT,
+    message_id INT NOT NULL,
+    file_name VARCHAR(255) NOT NULL,
+    file_path VARCHAR(512) NOT NULL,
+    file_type VARCHAR(100) NOT NULL,
+    file_size INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (message_id) REFERENCES support_messages (message_id) ON DELETE CASCADE,
+    INDEX idx_message (message_id)
+);
+
+
+-- =========================
+-- DATA INSERTIONS
+-- =========================
+
+-- 02_data.sql
+-- Seed data
+
+-- 1. Categories
+INSERT INTO categories (name, description) VALUES
+('Smartphones', 'Mobile phones with advanced computing capabilities.'),
+('Laptops', 'Portable personal computers.'),
+('Audio', 'Headphones, speakers, and audio equipment.'),
+('Accessories', 'Chargers, cases, and other peripherals.');
+
+-- 2. Products (Original Batch 1-10)
+INSERT INTO products (product_id, category_id, name, model, serial_number, description, quantity_in_stock, price, list_price, warranty_status, distributor_info) VALUES
 (1, 1, 'iPhone 17 Pro Max', 'FUT-IP17-PM', 'SN-IP17-PM-BL', 'Future generation design, A19 Pro chip, 10x Telephoto camera.', 50, 89999.00, 89999.00, '2 Years Apple Turkey', 'Apple Inc.'),
-
--- 2. Samsung Galaxy S25 Ultra
 (2, 1, 'Samsung Galaxy S25 Ultra', 'SM-S938B', 'SN-S25U-AI-512', 'Snapdragon 8 Gen 4, 200MP AI Camera, Titanium Frame.', 40, 69999.00, 74999.00, '2 Years Samsung Turkey', 'Samsung Electronics'),
-
--- 3. Xiaomi 15T Pro
 (3, 1, 'Xiaomi 15T Pro', '2507FPN8EG', 'SN-MI15T-256', 'Leica Summilux lens, 144Hz CrystalRes AMOLED, MediaTek Dimensity 9400, 120W HyperCharge.', 60, 39999.00, 44999.00, '2 Years Xiaomi Turkey', 'Xiaomi Turkey'),
-
--- 4. Lenovo Yoga Slim 7 Core Ultra 5
 (4, 2, 'Lenovo Yoga Slim 7 Core Ultra 5', '83CV0019TR', 'SN-YOGA7-CU5', 'Intel Core Ultra 5 125H, 14-inch WUXGA OLED, 16GB RAM, AI Engine, Ultra-thin chassis.', 25, 42999.00, 46999.00, '2 Years Lenovo Turkey', 'Lenovo Turkey'),
-
--- 5. MSI Katana 17
 (5, 2, 'MSI Katana 17', 'B13VFK-1036XTR', 'SN-MSI-KAT17', 'Intel Core i7-13620H, RTX 4060 8GB, 17.3-inch FHD 144Hz, Gaming Performance.', 30, 54999.00, 59999.00, '2 Years MSI Turkey', 'MSI Turkey'),
-
--- 6. JBL Tune 570BT
 (6, 3, 'JBL Tune 570BT', 'JBLT570BTBLK', 'SN-JBL-570-BL', 'Wireless On-Ear Headphones, Pure Bass Sound, 40H Battery Life, Multi-point Connection.', 80, 1799.00, 1999.00, '2 Years JBL Turkey', 'JBL Turkey'),
-
--- 7. Apple AirPods Max
 (7, 3, 'Apple AirPods Max', 'MGYH3AM/A', 'SN-APM-MAX-001', 'High-fidelity audio, Active Noise Cancellation with Transparency mode, Spatial Audio, Space Grey.', 15, 22999.00, 24999.00, '2 Years Apple Turkey', 'Apple Inc.'),
-
--- 8. JBL Go 4 Bluetooth Speaker
 (8, 3, 'JBL Go 4 Bluetooth Speaker', 'JBLGO4BLK', 'SN-JBL-GO4-BL', 'Ultra-portable, waterproof and dustproof (IP67), 7 hours of playtime, JBL Pro Sound.', 100, 1499.00, 1699.00, '2 Years JBL Turkey', 'JBL Turkey'),
-
--- 9. BASEUS 5000mAh 20W PicoGo
 (9, 4, 'BASEUS 5000mAh 20W PicoGo', 'PICO-GO-5K', 'SN-BAS-PICO-5K', 'Qi2 Magnetic Wireless Charging, 20W Fast Charging, Compact Design, Strong Magnets.', 150, 1299.00, 1499.00, '2 Years Baseus Turkey', 'Baseus Turkey'),
-
--- 10. Apple 20W USB-C Fast Charger (NEW - Category 4: Accessories)
 (10, 4, 'Apple 20W USB-C Fast Charger', 'MHJE3TU/A', 'SN-APP-20W-CHG', 'Apple 20W USB-C Power Adapter offers fast, efficient charging at home, in the office, or on the go.', 200, 729.00, 799.00, '2 Years Apple Turkey', 'Apple Inc.');
 
+-- 3. Products (New Batch 11-15)
+INSERT INTO products (product_id, category_id, name, model, serial_number, description, quantity_in_stock, price, list_price, warranty_status, distributor_info, currency) VALUES 
+(11, 4, 'Apple iPhone 17 Pro Max Clear Case with MagSafe', 'MGFW4ZM/A', 'SN-IP17PM-MAG-001', 'Thin, light, and easy to grip — this Apple-designed case shows off the brilliant colored finish of iPhone 17 Pro Max while providing extra protection. Crafted with a blend of optically clear polycarbonate and flexible materials.', 1, 2499.00, 2750.00, '2 Years Apple Türkiye Warranty', 'Apple Türkiye', 'TL'),
+(12, 2, 'Logitech G G213 Prodigy RGB Gaming Keyboard', '920-008094', 'SN-G213-KB-TR-001', 'Gaming-grade performance with Mech-Dome keys that deliver a superior tactile response. Features 5 individual RGB lighting zones with 16.8 million colors (LIGHTSYNC), a spill-resistant durable design, and dedicated media controls.', 0, 2199.00, 2600.00, '2 Years Logitech Türkiye Warranty', 'Logitech Türkiye', 'TL'),
+(13, 2, 'Razer Basilisk V3 Pro 30000 DPI Wireless Gaming Mouse', 'RZ01-04620100-R3G1', 'SN-RAZER-BAS-V3-001', 'The king of gaming mice returns to raise the game. Armed with the Razer Focus Pro 30K Optical Sensor, 13-zone Chroma lighting with full underglow, and the Razer HyperScroll Tilt Wheel. Features iconic ergonomic form with 10+1 programmable buttons.', 10, 5499.00, 6250.00, '2 Years Bilkom Warranty', 'Bilkom', 'TL'),
+(14, 3, 'Apple AirPods Pro 2', 'MTJV3TU/A', 'SN-AIRPODS-PRO2-001', 'Rebuilt from the sound up. AirPods Pro 2 feature up to 2x more Active Noise Cancellation, plus Adaptive Transparency, and Personalized Spatial Audio with dynamic head tracking for immersive sound. Now with multiple ear tips (XS, S, M, L) and up to 6 hours of listening time.', 100, 8999.00, 9999.00, '2 Years Apple Türkiye Warranty', 'Apple Türkiye', 'TL'),
+(15, 1, 'Xiaomi Redmi Note 14 8GB 256GB Black', '24117RN76G', 'SN-REDMI-N14-001', 'Features a 6.67-inch AMOLED display with 120Hz refresh rate, 5500mAh battery with 33W fast charging, and a 108MP triple camera system. Powered by MediaTek Helio G99 Ultra with IP54 dust and splash resistance.', 11, 12999.00, 13999.00, '2 Years Xiaomi Türkiye Warranty', 'Xiaomi Türkiye', 'TL');
 
--- (Note: '..._encrypted' fields are placeholders for your app's encrypted binary data)
--- (Note: 'password_hash' fields are placeholders for a real bcrypt hash)
--- 3. Users (Removed address_encrypted from insert)
+-- 4. Users (Standard)
 INSERT INTO users (email, password_hash, role, first_name_encrypted, last_name_encrypted, tax_id_encrypted) VALUES
 ('john.doe@example.com', '$2b$10$hash1', 'customer', 'ENC_JOHN', 'ENC_DOE', 'ENC_TAX_1'),
 ('jane.smith@example.com', '$2b$10$hash2', 'customer', 'ENC_JANE', 'ENC_SMITH', 'ENC_TAX_2'),
 ('sales@shop.com', '$2b$10$hash3', 'sales manager', 'ENC_SALES', 'ENC_MAN', 'ENC_TAX_3');
 
--- 3.5. User Addresses (NEW DATA)
+-- 5. User Addresses
 INSERT INTO user_addresses (user_id, address_title, country, city, postal_code, address_line_encrypted) VALUES
 (1, 'Home', 'Turkey', 'Istanbul', '34000', 'ENC_HOME_ADDR_JOHN'),
 (1, 'Work', 'Turkey', 'Ankara', '06000', 'ENC_WORK_ADDR_JOHN'),
 (2, 'Home', 'Turkey', 'Izmir', '35000', 'ENC_HOME_ADDR_JANE');
 
--- 4. Insert reviews
--- (Depends on users and products)
-INSERT INTO reviews (product_id, user_id, rating, comment_text)
-VALUES
-    (4, 2, 5, 'Absolutely love this laptop! Blazing fast and the screen is gorgeous.'),
-    (6, 1, 4, 'Great sound, but the battery life could be a little better.'),
-    (4, 1, 4, 'Solid machine for work. A bit pricy but worth it.');
+-- 6. Reviews
+INSERT INTO reviews (product_id, user_id, rating, comment_text) VALUES
+(4, 2, 5, 'Absolutely love this laptop! Blazing fast and the screen is gorgeous.'),
+(6, 1, 4, 'Great sound, but the battery life could be a little better.'),
+(4, 1, 4, 'Solid machine for work. A bit pricy but worth it.');
 
--- 5. Insert payment methods
--- (Depends on users)
-INSERT INTO payment_methods (user_id, gateway_customer_id, card_brand, last_four_digits, is_default)
-VALUES
-    (1, 'cus_tok_john123', 'Visa', '4242', true),
-    (1, 'cus_tok_john456', 'Mastercard', '1234', false),
-    (2, 'cus_tok_jane789', 'Visa', '8888', true);
+-- 7. Payment Methods
+INSERT INTO payment_methods (user_id, gateway_customer_id, card_brand, last_four_digits, is_default) VALUES
+(1, 'cus_tok_john123', 'Visa', '4242', true),
+(1, 'cus_tok_john456', 'Mastercard', '1234', false),
+(2, 'cus_tok_jane789', 'Visa', '8888', true);
 
--- 6. Orders (Updated to include City/Country snapshot)
+-- 8. Orders
 INSERT INTO orders (user_id, status, total_price, shipping_country, shipping_city, shipping_address_encrypted, order_date) VALUES
 (1, 'delivered', 89999.00, 'Turkey', 'Istanbul', 'ENC_HOME_ADDR_JOHN', NOW() - INTERVAL 7 DAY),
-(1, 'cart', NULL, NULL, NULL, NULL, NULL), -- Cart has no address yet
+(1, 'cart', NULL, NULL, NULL, NULL, NULL),
 (2, 'processing', 111579.00, 'Turkey', 'Izmir', 'ENC_HOME_ADDR_JANE', NOW() - INTERVAL 1 DAY);
 
--- 7. Insert order items
--- (Depends on orders and products)
-INSERT INTO order_items (order_id, product_id, quantity, price_at_purchase)
-VALUES
-    -- Items for order 1 (delivered)
-    (1, 2, 1, 1199.99),
-    -- Items for order 2 (active cart)
-    (2, 9, 2, 49.99),
-    -- Items for order 3 (processing)
-    (3, 5, 1, 899.50);
+-- 9. Order Items
+INSERT INTO order_items (order_id, product_id, quantity, price_at_purchase) VALUES
+(1, 2, 1, 1199.99),
+(2, 9, 2, 49.99),
+(3, 5, 1, 899.50);
 
--- 8. Insert Wishlist items
--- (Depends on users and products)
-INSERT INTO wishlists (user_id, product_id)
-VALUES
-(1, 4), -- John wants the AeroBook Pro
-(1, 7), -- John also wants the Speaker
-(2, 6); -- Jane wants the Earbuds
+-- 10. Wishlists
+INSERT INTO wishlists (user_id, product_id) VALUES
+(1, 4),
+(1, 7),
+(2, 6);
 
-
--- 9. Insert Product Images (Resetting data for Items 1-10)
---
-
-INSERT INTO product_images (product_id, image_url, alt_text, is_primary, display_order)
-VALUES
-    -- 1. iPhone 17 Pro Max
-    (1, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/apple/thumb/153503-1_large.jpg', 'iPhone 17 Pro Max Front', true, 1),
-    (1, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/apple/thumb/153503-2_large.jpg', 'iPhone 17 Pro Max Back', false, 2),
-    (1, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/apple/thumb/153503-3_large.jpg', 'iPhone 17 Pro Max Side', false, 3),
-    (1, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/apple/thumb/153503-4_large.jpg', 'iPhone 17 Pro Max Detail', false, 4),
-
-    -- 2. Samsung Galaxy S25 Ultra
-    (2, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/samsung/thumb/1-193_large.jpg', 'Samsung Galaxy S25 Ultra Front', true, 1),
-    (2, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/samsung/thumb/2-187_large.jpg', 'Samsung Galaxy S25 Ultra Back', false, 2),
-    (2, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/samsung/thumb/3-187_large.jpg', 'Samsung Galaxy S25 Ultra Stylus', false, 3),
-    (2, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/samsung/thumb/4-151_large.jpg', 'Samsung Galaxy S25 Ultra Side', false, 4),
-
-    -- 3. Xiaomi 15T Pro
-    (3, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/xiaomi/thumb/153457-1_large.jpg', 'Xiaomi 15T Pro Front', true, 1),
-    (3, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/xiaomi/thumb/153457-2_large.jpg', 'Xiaomi 15T Pro Back', false, 2),
-    (3, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/xiaomi/thumb/153457-3_large.jpg', 'Xiaomi 15T Pro Camera', false, 3),
-    (3, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/xiaomi/thumb/153457-4_large.jpg', 'Xiaomi 15T Pro Side', false, 4),
-
-    -- 4. Lenovo Yoga Slim 7 Core Ultra 5
-    (4, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/lenovo/thumb/152336-1_large.jpg', 'Lenovo Yoga Slim 7 Front', true, 1),
-    (4, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/lenovo/thumb/152336-2_large.jpg', 'Lenovo Yoga Slim 7 Keyboard', false, 2),
-    (4, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/lenovo/thumb/152336-3_large.jpg', 'Lenovo Yoga Slim 7 Side', false, 3),
-    (4, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/lenovo/thumb/152336-4_large.jpg', 'Lenovo Yoga Slim 7 Closed', false, 4),
-
-    -- 5. MSI Katana 17
-    (5, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/msi/thumb/152400-1-1_large.jpg', 'MSI Katana 17 Front', true, 1),
-    (5, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/msi/thumb/152400-2-1_large.jpg', 'MSI Katana 17 Open', false, 2),
-    (5, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/msi/thumb/152400-3-1_large.jpg', 'MSI Katana 17 Side', false, 3),
-    (5, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/msi/thumb/152400-5-1_large.jpg', 'MSI Katana 17 Back', false, 4),
-
-    -- 6. JBL Tune 570BT
-    (6, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/jbl/thumb/142350-1_large.jpg', 'JBL Tune 570BT Folded', true, 1),
-    (6, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/jbl/thumb/142350-2_large.jpg', 'JBL Tune 570BT Side', false, 2),
-    (6, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/jbl/thumb/142350-3_large.jpg', 'JBL Tune 570BT Angled', false, 3),
-    (6, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/jbl/thumb/142350-4_large.jpg', 'JBL Tune 570BT Front', false, 4),
-
-    -- 7. Apple AirPods Max
-    (7, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/apple/thumb/1-351_large.jpg', 'Apple AirPods Max Front', true, 1),
-    (7, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/apple/thumb/2-350_large.jpg', 'Apple AirPods Max Side', false, 2),
-    (7, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/apple/thumb/3-350_large.jpg', 'Apple AirPods Max Case', false, 3),
-
-    -- 8. JBL Go 4
-    (8, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/jbl/thumb/145617-1_large.jpg', 'JBL Go 4 Front', true, 1),
-    (8, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/jbl/thumb/145617-2_large.jpg', 'JBL Go 4 Side', false, 2),
-    (8, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/jbl/thumb/145617-3_large.jpg', 'JBL Go 4 Angled', false, 3),
-    (8, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/jbl/thumb/145617-4_large.jpg', 'JBL Go 4 Back', false, 4),
-
-    -- 9. BASEUS PicoGo Powerbank
-    (9, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/baseus/thumb/151371-1_large.jpg', 'Baseus PicoGo Front', true, 1),
-    (9, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/baseus/thumb/151371-2_large.jpg', 'Baseus PicoGo Side', false, 2),
-    (9, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/baseus/thumb/151371-3_large.jpg', 'Baseus PicoGo Magnetic', false, 3),
-    (9, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/baseus/thumb/151371-4_large.jpg', 'Baseus PicoGo Angled', false, 4),
-
-    -- 10. Apple 20W USB-C Fast Charger (NEW)
-    (10, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/apple/thumb/150372-1_large.jpg', 'Apple 20W Charger Front', true, 1),
-    (10, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/apple/thumb/150372-2_large.jpg', 'Apple 20W Charger Prongs', false, 2),
-    (10, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/apple/thumb/150372-3_large.jpg', 'Apple 20W Charger Box', false, 3);
-
--- ===================================================================
--- NEW PRODUCTS INSERT SCRIPT
--- Contains Product IDs: 11, 12, 13, 14, 15
--- ===================================================================
-
-INSERT INTO products (
-    product_id, category_id, name, model, serial_number, description, 
-    quantity_in_stock, price, list_price, warranty_status, distributor_info, currency
-) VALUES 
--- 11. MagSafe Case for iPhone 17 Pro Max
-(
-    11, 4, 'Apple iPhone 17 Pro Max Clear Case with MagSafe', 'MGFW4ZM/A', 'SN-IP17PM-MAG-001', 
-    'Thin, light, and easy to grip — this Apple-designed case shows off the brilliant colored finish of iPhone 17 Pro Max while providing extra protection. Crafted with a blend of optically clear polycarbonate and flexible materials.', 
-    1, 2499.00, 2750.00, '2 Years Apple Türkiye Warranty', 'Apple Türkiye', 'TL'
-),
--- 12. Logitech G213 Keyboard
-(
-    12, 2, 'Logitech G G213 Prodigy RGB Gaming Keyboard', '920-008094', 'SN-G213-KB-TR-001', 
-    'Gaming-grade performance with Mech-Dome keys that deliver a superior tactile response. Features 5 individual RGB lighting zones with 16.8 million colors (LIGHTSYNC), a spill-resistant durable design, and dedicated media controls.', 
-    0, 2199.00, 2600.00, '2 Years Logitech Türkiye Warranty', 'Logitech Türkiye', 'TL'
-),
--- 13. Razer Basilisk V3 Pro Mouse
-(
-    13, 2, 'Razer Basilisk V3 Pro 30000 DPI Wireless Gaming Mouse', 'RZ01-04620100-R3G1', 'SN-RAZER-BAS-V3-001', 
-    'The king of gaming mice returns to raise the game. Armed with the Razer Focus Pro 30K Optical Sensor, 13-zone Chroma lighting with full underglow, and the Razer HyperScroll Tilt Wheel. Features iconic ergonomic form with 10+1 programmable buttons.', 
-    10, 5499.00, 6250.00, '2 Years Bilkom Warranty', 'Bilkom', 'TL'
-),
--- 14. Apple AirPods Pro 2
-(
-    14, 3, 'Apple AirPods Pro (2nd Generation) with MagSafe Charging Case (USB-C)', 'MTJV3TU/A', 'SN-AIRPODS-PRO2-001', 
-    'Rebuilt from the sound up. AirPods Pro 2 feature up to 2x more Active Noise Cancellation, plus Adaptive Transparency, and Personalized Spatial Audio with dynamic head tracking for immersive sound. Now with multiple ear tips (XS, S, M, L) and up to 6 hours of listening time.', 
-    100, 8999.00, 9999.00, '2 Years Apple Türkiye Warranty', 'Apple Türkiye', 'TL'
-),
--- 15. Xiaomi Redmi Note 14
-(
-    15, 1, 'Xiaomi Redmi Note 14 8GB 256GB Black', '24117RN76G', 'SN-REDMI-N14-001', 
-    'Features a 6.67-inch AMOLED display with 120Hz refresh rate, 5500mAh battery with 33W fast charging, and a 108MP triple camera system. Powered by MediaTek Helio G99 Ultra with IP54 dust and splash resistance.', 
-    11, 12999.00, 13999.00, '2 Years Xiaomi Türkiye Warranty', 'Xiaomi Türkiye', 'TL'
-);
-
--- ===================================================================
--- INSERT PRODUCT IMAGES (IDs 11, 12, 13, 14, 15)
--- ===================================================================
-
-INSERT INTO product_images (product_id, image_url, is_primary) VALUES 
+-- 11. Product Images (ALL images merged)
+INSERT INTO product_images (product_id, image_url, alt_text, is_primary, display_order) VALUES
+-- Product 1
+(1, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/apple/thumb/153503-1_large.jpg', 'iPhone 17 Pro Max Front', true, 1),
+(1, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/apple/thumb/153503-2_large.jpg', 'iPhone 17 Pro Max Back', false, 2),
+(1, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/apple/thumb/153503-3_large.jpg', 'iPhone 17 Pro Max Side', false, 3),
+(1, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/apple/thumb/153503-4_large.jpg', 'iPhone 17 Pro Max Detail', false, 4),
+-- Product 2
+(2, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/samsung/thumb/1-193_large.jpg', 'Samsung Galaxy S25 Ultra Front', true, 1),
+(2, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/samsung/thumb/2-187_large.jpg', 'Samsung Galaxy S25 Ultra Back', false, 2),
+(2, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/samsung/thumb/3-187_large.jpg', 'Samsung Galaxy S25 Ultra Stylus', false, 3),
+(2, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/samsung/thumb/4-151_large.jpg', 'Samsung Galaxy S25 Ultra Side', false, 4),
+-- Product 3
+(3, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/xiaomi/thumb/153457-1_large.jpg', 'Xiaomi 15T Pro Front', true, 1),
+(3, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/xiaomi/thumb/153457-2_large.jpg', 'Xiaomi 15T Pro Back', false, 2),
+(3, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/xiaomi/thumb/153457-3_large.jpg', 'Xiaomi 15T Pro Camera', false, 3),
+(3, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/xiaomi/thumb/153457-4_large.jpg', 'Xiaomi 15T Pro Side', false, 4),
+-- Product 4
+(4, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/lenovo/thumb/152336-1_large.jpg', 'Lenovo Yoga Slim 7 Front', true, 1),
+(4, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/lenovo/thumb/152336-2_large.jpg', 'Lenovo Yoga Slim 7 Keyboard', false, 2),
+(4, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/lenovo/thumb/152336-3_large.jpg', 'Lenovo Yoga Slim 7 Side', false, 3),
+(4, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/lenovo/thumb/152336-4_large.jpg', 'Lenovo Yoga Slim 7 Closed', false, 4),
+-- Product 5
+(5, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/msi/thumb/152400-1-1_large.jpg', 'MSI Katana 17 Front', true, 1),
+(5, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/msi/thumb/152400-2-1_large.jpg', 'MSI Katana 17 Open', false, 2),
+(5, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/msi/thumb/152400-3-1_large.jpg', 'MSI Katana 17 Side', false, 3),
+(5, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/msi/thumb/152400-5-1_large.jpg', 'MSI Katana 17 Back', false, 4),
+-- Product 6
+(6, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/jbl/thumb/142350-1_large.jpg', 'JBL Tune 570BT Folded', true, 1),
+(6, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/jbl/thumb/142350-2_large.jpg', 'JBL Tune 570BT Side', false, 2),
+(6, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/jbl/thumb/142350-3_large.jpg', 'JBL Tune 570BT Angled', false, 3),
+(6, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/jbl/thumb/142350-4_large.jpg', 'JBL Tune 570BT Front', false, 4),
+-- Product 7
+(7, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/apple/thumb/1-351_large.jpg', 'Apple AirPods Max Front', true, 1),
+(7, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/apple/thumb/2-350_large.jpg', 'Apple AirPods Max Side', false, 2),
+(7, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/apple/thumb/3-350_large.jpg', 'Apple AirPods Max Case', false, 3),
+-- Product 8
+(8, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/jbl/thumb/145617-1_large.jpg', 'JBL Go 4 Front', true, 1),
+(8, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/jbl/thumb/145617-2_large.jpg', 'JBL Go 4 Side', false, 2),
+(8, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/jbl/thumb/145617-3_large.jpg', 'JBL Go 4 Angled', false, 3),
+(8, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/jbl/thumb/145617-4_large.jpg', 'JBL Go 4 Back', false, 4),
+-- Product 9
+(9, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/baseus/thumb/151371-1_large.jpg', 'Baseus PicoGo Front', true, 1),
+(9, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/baseus/thumb/151371-2_large.jpg', 'Baseus PicoGo Side', false, 2),
+(9, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/baseus/thumb/151371-3_large.jpg', 'Baseus PicoGo Magnetic', false, 3),
+(9, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/baseus/thumb/151371-4_large.jpg', 'Baseus PicoGo Angled', false, 4),
+-- Product 10
+(10, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/apple/thumb/150372-1_large.jpg', 'Apple 20W Charger Front', true, 1),
+(10, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/apple/thumb/150372-2_large.jpg', 'Apple 20W Charger Prongs', false, 2),
+(10, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/apple/thumb/150372-3_large.jpg', 'Apple 20W Charger Box', false, 3),
 -- Product 11 (iPhone Case)
-(11, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/apple/thumb/153653-1_large.jpg', 1),
-(11, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/apple/thumb/153653-2_large.jpg', 0),
-(11, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/apple/thumb/153653-3_large.jpg', 0),
-
+(11, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/apple/thumb/153653-1_large.jpg', NULL, 1, 0),
+(11, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/apple/thumb/153653-2_large.jpg', NULL, 0, 0),
+(11, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/apple/thumb/153653-3_large.jpg', NULL, 0, 0),
 -- Product 12 (Logitech Keyboard)
-(12, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/logitech/thumb/v2-84663_large.jpg', 1),
-(12, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/logitech/thumb/v2-84663-1_large.jpg', 0),
-(12, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/logitech/thumb/v2-84663-2_large.jpg', 0),
-
+(12, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/logitech/thumb/v2-84663_large.jpg', NULL, 1, 0),
+(12, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/logitech/thumb/v2-84663-1_large.jpg', NULL, 0, 0),
+(12, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/logitech/thumb/v2-84663-2_large.jpg', NULL, 0, 0),
 -- Product 13 (Razer Mouse)
-(13, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/razer/thumb/142187-1_large.jpg', 1),
-(13, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/razer/thumb/142187-2_large.jpg', 0),
-(13, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/razer/thumb/142187-3_large.jpg', 0),
-
+(13, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/razer/thumb/142187-1_large.jpg', NULL, 1, 0),
+(13, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/razer/thumb/142187-2_large.jpg', NULL, 0, 0),
+(13, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/razer/thumb/142187-3_large.jpg', NULL, 0, 0),
 -- Product 14 (AirPods Pro 2)
-(14, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/apple/thumb/141492-1_large.jpg', 1),
-(14, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/apple/thumb/141492-2_large.jpg', 0),
-(14, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/apple/thumb/141492-3_large.jpg', 0),
-(14, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/apple/thumb/141492-5_large.jpg', 0),
-
+(14, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/apple/thumb/141492-1_large.jpg', NULL, 1, 0),
+(14, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/apple/thumb/141492-2_large.jpg', NULL, 0, 0),
+(14, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/apple/thumb/141492-3_large.jpg', NULL, 0, 0),
+(14, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/apple/thumb/141492-5_large.jpg', NULL, 0, 0),
 -- Product 15 (Xiaomi Redmi Note 14)
-(15, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/xiaomi/thumb/149055-1_large.jpg', 1),
-(15, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/xiaomi/thumb/149055-4_large.jpg', 0);
+(15, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/xiaomi/thumb/149055-1_large.jpg', NULL, 1, 0),
+(15, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/xiaomi/thumb/149055-4_large.jpg', NULL, 0, 0);
 
-
---  Dev data insertion into users table for dev test
+-- 12. Dev User (Inserted with specific ID 0)
 SET SESSION sql_mode = 'NO_AUTO_VALUE_ON_ZERO';
-
 INSERT INTO users (user_id, email, password_hash, role)
-VALUES
-	(0,'dev@test.local', '$2b$10$fakehash.for.dev.dev', 'dev');
-
+VALUES (0,'dev@test.local', '$2b$10$fakehash.for.dev.dev', 'dev');
 SET SESSION sql_mode = '';
--- dev insertion ends
 
 
+-- =========================
+-- PROCEUDRES AND TRIGGERS
+-- =========================
+
+-- 03_procedures.sql
+-- Triggers and Stored Procedures
+
+-- 1. Trigger: Update Popularity
 DELIMITER $$
-
 CREATE TRIGGER trg_UpdatePopularityOnPurchase
 AFTER UPDATE ON orders
 FOR EACH ROW
 BEGIN
-    -- Check if the order status just changed from 'cart' to a confirmed state (like 'processing')
     IF OLD.status IN ('processing', 'in-transit') AND NEW.status = 'delivered' THEN
-        
-        -- Update the order_count for ALL products in this specific order
         UPDATE products p
         INNER JOIN order_items oi ON p.product_id = oi.product_id
         SET p.order_count = p.order_count + oi.quantity
         WHERE oi.order_id = NEW.order_id;
-        
     END IF;
 END$$
-
 DELIMITER ;
 
-
--- ===================================================================
--- STORED PROCEDURES (Existing)
--- ===================================================================
-
--- Set delimiter for procedure creation
+-- 2. Procedure: Get Product Reviews
 DELIMITER $$
-
--- 1. Get All Reviews for a Product
 CREATE PROCEDURE sp_GetProductReviews(IN p_product_id INT)
 BEGIN
     SELECT
@@ -553,9 +433,10 @@ BEGIN
     ORDER BY
         r.created_at DESC;
 END$$
+DELIMITER ;
 
-
--- 2. Get Average Rating for a Product
+-- 3. Procedure: Get Average Rating
+DELIMITER $$
 CREATE PROCEDURE sp_GetProductAverageRating(IN p_product_id INT)
 BEGIN
     SELECT
@@ -566,8 +447,10 @@ BEGIN
     WHERE
         r.product_id = p_product_id;
 END$$
+DELIMITER ;
 
--- 3. Get All Reviews by a User
+-- 4. Procedure: Get User Reviews
+DELIMITER $$
 CREATE PROCEDURE sp_GetUserReviews(IN p_user_id INT)
 BEGIN
     SELECT
@@ -586,98 +469,4 @@ BEGIN
     ORDER BY
         r.created_at DESC;
 END$$
-
-
--- Reset delimiter
 DELIMITER ;
-
--- ===================================================================
--- VERIFICATION SELECTS (Optional)
--- ===================================================================
-SELECT * FROM categories;
-SELECT * FROM products;
-SELECT * FROM users;
-SELECT * FROM reviews;
-SELECT * FROM payment_methods;
-SELECT * FROM orders;
-SELECT * FROM order_items;
-
--- ===================================================================
--- PROFILE UPDATE & ACCOUNT DELETION VERIFICATION SYSTEM
--- ===================================================================
-
--- Add phone_encrypted field to users table
-ALTER TABLE users 
-ADD COLUMN phone_encrypted BLOB AFTER address_encrypted;
-
--- Create verification_codes table for email verification
-CREATE TABLE IF NOT EXISTS verification_codes (
-    code_id INT PRIMARY KEY AUTO_INCREMENT,
-    user_id INT NOT NULL,
-    code VARCHAR(6) NOT NULL,
-    purpose ENUM('profile_update', 'account_deletion') NOT NULL,
-    -- Store pending update data as JSON
-    pending_data TEXT,
-    expires_at TIMESTAMP NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    is_used BOOLEAN DEFAULT FALSE,
-    
-    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
-    INDEX idx_user_purpose (user_id, purpose),
-    INDEX idx_expires (expires_at)
-);
-
--- ===================================================================
--- 11. SUPPORT CHAT SYSTEM TABLES
--- ===================================================================
-
--- Support chats table: tracks customer-agent conversations
-CREATE TABLE support_chats (
-    chat_id INT PRIMARY KEY AUTO_INCREMENT,
-    user_id INT NULL, -- NULL for guest users
-    guest_identifier VARCHAR(255) NULL, -- Cookie/session ID for guests
-    agent_user_id INT NULL, -- Agent who claimed the chat
-    status ENUM(
-        'waiting',
-        'active',
-        'resolved',
-        'closed'
-    ) NOT NULL DEFAULT 'waiting',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    claimed_at TIMESTAMP NULL, -- When agent claimed the chat
-    closed_at TIMESTAMP NULL,
-    FOREIGN KEY (user_id) REFERENCES users (user_id) ON DELETE SET NULL,
-    FOREIGN KEY (agent_user_id) REFERENCES users (user_id) ON DELETE SET NULL,
-    INDEX idx_status (status),
-    INDEX idx_agent (agent_user_id),
-    INDEX idx_user (user_id),
-    INDEX idx_guest (guest_identifier)
-);
-
--- Support messages table: individual messages within a chat
-CREATE TABLE support_messages (
-    message_id INT PRIMARY KEY AUTO_INCREMENT,
-    chat_id INT NOT NULL,
-    sender_type ENUM('customer', 'agent') NOT NULL,
-    sender_user_id INT NULL, -- User ID if authenticated
-    message_text TEXT, -- NULL if attachment-only
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    is_read BOOLEAN DEFAULT FALSE,
-    FOREIGN KEY (chat_id) REFERENCES support_chats (chat_id) ON DELETE CASCADE,
-    FOREIGN KEY (sender_user_id) REFERENCES users (user_id) ON DELETE SET NULL,
-    INDEX idx_chat (chat_id),
-    INDEX idx_created (created_at)
-);
-
--- Support attachments table: file attachments in messages
-CREATE TABLE support_attachments (
-    attachment_id INT PRIMARY KEY AUTO_INCREMENT,
-    message_id INT NOT NULL,
-    file_name VARCHAR(255) NOT NULL,
-    file_path VARCHAR(512) NOT NULL, -- Local path or URL
-    file_type VARCHAR(100) NOT NULL, -- MIME type  
-    file_size INT NOT NULL, -- Bytes
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (message_id) REFERENCES support_messages (message_id) ON DELETE CASCADE,
-    INDEX idx_message (message_id)
-);
