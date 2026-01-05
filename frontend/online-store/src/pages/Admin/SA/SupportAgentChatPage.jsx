@@ -7,7 +7,6 @@ import {
   getChatContext,
   uploadChatAttachment,
   getAttachmentDownloadUrl,
-  closeChat,
 } from '@/lib/supportChatApi';
 
 import { connectSupportSocket, authenticateSupportSocket } from '@/socket/supportSocket';
@@ -34,6 +33,7 @@ export default function SupportAgentChatPage() {
 
   const bottomRef = useRef(null);
   const socketRef = useRef(null);
+  const listenersAttachedRef = useRef(false); // ✅ ADD THIS
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -74,46 +74,59 @@ export default function SupportAgentChatPage() {
   // 2) Socket join for realtime
   useEffect(() => {
     if (!isSupportAgent) return;
-
-    const s = connectSupportSocket();
-    socketRef.current = s;
-
-    let cleanup = () => {};
-
+  
+    if (!socketRef.current) {
+      socketRef.current = connectSupportSocket();
+    }
+  
+    const s = socketRef.current;
+  
+    if (listenersAttachedRef.current) return; // 🚨 PREVENT DUPLICATES
+    listenersAttachedRef.current = true;
+  
     (async () => {
       try {
-        await authenticateSupportSocket({ token: token || null, guestId: null });
+        await authenticateSupportSocket();
         s.emit('agent:join-chat', { chatId });
-
-        const onJoined = payload => {
-          if (String(payload?.chatId) === String(chatId)) {
-            setMessages(payload.messages || []);
-          }
-        };
-
-        const onNewMessage = msg => {
-          if (String(msg?.chat_id) !== String(chatId)) return;
-          setMessages(prev => [...prev, msg]);
-        };
-
-        const onError = e => setError(e?.message || 'Socket error');
-
-        s.on('chat:joined', onJoined);
-        s.on('message:new', onNewMessage);
-        s.on('error', onError);
-
-        cleanup = () => {
-          s.off('chat:joined', onJoined);
-          s.off('message:new', onNewMessage);
-          s.off('error', onError);
-        };
       } catch (e) {
-        setError(e?.message || 'Socket authentication failed');
+        setError(e?.message || 'Socket auth failed');
       }
     })();
-
-    return () => cleanup();
-  }, [isSupportAgent, token, chatId]);
+  
+    const onJoined = payload => {
+      if (String(payload?.chatId) === String(chatId)) {
+        setMessages(payload.messages || []);
+      }
+    };
+  
+    const onNewMessage = msg => {
+      if (String(msg?.chat_id) !== String(chatId)) return;
+      setMessages(prev => [...prev, msg]);
+    };
+  
+    const onError = e => setError(e?.message || 'Socket error');
+    const onChatEnded = payload => {
+      if (String(payload?.chatId) !== String(chatId)) return;
+    
+      console.log('CHAT ENDED RECEIVED (agent)', payload);
+    
+      // now it is safe to leave
+      navigate('/admin/support/active');
+    };
+  
+    s.on('chat:joined', onJoined);
+    s.on('message:new', onNewMessage);
+    s.on('error', onError);
+    s.on('chat:ended', onChatEnded);
+  
+    return () => {
+      s.off('chat:joined', onJoined);
+      s.off('message:new', onNewMessage);
+      s.off('error', onError);
+      s.off('chat:ended', onChatEnded);
+      listenersAttachedRef.current = false; // ✅ reset on unmount
+    };
+  }, [isSupportAgent, chatId]);
 
   function pickFile(e) {
     const f = e.target.files?.[0] || null;
@@ -150,8 +163,6 @@ export default function SupportAgentChatPage() {
 
       try {
         await uploadChatAttachment(chatId, msgId, file);
-        const msgRes = await getChatMessages(chatId);
-        setMessages(msgRes.messages || []);
       } catch (e) {
         setError(e?.message || 'Upload failed');
       }
@@ -171,13 +182,18 @@ export default function SupportAgentChatPage() {
     });
   }
 
-  async function handleResolve() {
-    try {
-      await closeChat(chatId, 'resolved');
-      navigate('/admin/support/active');
-    } catch (e) {
-      setError(e?.message || 'Failed to resolve chat');
+  function handleResolve() {
+    const s = socketRef.current;
+  
+    if (!s) {
+      setError('Socket not connected');
+      return;
     }
+  
+    console.log('RESOLVE CLICKED', chatId);
+  
+    // ONLY emit. The listener is already attached in the useEffect.
+    s.emit('agent:resolve-chat', { chatId });
   }
 
   return (

@@ -4,6 +4,7 @@
 import * as SupportChat from '../models/SupportChat.js';
 import * as SupportMessage from '../models/SupportMessage.js';
 import jwt from 'jsonwebtoken';
+import cookie from 'cookie';
 
 /**
  * Initialize Socket.io event handlers
@@ -13,50 +14,65 @@ export function initializeSocketHandlers(io) {
   io.on('connection', (socket) => {
     console.log(`Client connected: ${socket.id}`);
 
+
     let currentUser = null;
     let currentChatId = null;
 
-    // Authenticate socket connection
+    // -----------------------------
+    // AUTHENTICATE SOCKET
+    // -----------------------------
     socket.on('authenticate', async (data) => {
       try {
-        const { token, guestId } = data;
+        const { token, guestId } = data || {};
 
-        if (token) {
-          // Authenticated user
-          const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        let jwtToken = token;
+
+        // 🔑 FALLBACK: read token from cookies (MAIN FIX)
+        if (!jwtToken && socket.handshake.headers.cookie) {
+          const cookies = cookie.parse(socket.handshake.headers.cookie);
+          jwtToken = cookies.token;
+        }
+
+        if (jwtToken) {
+          const decoded = jwt.verify(jwtToken, process.env.JWT_SECRET);
           currentUser = {
             user_id: decoded.user_id,
             role: decoded.role,
             email: decoded.email,
             isGuest: false,
           };
+
+          socket.currentUser = currentUser;
         } else if (guestId) {
-          // Guest user
           currentUser = {
             guest_id: guestId,
             isGuest: true,
           };
+          socket.currentUser = currentUser;
+        } else {
+          currentUser = null;
         }
 
         socket.emit('authenticated', { success: true, user: currentUser });
       } catch (error) {
         console.error('Authentication error:', error);
-        socket.emit('authenticated', { success: false, error: 'Invalid token' });
+        socket.emit('authenticated', {
+          success: false,
+          error: 'Invalid token',
+        });
       }
     });
 
-    // Customer joins a chat room
-    socket.on('customer:join-chat', async (data) => {
+    // -----------------------------
+    // CUSTOMER JOINS CHAT
+    // -----------------------------
+    socket.on('customer:join-chat', async ({ chatId }) => {
       try {
-        const { chatId } = data;
-
-        // Verify chat access
         const chat = await SupportChat.getChatById(chatId);
         if (!chat) {
           return socket.emit('error', { message: 'Chat not found' });
         }
 
-        // Check permission
         const hasAccess =
           (currentUser &&
             !currentUser.isGuest &&
@@ -71,31 +87,33 @@ export function initializeSocketHandlers(io) {
 
         currentChatId = chatId;
         socket.join(`chat_${chatId}`);
+        console.log(
+          'CUSTOMER JOINED ROOM',
+          `chat_${chatId}`,
+          'socket:',
+          socket.id,
+          'currentUser:',
+          currentUser
+        );
 
-        // Get chat messages
         const messages = await SupportMessage.getMessagesByChatId(chatId);
-
         socket.emit('chat:joined', { chatId, messages });
-      } catch (error) {
-        console.error('Error joining chat:', error);
+      } catch (err) {
+        console.error(err);
         socket.emit('error', { message: 'Failed to join chat' });
       }
     });
 
-    // Customer sends a message
-    socket.on('customer:send-message', async (data) => {
+    // -----------------------------
+    // CUSTOMER SEND MESSAGE
+    // -----------------------------
+    socket.on('customer:send-message', async ({ chatId, messageText }) => {
       try {
-        const { chatId, messageText } = data;
-
-        if (!currentChatId || currentChatId != chatId) {
-          return socket.emit('error', { message: 'Not in this chat room' });
-        }
-
+        socket.join(`chat_${chatId}`);
         const senderUserId = currentUser?.isGuest
           ? null
           : currentUser?.user_id;
 
-        // Create message
         const messageId = await SupportMessage.createMessage(
           chatId,
           'customer',
@@ -103,27 +121,26 @@ export function initializeSocketHandlers(io) {
           messageText
         );
 
-        // Get the created message
         const message = await SupportMessage.getMessageById(messageId);
 
-        // Broadcast to all in the chat room
         io.to(`chat_${chatId}`).emit('message:new', {
           ...message,
           attachments: [],
         });
 
-        // Notify agent queue if chat is waiting
         const chat = await SupportChat.getChatById(chatId);
         if (chat.status === 'waiting') {
           io.to('agent_queue').emit('queue:update');
         }
-      } catch (error) {
-        console.error('Error sending message:', error);
+      } catch (err) {
+        console.error(err);
         socket.emit('error', { message: 'Failed to send message' });
       }
     });
 
-    // Agent joins the queue room
+    // -----------------------------
+    // AGENT JOINS QUEUE
+    // -----------------------------
     socket.on('agent:join-queue', async () => {
       try {
         if (!currentUser || currentUser.role !== 'support agent') {
@@ -131,21 +148,19 @@ export function initializeSocketHandlers(io) {
         }
 
         socket.join('agent_queue');
-
-        // Send current waiting chats
         const waitingChats = await SupportChat.getWaitingChats();
         socket.emit('queue:chats', { chats: waitingChats });
-      } catch (error) {
-        console.error('Error joining queue:', error);
+      } catch (err) {
+        console.error(err);
         socket.emit('error', { message: 'Failed to join queue' });
       }
     });
 
-    // Agent claims a chat
-    socket.on('agent:claim-chat', async (data) => {
+    // -----------------------------
+    // AGENT CLAIMS CHAT
+    // -----------------------------
+    socket.on('agent:claim-chat', async ({ chatId }) => {
       try {
-        const { chatId } = data;
-
         if (!currentUser || currentUser.role !== 'support agent') {
           return socket.emit('error', { message: 'Access denied' });
         }
@@ -161,38 +176,28 @@ export function initializeSocketHandlers(io) {
           });
         }
 
-        // Join the chat room
         currentChatId = chatId;
         socket.join(`chat_${chatId}`);
 
-        // Get chat with context
-        const chatWithContext =
-          await SupportChat.getChatWithCustomerContext(chatId);
+        const chat = await SupportChat.getChatWithCustomerContext(chatId);
         const messages = await SupportMessage.getMessagesByChatId(chatId);
 
-        socket.emit('chat:claimed', {
-          chat: chatWithContext,
-          messages,
-        });
-
-        // Notify customer that agent joined
+        socket.emit('chat:claimed', { chat, messages });
+        io.to('agent_queue').emit('queue:update');
         io.to(`chat_${chatId}`).emit('agent:joined', {
           agent_email: currentUser.email,
         });
-
-        // Update agent queue
-        io.to('agent_queue').emit('queue:update');
-      } catch (error) {
-        console.error('Error claiming chat:', error);
+      } catch (err) {
+        console.error(err);
         socket.emit('error', { message: 'Failed to claim chat' });
       }
     });
 
-    // Agent joins an already-claimed chat
-    socket.on('agent:join-chat', async (data) => {
+    // -----------------------------
+    // AGENT JOINS CHAT
+    // -----------------------------
+    socket.on('agent:join-chat', async ({ chatId }) => {
       try {
-        const { chatId } = data;
-
         if (!currentUser || currentUser.role !== 'support agent') {
           return socket.emit('error', { message: 'Access denied' });
         }
@@ -207,17 +212,18 @@ export function initializeSocketHandlers(io) {
 
         const messages = await SupportMessage.getMessagesByChatId(chatId);
         socket.emit('chat:joined', { chatId, messages });
-      } catch (error) {
-        console.error('Error joining chat:', error);
+      } catch (err) {
+        console.error(err);
         socket.emit('error', { message: 'Failed to join chat' });
       }
     });
 
-    // Agent sends a message
-    socket.on('agent:send-message', async (data) => {
-      try {
-        const { chatId, messageText } = data;
+    // -----------------------------
+    // AGENT SEND MESSAGE
+    // -----------------------------
+    socket.on('agent:send-message', async ({ chatId, messageText }) => {
 
+      try {
         if (!currentUser || currentUser.role !== 'support agent') {
           return socket.emit('error', { message: 'Access denied' });
         }
@@ -226,7 +232,6 @@ export function initializeSocketHandlers(io) {
           return socket.emit('error', { message: 'Not in this chat room' });
         }
 
-        // Create message
         const messageId = await SupportMessage.createMessage(
           chatId,
           'agent',
@@ -234,37 +239,77 @@ export function initializeSocketHandlers(io) {
           messageText
         );
 
-        // Get the created message
         const message = await SupportMessage.getMessageById(messageId);
 
-        // Broadcast to all in the chat room
         io.to(`chat_${chatId}`).emit('message:new', {
           ...message,
           sender_email: currentUser.email,
           attachments: [],
         });
-      } catch (error) {
-        console.error('Error sending message:', error);
+      } catch (err) {
+        console.error(err);
         socket.emit('error', { message: 'Failed to send message' });
       }
     });
+    // -----------------------------
+// AGENT RESOLVES CHAT  ✅ FIXED
+// -----------------------------
+socket.on('agent:resolve-chat', async ({ chatId }) => {
+  try {
+    if (!currentUser || currentUser.role !== 'support agent') {
+      return socket.emit('error', { message: 'Access denied' });
+    }
 
-    // Typing indicator
-    socket.on('typing:start', (data) => {
-      const { chatId, userType } = data;
-      socket.to(`chat_${chatId}`).emit('typing:user', { userType });
+    if (!currentChatId || currentChatId !== chatId) {
+      return socket.emit('error', { message: 'Not in this chat room' });
+    }
+
+    // 1️⃣ Update DB
+    await SupportChat.updateChatStatus(chatId, 'resolved');
+
+    // 2️⃣ Emit to agent (always works)
+    socket.emit('chat:ended', {
+      chatId,
+      status: 'resolved',
     });
 
-    socket.on('typing:stop', (data) => {
-      const { chatId } = data;
-      socket.to(`chat_${chatId}`).emit('typing:stop');
+    // 3️⃣ Emit to EVERY socket that EVER joined the room
+    io.to(`chat_${chatId}`).emit('chat:ended', {
+      chatId,
+      status: 'resolved',
     });
 
-    // Handle disconnect
+    // 4️⃣ 🔑 SAFETY NET: fetch chat & emit directly
+    const chat = await SupportChat.getChatById(chatId);
+
+    if (chat?.guest_identifier) {
+      for (const [id, s] of io.of('/').sockets) {
+        if (s.currentUser?.guest_id === chat.guest_identifier) {
+          s.emit('chat:ended', { chatId, status: 'resolved' });
+        }
+      }
+    }
+
+    if (chat?.user_id) {
+      for (const [id, s] of io.of('/').sockets) {
+        if (s.currentUser?.user_id === chat.user_id) {
+          s.emit('chat:ended', { chatId, status: 'resolved' });
+        }
+      }
+    }
+
+  } catch (err) {
+    console.error(err);
+    socket.emit('error', { message: 'Failed to resolve chat' });
+  }
+});
+
     socket.on('disconnect', () => {
       console.log(`Client disconnected: ${socket.id}`);
     });
   });
+
+  
 
   return io;
 }

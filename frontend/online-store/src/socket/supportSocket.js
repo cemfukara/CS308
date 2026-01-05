@@ -10,12 +10,12 @@ const SOCKET_URL =
 let socket = null;
 
 export function connectSupportSocket() {
-  if (socket && socket.connected) return socket;
+  if (socket) return socket;
 
   socket = io(SOCKET_URL, {
-    withCredentials: true, // cookie auth if needed
+    withCredentials: true, // ✅ cookies sent automatically
     transports: ['websocket'],
-    autoConnect: true,
+    autoConnect: false,
   });
 
   return socket;
@@ -33,30 +33,40 @@ export function disconnectSupportSocket() {
 }
 
 /**
- * Authenticate socket using either:
- * - token (logged in user)
- * - guestId (guest chat)
+ * Authenticate socket
+ * - Logged-in users → cookie (automatic)
+ * - Guests → guestId
  */
-export function authenticateSupportSocket({ token, guestId }) {
+export function authenticateSupportSocket({ guestId } = {}) {
   const s = connectSupportSocket();
 
   return new Promise((resolve, reject) => {
     const onOk = payload => {
-      s.off('authenticated', onOk);
-      s.off('connect_error', onErr);
+      cleanup();
       if (payload?.success) resolve(payload);
       else reject(new Error(payload?.error || 'Socket auth failed'));
     };
 
     const onErr = err => {
-      s.off('authenticated', onOk);
-      s.off('connect_error', onErr);
+      cleanup();
       reject(err);
     };
+
+    const cleanup = () => {
+      s.off('authenticated', onOk);
+      s.off('connect_error', onErr);
+    };
+
+    if (!s.connected) {
+      s.connect();
+    }
 
     s.on('authenticated', onOk);
     s.on('connect_error', onErr);
 
-    s.emit('authenticate', { token, guestId });
+    // ✅ DO NOT SEND TOKEN
+    s.emit('authenticate', {
+      guestId,
+    });
   });
 }

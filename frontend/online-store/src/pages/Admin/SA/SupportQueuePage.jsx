@@ -55,7 +55,7 @@ export default function SupportQueuePage() {
 
     (async () => {
       try {
-        await authenticateSupportSocket({ token: token || null, guestId: null });
+        await authenticateSupportSocket({ token });
 
         s.emit('agent:join-queue');
 
@@ -89,24 +89,28 @@ export default function SupportQueuePage() {
   }, [socketReady, token]);
 
   // 3) Claim chat (socket-first)
+  // 3) Claim chat (socket-first)
   async function claim(chatId) {
     setError('');
     const s = connectSupportSocket();
-
-    const onClaimed = payload => {
-      const claimedChatId = payload?.chat?.chat_id || chatId;
-      navigate(`/admin/support/chat/${claimedChatId}`);
-    };
-
-    const onErr = e => {
-      setError(e?.message || 'Failed to claim chat');
-      setRefreshKey(k => k + 1);
-    };
-
-    s.once('chat:claimed', onClaimed);
-    s.once('error', onErr);
-
-    s.emit('agent:claim-chat', { chatId });
+  
+    try {
+      // 🔑 AUTHENTICATE FIRST (THIS IS CRITICAL)
+      await authenticateSupportSocket({ token });
+  
+      s.once('chat:claimed', payload => {
+        const claimedChatId = payload?.chat?.chat_id || chatId;
+        navigate(`/admin/support/chat/${claimedChatId}`);
+      });
+  
+      s.once('error', e => {
+        setError(e?.message || 'Failed to claim chat');
+      });
+  
+      s.emit('agent:claim-chat', { chatId });
+    } catch (e) {
+      setError(e?.message || 'Socket authentication failed');
+    }
   }
 
   return (

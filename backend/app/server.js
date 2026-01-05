@@ -10,7 +10,7 @@ const PORT = process.env.PORT || 5000; // Get the port from .env or use 5000
 const httpServer = createServer(app);
 
 // Initialize Socket.io with CORS
-const io = new Server(httpServer, {
+export const io = new Server(httpServer, {
   cors: {
     origin: ['http://localhost:5173', 'http://localhost:2000'],
     credentials: true,

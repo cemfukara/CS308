@@ -206,3 +206,25 @@
   color: #c7d2fe;
   text-decoration: underline;
 }
+
+.systemMessage {
+  text-align: center;
+  font-size: 13px;
+  color: #6b7280;
+  margin: 12px 0;
+}
+
+.systemActions {
+  display: flex;
+  justify-content: center;
+  margin: 10px 0;
+}
+
+.newChatBtn {
+  background: #111827;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+}

@@ -55,7 +55,7 @@ export default function SupportActiveChatsPage() {
 
     (async () => {
       try {
-        await authenticateSupportSocket({ token: token || null, guestId: null });
+        await authenticateSupportSocket({ token });
 
         s.emit('agent:join-queue');
 

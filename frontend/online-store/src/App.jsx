@@ -55,10 +55,12 @@ import SMRevenue from './pages/Admin/SM/SMRevenue.jsx';
 import SupportQueuePage from './pages/Admin/SA/SupportQueuePage.jsx';
 import SupportActiveChatsPage from './pages/Admin/SA/SupportActiveChatsPage.jsx';
 import SupportAgentChatPage from './pages/Admin/SA/SupportAgentChatPage.jsx';
+import SupportChatWidget from './components/support/SupportChatWidget';
 
 export function AppContent() {
   const location = useLocation();
   const isAdminRoute = location.pathname.startsWith('/admin');
+  const user = useAuthStore(state => state.user);
 
   const fetchProfile = useAuthStore(state => state.fetchProfile);
 
@@ -149,6 +151,14 @@ export function AppContent() {
       </Routes>
 
       {!isAdminRoute && <Footer />}
+
+{/* Customer Support Chat (global) */}
+{!isAdminRoute && (
+  <SupportChatWidget
+    isLoggedIn={!!user}
+    token={null}
+  />
+)}
     </>
   );
 }
