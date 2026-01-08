@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Orders.css';
-import { getOrders } from '@/lib/ordersApi';
+import { getOrders, cancelOrder } from '@/lib/ordersApi';
 import { formatPrice } from '@/utils/formatPrice';
 
 const Orders = () => {
@@ -29,6 +29,24 @@ const Orders = () => {
     };
   }, []);
 
+  const handleCancelOrder = async (orderId) => {
+    try {
+      await cancelOrder(orderId);
+
+      // update UI instantly
+      setOrders(prev =>
+        prev.map(o =>
+          o.order_id === orderId
+            ? { ...o, status: 'cancelled' }
+            : o
+        )
+      );
+    } catch (err) {
+      console.error(err);
+      alert('Failed to cancel order');
+    }
+  };
+
   const displayOrders = orders.map(order => ({
     ...order,
     status: order.status || 'processing',
@@ -55,14 +73,27 @@ const Orders = () => {
                   </p>
                   <p>Total: {formatPrice(order.total_price, order.currency)}</p>
                 </div>
+
                 <div className="order-actions">
-                  <span className={`status ${order.status.toLowerCase()}`}>{order.status}</span>
+                  <span className={`status ${order.status.toLowerCase()}`}>
+                    {order.status}
+                  </span>
+
                   <button
                     className="details-btn"
                     onClick={() => navigate(`/account/orders/${order.order_id}`)}
                   >
                     See Details
                   </button>
+
+                  {order.status === 'processing' && (
+                    <button
+                      className="cancel-btn"
+                      onClick={() => handleCancelOrder(order.order_id)}
+                    >
+                      Cancel Order
+                    </button>
+                  )}
                 </div>
               </div>
             </div>

@@ -89,3 +89,18 @@
 .details-btn:hover {
   background-color: #1d4ed8;
 }
+
+
+.cancel-btn {
+  background: #c62828;
+  color: white;
+  border: none;
+  padding: 6px 10px;
+  margin-left: 8px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.cancel-btn:hover {
+  background: #b71c1c;
+}

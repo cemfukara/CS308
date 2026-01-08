@@ -5,3 +5,4 @@ export const getOrderById = id => api.get(`/orders/${id}`);
 export const updateOrderStatus = (id, status) => api.put(`/orders/${id}/status`, { status });
 export const createOrder = payload => api.post('/orders', payload);
 export const validatePayment = payload => api.post('/payment/validate', payload);
+export const cancelOrder = (id) => api.post(`/orders/${id}/cancel`);
