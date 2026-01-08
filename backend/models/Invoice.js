@@ -104,7 +104,7 @@ export async function getRevenueProfitBetweenDates(startDate, endDate) {
       ), 0) AS total_profit
     FROM order_items oi
     JOIN orders o ON o.order_id = oi.order_id
-    WHERE o.status != 'cart'
+    WHERE o.status = 'delivered'
       AND o.order_date >= ?
       AND o.order_date < DATE_ADD(?, INTERVAL 1 DAY)
   `;
@@ -127,7 +127,7 @@ export async function getRevenueProfitChart(startDate, endDate) {
       ), 0) AS profit
     FROM order_items oi
     JOIN orders o ON o.order_id = oi.order_id
-    WHERE o.status != 'cart'
+    WHERE o.status = 'delivered'
       AND o.order_date >= ?
       AND o.order_date < DATE_ADD(?, INTERVAL 1 DAY)
     GROUP BY day
