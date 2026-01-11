@@ -270,7 +270,7 @@ INSERT INTO products (product_id, category_id, name, model, serial_number, descr
 (14, 3, 'Apple AirPods Pro 2', 'MTJV3TU/A', 'SN-AIRPODS-PRO2-001', 'Rebuilt from the sound up. AirPods Pro 2 feature up to 2x more Active Noise Cancellation, plus Adaptive Transparency, and Personalized Spatial Audio with dynamic head tracking for immersive sound. Now with multiple ear tips (XS, S, M, L) and up to 6 hours of listening time.', 100, 8999.00, 9999.00, '2 Years Apple Türkiye Warranty', 'Apple Türkiye', 'TL'),
 (15, 1, 'Xiaomi Redmi Note 14 8GB 256GB Black', '24117RN76G', 'SN-REDMI-N14-001', 'Features a 6.67-inch AMOLED display with 120Hz refresh rate, 5500mAh battery with 33W fast charging, and a 108MP triple camera system. Powered by MediaTek Helio G99 Ultra with IP54 dust and splash resistance.', 11, 12999.00, 13999.00, '2 Years Xiaomi Türkiye Warranty', 'Xiaomi Türkiye', 'TL');
 
--- 4. Users (Standard)
+-- 4. Users 
 INSERT INTO users (email, password_hash, role, first_name_encrypted, last_name_encrypted, tax_id_encrypted) VALUES
 ('john.doe@example.com', '$2b$10$hash1', 'customer', 'ENC_JOHN', 'ENC_DOE', 'ENC_TAX_1'),
 ('jane.smith@example.com', '$2b$10$hash2', 'customer', 'ENC_JANE', 'ENC_SMITH', 'ENC_TAX_2'),
@@ -312,7 +312,7 @@ INSERT INTO wishlists (user_id, product_id) VALUES
 (1, 7),
 (2, 6);
 
--- 11. Product Images (ALL images merged)
+-- 11. Product Images 
 INSERT INTO product_images (product_id, image_url, alt_text, is_primary, display_order) VALUES
 -- Product 1
 (1, 'https://cdn.vatanbilgisayar.com/Upload/PRODUCT/apple/thumb/153503-1_large.jpg', 'iPhone 17 Pro Max Front', true, 1),
@@ -470,3 +470,24 @@ BEGIN
         r.created_at DESC;
 END$$
 DELIMITER ;
+
+
+--Verification Selects
+SELECT * FROM Orders
+SELECT * FROM Order_Items
+SELECT * FROM Payment_Methods
+SELECT * FROM Reviews
+SELECT * FROM Categories
+SELECT * FROM Products
+SELECT * FROM Users
+SELECT * FROM User_Addresses
+SELECT * FROM Wishlists
+SELECT * FROM Product_Images
+SELECT * FROM Notifications
+SELECT * FROM Refunds
+SELECT * FROM Verification_Codes
+SELECT * FROM Support_Chats
+SELECT * FROM Support_Messages
+SELECT * FROM Support_Attachments
+
+
