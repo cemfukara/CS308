@@ -4,9 +4,8 @@
 import * as SupportChat from '../../models/SupportChat.js';
 import * as SupportMessage from '../../models/SupportMessage.js';
 import * as SupportAttachment from '../../models/SupportAttachment.js';
-import { io } from '../server.js';
+import { getIO } from '../socket.js';
 import { v4 as uuidv4 } from 'uuid';
-import path from 'path';
 import fs from 'fs';
 
 /**
@@ -291,18 +290,20 @@ export async function closeChat(req, res) {
 
     const success = await SupportChat.updateChatStatus(chatId, status);
 
-if (!success) {
-  return res.status(404).json({ message: 'Chat not found' });
-}
+    if (!success) {
+      return res.status(404).json({ message: 'Chat not found' });
+    }
 
-/* 🔔 SOCKET NOTIFICATION TO CUSTOMER */
-io.to(`chat_${chatId}`).emit('chat:ended', {
-  chatId,
-  status, // 'resolved' or 'closed'
-});
+    /* 🔔 SOCKET NOTIFICATION TO CUSTOMER */
+    const io = getIO();
+    if (io) {
+      io.to(`chat_${chatId}`).emit('chat:ended', {
+        chatId,
+        status,
+      });
+    }
 
-res.json({ message: 'Chat status updated successfully' });
-
+    res.json({ message: 'Chat status updated successfully' });
   } catch (error) {
     console.error('Error closing chat:', error);
     res.status(500).json({ message: 'Failed to close chat' });

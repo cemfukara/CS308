@@ -1,25 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import request from 'supertest';
 import app from '../app/app.js';
+import {
+  authenticate,
+  authorizeRoles,
+} from '../app/middlewares/authMiddleware.js';
 
 // 1. Mock the Cart Model
 import * as CartModel from '../models/Cart.js';
 
 vi.mock('../models/Cart.js');
-
-// 2. Mock Auth Middleware
-vi.mock('../app/middlewares/authMiddleware.js', () => ({
-  authenticate: (req, res, next) => {
-    req.user = { user_id: 123, role: 'customer' }; // Default mock user
-    next();
-  },
-  // We mock this because adminRoutes (loaded by app.js) uses it.
-  // We return a function that calls next() immediately, bypassing the role check.
-  authorizeRoles:
-    (...roles) =>
-      (req, res, next) =>
-        next(),
-}));
 
 describe('Cart Controller', () => {
   beforeEach(() => {
@@ -28,7 +18,7 @@ describe('Cart Controller', () => {
 
   // Test 1: getCart
   it('GET /api/cart - should return cart and items', async () => {
-    const mockCart = { order_id: 5, user_id: 123, status: 'cart' };
+    const mockCart = { order_id: 5, user_id: 1, status: 'cart' };
     const mockItems = [
       {
         order_item_id: 10,
@@ -50,7 +40,7 @@ describe('Cart Controller', () => {
     expect(res.body.success).toBe(true);
     expect(res.body.cart).toEqual(mockCart);
     expect(res.body.items).toEqual(mockItems);
-    expect(CartModel.getOrCreateCart).toHaveBeenCalledWith(123);
+    expect(CartModel.getOrCreateCart).toHaveBeenCalledWith(1);
     expect(CartModel.getCartItems).toHaveBeenCalledWith(5);
   });
 
@@ -82,12 +72,36 @@ describe('Cart Controller', () => {
     expect(CartModel.addToCart).not.toHaveBeenCalled();
   });
 
-  // Test 4: update cart (Not Implemented)
-  it('PUT /api/cart/update - should return 501 not implemented', async () => {
-    const res = await request(app).put('/api/cart/update').send({});
+  it('PATCH /api/cart/items/:productId - should update cart item quantity', async () => {
+    const productId = 1;
 
-    expect(res.status).toBe(501);
-    expect(res.body.message).toMatch(/not implemented/i);
+    const res = await request(app)
+      .patch(`/api/cart/items/${productId}`)
+      .send({ quantity: 2 });
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual(
+      expect.objectContaining({
+        success: true,
+        message: 'Cart item updated',
+      })
+    );
+  });
+
+  it('PATCH /api/cart/items/:productId - should return 400 if quantity missing', async () => {
+    const productId = 1;
+
+    const res = await request(app)
+      .patch(`/api/cart/items/${productId}`)
+      .send({});
+
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual(
+      expect.objectContaining({
+        success: false,
+        message: 'productId and quantity required',
+      })
+    );
   });
 
   // Test 5: deleteCartItem (Success)
@@ -98,7 +112,7 @@ describe('Cart Controller', () => {
 
     expect(res.status).toBe(200);
     expect(res.body.message).toMatch(/removed/i);
-    expect(CartModel.removeFromCart).toHaveBeenCalledWith(123, '99');
+    expect(CartModel.removeFromCart).toHaveBeenCalledWith(1, '99');
   });
 
   // Test 6: deleteCartItem (Not Found)

@@ -2,6 +2,7 @@ import './config/dotenv.js';
 import app from './app.js';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
+import { setIO } from './socket.js';
 import { initializeSocketHandlers } from './socketHandler.js';
 
 const PORT = process.env.PORT || 5000; // Get the port from .env or use 5000
@@ -19,6 +20,7 @@ export const io = new Server(httpServer, {
 
 // Initialize Socket.io event handlers
 initializeSocketHandlers(io);
+setIO(io);
 
 // Start server
 httpServer.listen(PORT, () => {

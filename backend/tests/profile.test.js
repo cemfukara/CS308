@@ -65,8 +65,16 @@ const mockAuthMiddleware = (req, res, next) => {
 // Define test routes
 app.post('/profile/request-update', mockAuthMiddleware, requestProfileUpdate);
 app.post('/profile/confirm-update', mockAuthMiddleware, confirmProfileUpdate);
-app.post('/account/request-deletion', mockAuthMiddleware, requestAccountDeletion);
-app.post('/account/confirm-deletion', mockAuthMiddleware, confirmAccountDeletion);
+app.post(
+  '/account/request-deletion',
+  mockAuthMiddleware,
+  requestAccountDeletion
+);
+app.post(
+  '/account/confirm-deletion',
+  mockAuthMiddleware,
+  confirmAccountDeletion
+);
 
 describe('Profile Controller Tests', () => {
   beforeEach(() => {
@@ -95,12 +103,10 @@ describe('Profile Controller Tests', () => {
       VerificationCodeModel.invalidatePendingCodes.mockResolvedValue(0);
       EmailService.sendVerificationEmail.mockResolvedValue({});
 
-      const response = await request(app)
-        .post('/profile/request-update')
-        .send({
-          first_name: 'Jane',
-          email: 'newemail@example.com',
-        });
+      const response = await request(app).post('/profile/request-update').send({
+        first_name: 'Jane',
+        email: 'newemail@example.com',
+      });
 
       expect(response.status).toBe(200);
       expect(response.body.message).toContain('Verification code sent');
@@ -135,11 +141,9 @@ describe('Profile Controller Tests', () => {
       EmailService.sendVerificationEmail.mockResolvedValue({});
       bcrypt.hash.mockResolvedValue('$2b$10$hashedPassword');
 
-      const response = await request(app)
-        .post('/profile/request-update')
-        .send({
-          password: 'newPassword123',
-        });
+      const response = await request(app).post('/profile/request-update').send({
+        password: 'newPassword123',
+      });
 
       expect(response.status).toBe(200);
       expect(bcrypt.hash).toHaveBeenCalledWith('newPassword123', 10);
@@ -163,11 +167,9 @@ describe('Profile Controller Tests', () => {
     });
 
     it('should reject invalid email format', async () => {
-      const response = await request(app)
-        .post('/profile/request-update')
-        .send({
-          email: 'invalid-email',
-        });
+      const response = await request(app).post('/profile/request-update').send({
+        email: 'invalid-email',
+      });
 
       expect(response.status).toBe(400);
       expect(response.body.message).toContain('Invalid email format');
@@ -176,11 +178,9 @@ describe('Profile Controller Tests', () => {
     it('should return 404 if user not found', async () => {
       UserModel.findById.mockResolvedValue(null);
 
-      const response = await request(app)
-        .post('/profile/request-update')
-        .send({
-          first_name: 'Jane',
-        });
+      const response = await request(app).post('/profile/request-update').send({
+        first_name: 'Jane',
+      });
 
       expect(response.status).toBe(404);
       expect(response.body.message).toContain('User not found');
@@ -189,11 +189,9 @@ describe('Profile Controller Tests', () => {
     it('should handle server errors gracefully', async () => {
       UserModel.findById.mockRejectedValue(new Error('Database error'));
 
-      const response = await request(app)
-        .post('/profile/request-update')
-        .send({
-          first_name: 'Jane',
-        });
+      const response = await request(app).post('/profile/request-update').send({
+        first_name: 'Jane',
+      });
 
       expect(response.status).toBe(500);
       expect(response.body.message).toBe('Server error');
@@ -218,11 +216,9 @@ describe('Profile Controller Tests', () => {
       UserModel.updateUserProfile.mockResolvedValue(true);
       VerificationCodeModel.markCodeAsUsed.mockResolvedValue(true);
 
-      const response = await request(app)
-        .post('/profile/confirm-update')
-        .send({
-          code: '123456',
-        });
+      const response = await request(app).post('/profile/confirm-update').send({
+        code: '123456',
+      });
 
       expect(response.status).toBe(200);
       expect(response.body.message).toContain('Profile updated successfully');
@@ -297,11 +293,9 @@ describe('Profile Controller Tests', () => {
     });
 
     it('should reject invalid code format', async () => {
-      const response = await request(app)
-        .post('/profile/confirm-update')
-        .send({
-          code: '12345', // Only 5 digits
-        });
+      const response = await request(app).post('/profile/confirm-update').send({
+        code: '12345', // Only 5 digits
+      });
 
       expect(response.status).toBe(400);
       expect(response.body.message).toContain('Invalid verification code');
@@ -310,11 +304,9 @@ describe('Profile Controller Tests', () => {
     it('should reject invalid or expired code', async () => {
       VerificationCodeModel.findValidCode.mockResolvedValue(null);
 
-      const response = await request(app)
-        .post('/profile/confirm-update')
-        .send({
-          code: '123456',
-        });
+      const response = await request(app).post('/profile/confirm-update').send({
+        code: '123456',
+      });
 
       expect(response.status).toBe(400);
       expect(response.body.message).toContain('Invalid or expired');
@@ -326,11 +318,9 @@ describe('Profile Controller Tests', () => {
         pending_data: null,
       });
 
-      const response = await request(app)
-        .post('/profile/confirm-update')
-        .send({
-          code: '123456',
-        });
+      const response = await request(app).post('/profile/confirm-update').send({
+        code: '123456',
+      });
 
       expect(response.status).toBe(400);
       expect(response.body.message).toContain('No pending update');
@@ -344,11 +334,9 @@ describe('Profile Controller Tests', () => {
       encrypt.mockImplementation((val) => `encrypted_${val}`);
       UserModel.updateUserProfile.mockResolvedValue(false);
 
-      const response = await request(app)
-        .post('/profile/confirm-update')
-        .send({
-          code: '123456',
-        });
+      const response = await request(app).post('/profile/confirm-update').send({
+        code: '123456',
+      });
 
       expect(response.status).toBe(500);
       expect(response.body.message).toContain('Failed to update profile');
@@ -375,7 +363,9 @@ describe('Profile Controller Tests', () => {
       const response = await request(app).post('/account/request-deletion');
 
       expect(response.status).toBe(200);
-      expect(response.body.message).toContain('deletion verification code sent');
+      expect(response.body.message).toContain(
+        'deletion verification code sent'
+      );
       expect(response.body.message).toContain('irreversible');
       expect(response.body.email).toBe('test@example.com');
 

@@ -3,6 +3,10 @@ import { describe, it, beforeEach, beforeAll, expect, vi } from 'vitest';
 import request from 'supertest';
 import app from '../app/app.js';
 import * as encrypter from '../utils/encrypter.js';
+import {
+  authenticate,
+  authorizeRoles,
+} from '../app/middlewares/authMiddleware.js';
 
 // ------------------ Mock DB ------------------
 vi.mock('../app/config/db.js', () => ({
@@ -30,20 +34,6 @@ import { authorizeRoles } from '../app/middlewares/authMiddleware.js';
 vi.mock('../utils/encrypter.js', () => ({
   encrypt: vi.fn((text) => `encrypted-${text}`),
   decrypt: vi.fn((text) => text.replace('encrypted-', '')),
-}));
-
-// ------------------ Mock auth middleware ------------------
-vi.mock('../app/middlewares/authMiddleware.js', () => ({
-  authenticate: vi.fn((req, res, next) => {
-    req.user = { user_id: 1, email: 'alimemo@provider.com', role: 'pm' };
-    next();
-  }),
-
-  authorizeRoles: vi.fn((allowedRoles = []) => {
-    return (req, res, next) => {
-      next();
-    };
-  }),
 }));
 
 // ------------------ Tests ------------------

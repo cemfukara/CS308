@@ -6,6 +6,10 @@ import app from '../app/app.js';
 import * as ProductModel from '../models/Product.js';
 import * as NotificationModel from '../models/Notification.js';
 import * as WishlistModel from '../models/Wishlist.js';
+import {
+  authenticate,
+  authorizeRoles,
+} from '../app/middlewares/authMiddleware.js';
 
 vi.mock('../models/Product.js');
 vi.mock('../models/Notification.js');
@@ -17,15 +21,6 @@ vi.mock('../app/middlewares/validationMiddleware.js', () => {
     validateProductInput: [(req, res, next) => next()],
   };
 });
-
-// 2. Mock Auth Middleware
-vi.mock('../app/middlewares/authMiddleware.js', () => ({
-  authenticate: (req, res, next) => {
-    req.user = { role: 'product manager' };
-    next();
-  },
-  authorizeRoles: () => (req, res, next) => next(),
-}));
 
 describe('Product Controller', () => {
   beforeEach(() => {

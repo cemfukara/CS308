@@ -1,6 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import request from 'supertest';
 import app from '../app/app.js'; // Ensure app.js is exported correctly
+import {
+  authenticate,
+  authorizeRoles,
+} from '../app/middlewares/authMiddleware.js';
 
 // 1. Mock the DB Module
 // We mock the 'query' function to return different results for each test
@@ -11,15 +15,6 @@ vi.mock('../app/config/db.js', () => ({
 }));
 
 import { db } from '../app/config/db.js';
-
-// 2. Mock Auth Middleware to bypass login checks
-vi.mock('../app/middlewares/authMiddleware.js', () => ({
-  authenticate: (req, res, next) => {
-    req.user = { role: 'product manager' }; // Mock admin user
-    next();
-  },
-  authorizeRoles: (roles) => (req, res, next) => next(),
-}));
 
 describe('Category Controller', () => {
   beforeEach(() => {

@@ -1,7 +1,16 @@
 // backend/tests/supportChat.test.js
 // Unit tests for support chat system
-
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
+import {
+  vi,
+  describe,
+  it,
+  expect,
+  beforeAll,
+  afterAll,
+  beforeEach,
+} from 'vitest';
+// This test requires REAL authentication and role logic
+vi.unmock('../app/middlewares/authMiddleware.js');
 import request from 'supertest';
 import app from '../app/app.js';
 import { db } from '../app/config/db.js';
@@ -36,7 +45,9 @@ describe('Support Chat System', () => {
           status: customerRes.status,
           body: customerRes.body,
         });
-        throw new Error(`Customer registration failed with status ${customerRes.status}`);
+        throw new Error(
+          `Customer registration failed with status ${customerRes.status}`
+        );
       }
 
       customerId = customerRes.body.user_id;
@@ -87,7 +98,9 @@ describe('Support Chat System', () => {
           status: agentLoginRes.status,
           body: agentLoginRes.body,
         });
-        throw new Error(`Agent login failed with status ${agentLoginRes.status}`);
+        throw new Error(
+          `Agent login failed with status ${agentLoginRes.status}`
+        );
       }
 
       // Extract cookie properly
@@ -101,7 +114,9 @@ describe('Support Chat System', () => {
 
       // Validate that both tokens are set
       if (!authToken || !agentToken) {
-        throw new Error('Authentication tokens were not properly set during test setup');
+        throw new Error(
+          'Authentication tokens were not properly set during test setup'
+        );
       }
     } catch (error) {
       console.error('Setup error:', error);

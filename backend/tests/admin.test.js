@@ -3,21 +3,22 @@ import request from 'supertest';
 import express from 'express';
 
 // Import Controllers
-import {
-  setDiscount
-} from '../app/controllers/productController.js';
-import {
-  getDeliveries
-} from '../app/controllers/orderController.js';
+import { setDiscount } from '../app/controllers/productController.js';
+import { getDeliveries } from '../app/controllers/orderController.js';
 import {
   getInvoicesByDateRange,
   getRevenueProfit,
-  getRevenueProfitChartController
+  getRevenueProfitChartController,
 } from '../app/controllers/invoiceController.js';
 import {
   approveReviewCommentController,
-  getPendingCommentsController
+  getPendingCommentsController,
 } from '../app/controllers/reviewController.js';
+
+import {
+  authenticate,
+  authorizeRoles,
+} from '../app/middlewares/authMiddleware.js';
 
 // 1. Mock the Models
 import * as InvoiceModel from '../models/Invoice.js';
@@ -38,25 +39,57 @@ vi.mock('../models/Notification.js');
 const app = express();
 app.use(express.json());
 
-// Mock Auth Middleware
-const mockAuth = (req, res, next) => {
-  // Simulate an admin user (Role doesn't matter for controller logic test, only route access)
-  req.user = { user_id: 1, role: 'product manager' };
-  next();
-};
-
 // 3. Define Routes (mirroring adminRoutes.js structure)
 // Sales Manager Routes
-app.get('/invoices/range', mockAuth, getInvoicesByDateRange);
-app.get('/invoices/revenue', mockAuth, getRevenueProfit);
-app.get('/invoices/chart', mockAuth, getRevenueProfitChartController);
-app.patch('/products/discount', mockAuth, setDiscount);
+app.get(
+  '/invoices/range',
+  authenticate,
+  authorizeRoles(['sales manager']),
+  getInvoicesByDateRange
+);
+
+app.get(
+  '/invoices/revenue',
+  authenticate,
+  authorizeRoles(['sales manager']),
+  getRevenueProfit
+);
+
+app.get(
+  '/invoices/chart',
+  authenticate,
+  authorizeRoles(['sales manager']),
+  getRevenueProfitChartController
+);
+
+app.patch(
+  '/products/discount',
+  authenticate,
+  authorizeRoles(['product manager']),
+  setDiscount
+);
 
 // Product Manager Routes
-app.get('/deliveries', mockAuth, getDeliveries);
-app.get('/reviews/pending', mockAuth, getPendingCommentsController);
-app.patch('/reviews/:reviewId/approve', mockAuth, approveReviewCommentController);
+app.get(
+  '/deliveries',
+  authenticate,
+  authorizeRoles(['product manager']),
+  getDeliveries
+);
 
+app.get(
+  '/reviews/pending',
+  authenticate,
+  authorizeRoles(['product manager']),
+  getPendingCommentsController
+);
+
+app.patch(
+  '/reviews/:reviewId/approve',
+  authenticate,
+  authorizeRoles(['product manager']),
+  approveReviewCommentController
+);
 
 describe('Admin Routes Controller Tests', () => {
   afterEach(() => {
@@ -67,17 +100,21 @@ describe('Admin Routes Controller Tests', () => {
      SALES MANAGER TESTS
      ============================================================ */
   describe('Sales Manager Endpoints', () => {
-    
     // --- Invoice Range ---
     it('GET /invoices/range - should return invoices for date range', async () => {
       const mockInvoices = [{ order_id: 10, total: 500 }];
       InvoiceModel.getInvoicesByDateRange.mockResolvedValue(mockInvoices);
 
-      const res = await request(app).get('/invoices/range?start=2025-01-01&end=2025-01-31');
+      const res = await request(app).get(
+        '/invoices/range?start=2025-01-01&end=2025-01-31'
+      );
 
       expect(res.status).toBe(200);
       expect(res.body).toEqual(mockInvoices);
-      expect(InvoiceModel.getInvoicesByDateRange).toHaveBeenCalledWith('2025-01-01', '2025-01-31');
+      expect(InvoiceModel.getInvoicesByDateRange).toHaveBeenCalledWith(
+        '2025-01-01',
+        '2025-01-31'
+      );
     });
 
     it('GET /invoices/range - should return 400 if dates missing', async () => {
@@ -87,16 +124,22 @@ describe('Admin Routes Controller Tests', () => {
 
     // --- Revenue & Profit ---
     it('GET /invoices/revenue - should return financial stats', async () => {
-      const mockStats = { total_revenue: 1000, total_cost: 500, total_profit: 500 };
+      const mockStats = {
+        total_revenue: 1000,
+        total_cost: 500,
+        total_profit: 500,
+      };
       InvoiceModel.getRevenueProfitBetweenDates.mockResolvedValue(mockStats);
 
-      const res = await request(app).get('/invoices/revenue?start=2025-01-01&end=2025-01-02');
+      const res = await request(app).get(
+        '/invoices/revenue?start=2025-01-01&end=2025-01-02'
+      );
 
       expect(res.status).toBe(200);
       expect(res.body).toEqual({
         revenue: 1000,
         cost: 500,
-        profit: 500
+        profit: 500,
       });
     });
 
@@ -105,15 +148,22 @@ describe('Admin Routes Controller Tests', () => {
       const mockChart = [{ day: '2025-01-01', revenue: 100 }];
       InvoiceModel.getRevenueProfitChart.mockResolvedValue(mockChart);
 
-      const res = await request(app).get('/invoices/chart?start=2025-01-01&end=2025-01-02');
+      const res = await request(app).get(
+        '/invoices/chart?start=2025-01-01&end=2025-01-02'
+      );
 
       expect(res.status).toBe(200);
-      expect(res.body).toEqual([{ day: '2025-01-01', revenue: 100, cost: 0, profit: 0 }]);
+      expect(res.body).toEqual([
+        { day: '2025-01-01', revenue: 100, cost: 0, profit: 0 },
+      ]);
     });
 
     // --- Discount Application ---
     it('PATCH /products/discount - should apply discount and notify users', async () => {
-      ProductModel.applyDiscount.mockResolvedValue({ product_id: 1, price: 90 });
+      ProductModel.applyDiscount.mockResolvedValue({
+        product_id: 1,
+        price: 90,
+      });
       WishlistModel.getWishlistedUsers.mockResolvedValue([{ user_id: 5 }]);
       NotificationModel.notifyUsers.mockResolvedValue(true);
 
@@ -132,7 +182,6 @@ describe('Admin Routes Controller Tests', () => {
      PRODUCT MANAGER TESTS
      ============================================================ */
   describe('Product Manager Endpoints', () => {
-
     // --- Deliveries ---
     it('GET /deliveries - should return all non-cart orders', async () => {
       const mockOrders = [{ order_id: 100, status: 'processing' }];
@@ -147,7 +196,9 @@ describe('Admin Routes Controller Tests', () => {
 
     // --- Pending Reviews ---
     it('GET /reviews/pending - should return reviews requiring moderation', async () => {
-      const mockReviews = [{ review_id: 5, comment_text: 'Wait', status: 'pending' }];
+      const mockReviews = [
+        { review_id: 5, comment_text: 'Wait', status: 'pending' },
+      ];
       ReviewModel.getPendingComments.mockResolvedValue(mockReviews);
 
       const res = await request(app).get('/reviews/pending');
@@ -166,7 +217,7 @@ describe('Admin Routes Controller Tests', () => {
       expect(res.body.message).toMatch(/approved successfully/);
       expect(ReviewModel.setReviewStatus).toHaveBeenCalledWith({
         reviewId: 50,
-        status: 'approved'
+        status: 'approved',
       });
     });
 

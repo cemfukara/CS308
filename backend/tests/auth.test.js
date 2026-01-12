@@ -1,4 +1,5 @@
 // Tests for authentication and role-based access control.
+vi.unmock('../app/middlewares/authMiddleware.js'); // unmock globally mocked auth
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import request from 'supertest';
 import express from 'express';
@@ -199,7 +200,9 @@ describe('Auth Middleware Tests', () => {
       // This simulates a scenario where authorizeRoles is called but user isn't set
       // We create a specific route for this test case bypassing 'authenticate'
       const appNoAuth = express();
-      appNoAuth.get('/test/no-user', authorizeRoles(['admin']), (req, res) => res.send('OK'));
+      appNoAuth.get('/test/no-user', authorizeRoles(['admin']), (req, res) =>
+        res.send('OK')
+      );
 
       const response = await request(appNoAuth).get('/test/no-user');
 
