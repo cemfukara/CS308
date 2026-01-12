@@ -39,7 +39,7 @@ export async function sendInvoiceEmail(
 
   // Get customer name and currency
   const customerName = orderDetails.customerName || 'Customer';
-  const currencySymbol = orderDetails.currency === 'TRY' ? '₺' : '$';
+  // const currencySymbol = orderDetails.currency === 'TRY' ? '₺' : '$'; // Unused, keeping for reference
 
   const mailOptions = {
     from: `"${senderName}" <${senderEmail}>`,
@@ -333,6 +333,80 @@ ${senderName}
       error.message
     );
     throw error;
+  }
+}
+
+/**
+ * Send refund approval email
+ * @param {string} email - Customer's email
+ * @param {number} amount - Refund amount
+ * @param {string} currency - Currency code
+ * @param {string} productName - Name of product being refunded
+ */
+export async function sendRefundApprovedEmail(email, amount, currency, productName) {
+  const senderName = process.env.SENDER_NAME || 'Online Store';
+  const senderEmail = process.env.GMAIL_USER;
+  
+  const formattedAmount = formatPrice(amount, currency);
+
+  const mailOptions = {
+    from: `"${senderName}" <${senderEmail}>`,
+    to: email,
+    subject: 'Refund Approved',
+    text: `
+Dear Customer,
+
+Your refund request for "${productName}" has been approved.
+
+Refund Amount: ${formattedAmount}
+
+The amount has been credited back to your original payment method.
+
+Best regards,
+${senderName}
+    `.trim(),
+    html: `
+      <!DOCTYPE html>
+      <html>
+        <head>
+           <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background-color: #4CAF50; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0; }
+            .content { padding: 30px; background-color: #f9f9f9; }
+            .amount { font-size: 24px; font-weight: bold; color: #4CAF50; margin: 15px 0;}
+           </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>Refund Approved</h1>
+            </div>
+            <div class="content">
+              <p>Dear Customer,</p>
+              <p>Your refund request for <strong>${productName}</strong> has been processed and approved.</p>
+              
+              <div class="amount">Refund Amount: ${formattedAmount}</div>
+              
+              <p>The amount has been credited back to your original payment method.</p>
+              
+              <br>
+              <p>Best regards,<br>${senderName}</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `,
+  };
+
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`✅ Refund email sent to ${email}`);
+    console.log('📧 Message ID:', info.messageId);
+    return info;
+  } catch (error) {
+    console.error('❌ Gmail: Error sending refund email:', error.message);
+    // Don't throw, just log
   }
 }
 

@@ -1,5 +1,3 @@
-// This file combines and exports all routes for easy import into app.js.
-//routes/index.js → combine all routers into a single router and export it for easy inclusion in app.js.
 // app/routes/index.js
 
 import adminRoutes from './adminRoutes.js';
@@ -13,6 +11,7 @@ import invoiceRoutes from './invoiceRoutes.js';
 import reviewRoutes from './reviewRoutes.js';
 import paymentRoutes from './paymentRoutes.js';
 import supportChatRoutes from './supportChatRoutes.js';
+import refundRoutes from './refundRoutes.js';
 
 export {
   adminRoutes,
@@ -26,5 +25,5 @@ export {
   reviewRoutes,
   paymentRoutes,
   supportChatRoutes,
+  refundRoutes,
 };
-

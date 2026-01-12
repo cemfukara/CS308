@@ -5,6 +5,7 @@ import useCartStore from '@/store/cartStore';
 import './OrderDetails.css';
 import { getOrderById } from '@/lib/ordersApi';
 import { formatPrice } from '@/utils/formatPrice';
+import { api } from '@/lib/api'; 
 
 const OrderDetails = () => {
   const { id } = useParams();
@@ -94,6 +95,23 @@ const OrderDetails = () => {
     ));
   };
 
+  const handleRefundRequest = async (item) => {
+    const reason = prompt(`Please enter a reason for returning "${item.name}":`);
+    if (reason === null) return; // cancelled
+
+    try {
+      await api.post('/refunds/request', {
+        orderId: order.order_id,
+        orderItemId: item.order_item_id,
+        quantity: item.quantity, 
+        reason: reason
+      });
+      toast.success('Refund request submitted! The Sales Manager will review it.');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to submit refund request.');
+    }
+  };
+
   if (!order) {
     return (
       <div className="order-details-page">
@@ -117,6 +135,14 @@ const OrderDetails = () => {
     order.shipping_address || '123 Main Street, Istanbul, Türkiye (default delivery)';
   const invoiceAddress = 'Invoice address same as delivery';
 
+  // Check eligibility: Delivered AND < 30 days
+  const isDelivered = order.status === 'delivered';
+  const orderDate = new Date(order.order_date);
+  const diffTime = Math.abs(new Date() - orderDate);
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+  const isWithin30Days = diffDays <= 30;
+  const canRefund = isDelivered && isWithin30Days;
+
   return (
     <div className="order-details-page">
       <button className="back-btn" onClick={() => navigate('/account/orders')}>
@@ -124,7 +150,9 @@ const OrderDetails = () => {
       </button>
 
       <div className="order-details-card">
-        <h2>Order Details</h2>
+        <h2>Order Details #{order.order_id}</h2>
+        <p style={{marginBottom: '5px'}}>Ordered on: {new Date(order.order_date).toLocaleDateString()}</p>
+        <p style={{marginBottom: '20px'}}>Status: <span style={{fontWeight:'bold', textTransform:'capitalize'}}>{order.status}</span></p>
 
         <div className="order-items">
           {order.items.map(item => {
@@ -133,14 +161,25 @@ const OrderDetails = () => {
             return (
               <div className="order-item-row" key={item.order_item_id}>
                 <div className="item-left">
-                  {/* no image in DB yet → just text */}
                   <div className="item-info">
                     <h3>{item.name}</h3>
                     <p className="item-desc">Model: {item.model || 'Not specified'}</p>
                     <p>Quantity: {item.quantity}</p>
-                    <button className="repurchase-btn" onClick={() => handleRepurchase(item)}>
-                      Repurchase
-                    </button>
+                    
+                    <div style={{marginTop: '10px', display: 'flex', alignItems: 'center'}}>
+                        <button className="repurchase-btn" onClick={() => handleRepurchase(item)}>
+                          Repurchase
+                        </button>
+
+                        {canRefund && (
+                        <button 
+                            className="refund-btn" 
+                            onClick={() => handleRefundRequest(item)}
+                        >
+                            Refund
+                        </button>
+                        )}
+                    </div>
                   </div>
                 </div>
 
@@ -159,10 +198,12 @@ const OrderDetails = () => {
               <span>Subtotal</span>
               <span>{formatPrice(subtotal, order.currency)}</span>
             </div>
-            <div className="summary-item">
-              <span>Discount</span>
-              <span>- {formatPrice(discount, order.currency)}</span>
-            </div>
+            {discount > 0 && (
+                <div className="summary-item">
+                <span>Discount</span>
+                <span>- {formatPrice(discount, order.currency)}</span>
+                </div>
+            )}
             <div className="summary-item">
               <span>Delivery</span>
               <span>{delivery > 0 ? `${formatPrice(delivery, order.currency)}` : 'Free'}</span>

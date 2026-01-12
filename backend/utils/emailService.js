@@ -7,4 +7,5 @@ export {
   testEmailConfig,
   sendVerificationEmail,
   sendAccountDeletionEmail,
+  sendRefundApprovedEmail,
 } from './gmailService.js';
