@@ -10,16 +10,30 @@ import {
   findById,
   updateUserProfile,
 } from '../../models/User.js';
+import logger from '../../utils/logger.js';
 
 export const login = async (req, res) => {
   const { email, password } = req.body;
 
   try {
     const user = await findByEmail(email);
-    if (!user) return res.status(401).json({ message: 'Invalid credentials' });
+    if (!user) {
+      logger.warn('Login failed: user not found', {
+        email,
+        ip: req.ip,
+      });
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
 
     const valid = await bcrypt.compare(password, user.password_hash);
-    if (!valid) return res.status(401).json({ message: 'Invalid credentials' });
+    if (!valid) {
+      logger.warn('Login failed: invalid password', {
+        email,
+        userId: user.user_id,
+        ip: req.ip,
+      });
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
 
     // create token
     const token = generateAccessToken({
@@ -36,9 +50,17 @@ export const login = async (req, res) => {
       maxAge: 60 * 60 * 1000, // 1 hour
     });
 
+    logger.info('Login successful', {
+      userId: user.user_id,
+      role: user.role,
+    });
+
     res.json({ message: 'Login successful' });
   } catch (err) {
-    console.error('Login error:', err);
+    logger.error('Login error', {
+      message: err.message,
+      stack: err.stack,
+    });
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -57,6 +79,9 @@ export const register = async (req, res) => {
     // Check duplicates
     const existingUser = await findByEmail(email);
     if (existingUser) {
+      logger.warn('Registration failed: email already exists', {
+        email,
+      });
       return res.status(409).json({ message: 'Email already registered' });
     }
 
@@ -72,6 +97,11 @@ export const register = async (req, res) => {
       tax_id
     );
 
+    logger.info('User registered', {
+      userId: user_id,
+      email,
+    });
+
     res.status(201).json({
       message: 'User registered successfully',
       user: {
@@ -83,7 +113,10 @@ export const register = async (req, res) => {
       },
     });
   } catch (err) {
-    console.error('Register error:', err);
+    logger.error('Registration error', {
+      message: err.message,
+      stack: err.stack,
+    });
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -97,6 +130,10 @@ export const getProfile = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
+    logger.info('Profile accessed', {
+      userId,
+    });
+
     return res.json({
       id: user.user_id,
       email: user.email,
@@ -109,7 +146,11 @@ export const getProfile = async (req, res) => {
       createdAt: user.created_at,
     });
   } catch (err) {
-    console.error('Error fetching user:', err);
+    logger.error('Get profile error', {
+      userId,
+      message: err.message,
+      stack: err.stack,
+    });
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -188,9 +229,18 @@ export const updateProfile = async (req, res) => {
       });
     }
 
+    logger.info('Profile updated', {
+      userId,
+      updatedFields: Object.keys(updateFields),
+    });
+
     return res.status(200).json({ message: 'Profile updated successfully' });
   } catch (error) {
-    console.error('updateProfile error:', error);
+    logger.error('Update profile error', {
+      userId: req.user?.user_id,
+      message: error.message,
+      stack: error.stack,
+    });
     return res
       .status(error?.status || 500)
       .json({ message: error?.message || 'Server error' });

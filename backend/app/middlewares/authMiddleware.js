@@ -3,6 +3,7 @@
 
 import jwt from 'jsonwebtoken';
 import { findById } from '../../models/User.js';
+import logger from '../../utils/logger.js';
 
 // This function decodes the valid JWT token from cookies and passes its contents to req.user
 // IMPORTANT: This function does not check for user roles, only decodes the token.
@@ -14,6 +15,12 @@ export const authenticate = async (req, res, next) => {
     process.env.NODE_ENV == 'development'
   ) {
     let dev = await findById(0); // fetch dev user info
+
+    logger.warn('DEV AUTH BYPASS USED', {
+      ip: req.ip,
+      path: req.originalUrl,
+    });
+
     req.user = {
       user_id: 0,
       first_name: dev.first_name,
@@ -29,6 +36,10 @@ export const authenticate = async (req, res, next) => {
   const token = req.cookies.token; // read from cookie
 
   if (!token) {
+    logger.warn('Authentication failed: No token', {
+      ip: req.ip,
+      path: req.originalUrl,
+    });
     return res.status(401).json({ message: 'Unauthorized: No token provided' });
   }
 
@@ -40,6 +51,10 @@ export const authenticate = async (req, res, next) => {
     const currentUser = await findById(decoded.user_id);
 
     if (!currentUser) {
+      logger.error('Authentication token valid but user not found', {
+        userId: decoded.user_id,
+      });
+
       return res.status(401).json({ message: 'User not found' });
     }
 
@@ -54,6 +69,10 @@ export const authenticate = async (req, res, next) => {
 
     return next();
   } catch {
+    logger.warn('Authentication failed: Invalid or expired token', {
+      ip: req.ip,
+      path: req.originalUrl,
+    });
     res.status(401).json({ message: 'Invalid or expired token' });
   }
 };
@@ -67,6 +86,12 @@ export const optionalAuthenticate = async (req, res, next) => {
     process.env.NODE_ENV == 'development'
   ) {
     let dev = await findById(0); // fetch dev user info
+
+    logger.warn('DEV AUTH BYPASS USED', {
+      ip: req.ip,
+      path: req.originalUrl,
+    });
+
     req.user = {
       user_id: 0,
       first_name: dev.first_name,
@@ -123,10 +148,19 @@ export const authorizeRoles = (allowedRoles = []) => {
     }
 
     if (!user) {
+      logger.warn('Authorization failed: no authenticated user', {
+        path: req.originalUrl,
+      });
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
     if (!allowedRoles.includes(user.role)) {
+      logger.warn('Authorization failed: forbidden role', {
+        userId: user.user_id,
+        role: user.role,
+        allowedRoles,
+        path: req.originalUrl,
+      });
       return res.status(403).json({ message: 'Forbidden: Access denied.' });
     }
 
