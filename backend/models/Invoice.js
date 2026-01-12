@@ -92,18 +92,23 @@ export async function getInvoiceItems(orderId) {
 }
 
 export async function getRevenueProfitBetweenDates(startDate, endDate) {
-  const COST_RATIO = 0.5; // 50% default cost
-
+  // Logic: Cost is either the stored 'cost' on the product or 50% of the sale price.
   const sql = `
     SELECT
       COALESCE(SUM(oi.quantity * oi.price_at_purchase), 0) AS total_revenue,
-      COALESCE(SUM(oi.quantity * oi.price_at_purchase * ${COST_RATIO}), 0) AS total_cost,
+      
       COALESCE(SUM(
-        oi.quantity * oi.price_at_purchase
-        - oi.quantity * oi.price_at_purchase * ${COST_RATIO}
+        oi.quantity * COALESCE(p.cost, oi.price_at_purchase * 0.5)
+      ), 0) AS total_cost,
+      
+      COALESCE(SUM(
+        (oi.quantity * oi.price_at_purchase) - 
+        (oi.quantity * COALESCE(p.cost, oi.price_at_purchase * 0.5))
       ), 0) AS total_profit
+
     FROM order_items oi
     JOIN orders o ON o.order_id = oi.order_id
+    LEFT JOIN products p ON p.product_id = oi.product_id
     WHERE o.status = 'delivered'
       AND o.order_date >= ?
       AND o.order_date < DATE_ADD(?, INTERVAL 1 DAY)
@@ -114,19 +119,24 @@ export async function getRevenueProfitBetweenDates(startDate, endDate) {
 }
 
 export async function getRevenueProfitChart(startDate, endDate) {
-  const COST_RATIO = 0.5;
-
   const sql = `
     SELECT 
       DATE_FORMAT(o.order_date, '%Y-%m-%d') AS day,
+      
       COALESCE(SUM(oi.quantity * oi.price_at_purchase), 0) AS revenue,
-      COALESCE(SUM(oi.quantity * oi.price_at_purchase * ${COST_RATIO}), 0) AS cost,
+      
       COALESCE(SUM(
-        oi.quantity * oi.price_at_purchase
-        - oi.quantity * oi.price_at_purchase * ${COST_RATIO}
+        oi.quantity * COALESCE(p.cost, oi.price_at_purchase * 0.5)
+      ), 0) AS cost,
+      
+      COALESCE(SUM(
+        (oi.quantity * oi.price_at_purchase) - 
+        (oi.quantity * COALESCE(p.cost, oi.price_at_purchase * 0.5))
       ), 0) AS profit
+
     FROM order_items oi
     JOIN orders o ON o.order_id = oi.order_id
+    LEFT JOIN products p ON p.product_id = oi.product_id
     WHERE o.status = 'delivered'
       AND o.order_date >= ?
       AND o.order_date < DATE_ADD(?, INTERVAL 1 DAY)

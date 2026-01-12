@@ -23,6 +23,7 @@ CREATE TABLE products (
     quantity_in_stock INT NOT NULL DEFAULT 0,
     price DECIMAL(10, 2) NOT NULL,
     list_price DECIMAL(10, 2),
+    cost DECIMAL(10, 2) DEFAULT NULL, -- Added cost column for profit calculation
     warranty_status VARCHAR(255),
     distributor_info VARCHAR(255),
     currency VARCHAR(10) NOT NULL DEFAULT 'TL',

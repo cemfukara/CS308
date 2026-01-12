@@ -15,6 +15,7 @@ function AdminProductNew() {
   const [categoryId, setCategoryId] = useState('');
   const [price, setPrice] = useState('');
   const [listPrice, setListPrice] = useState('');
+  const [cost, setCost] = useState('');
   const [quantityInStock, setQuantityInStock] = useState('');
   const [warrantyStatus, setWarrantyStatus] = useState('');
   const [distributorInfo, setDistributorInfo] = useState('');
@@ -60,6 +61,7 @@ function AdminProductNew() {
       category_id: categoryId ? Number(categoryId) : null,
       price: Number(price),
       list_price: listPrice ? Number(listPrice) : null,
+      cost: cost ? Number(cost) : null,
       quantity_in_stock: Number(quantityInStock),
       warranty_status: warrantyStatus,
       distributor_info: distributorInfo,
@@ -163,6 +165,24 @@ function AdminProductNew() {
                 if (v === '') return setPrice('');
                 if (Number(v) < 0) return; // prevent negative typing
                 setPrice(v);
+              }}
+            />
+          </div>
+
+          <div className={styles.formGroup}>
+            <label className={styles.label}>Cost (Optional)</label>
+            <input
+              className={styles.input}
+              type="number"
+              min="0"
+              step="0.01"
+              placeholder="Defaults to 50% of price"
+              value={cost}
+              onChange={e => {
+                const v = e.target.value;
+                if (v === '') return setCost('');
+                if (Number(v) < 0) return;
+                setCost(v);
               }}
             />
           </div>

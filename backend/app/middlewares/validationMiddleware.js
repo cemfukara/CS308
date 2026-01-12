@@ -74,6 +74,12 @@ export const validateProductInput = [
       }
       return true;
     }),
+    
+  // Optional field: cost (newly added)
+  body('cost')
+    .optional({ checkFalsy: true })
+    .isFloat({ min: 0 })
+    .withMessage('Cost must be a non-negative number.'),
 
   // Optional field: warranty_status
   body('warranty_status')

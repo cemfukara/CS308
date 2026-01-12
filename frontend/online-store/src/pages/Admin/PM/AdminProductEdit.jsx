@@ -15,6 +15,7 @@ function AdminProductEdit() {
   const [categoryId, setCategoryId] = useState('');
   const [price, setPrice] = useState('');
   const [listPrice, setListPrice] = useState('');
+  const [cost, setCost] = useState('');
   const [quantityInStock, setQuantityInStock] = useState('');
   const [warrantyStatus, setWarrantyStatus] = useState('');
   const [distributorInfo, setDistributorInfo] = useState('');
@@ -47,6 +48,7 @@ function AdminProductEdit() {
         );
         setPrice(p.price != null ? String(p.price) : '');
         setListPrice(p.list_price != null ? String(p.list_price) : '');
+        setCost(p.cost != null ? String(p.cost) : '');
         setQuantityInStock(p.quantity_in_stock != null ? String(p.quantity_in_stock) : '');
         setWarrantyStatus(p.warranty_status ?? '');
         setDistributorInfo(p.distributor_info ?? '');
@@ -99,6 +101,7 @@ function AdminProductEdit() {
       category_id: categoryId ? Number(categoryId) : null,
       price: Number(price),
       list_price: listPrice ? Number(listPrice) : null,
+      cost: cost ? Number(cost) : null,
       quantity_in_stock: Number(quantityInStock),
       warranty_status: warrantyStatus.trim() || null,
       distributor_info: distributorInfo.trim() || null,
@@ -204,6 +207,24 @@ function AdminProductEdit() {
                   if (v === '') return setPrice('');
                   if (Number(v) < 0) return; // prevent negative typing
                   setPrice(v);
+                }}
+              />
+            </div>
+
+            <div className={styles.formGroup}>
+              <label className={styles.label}>Cost (Optional)</label>
+              <input
+                className={styles.input}
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="Defaults to 50% of price"
+                value={cost}
+                onChange={e => {
+                  const v = e.target.value;
+                  if (v === '') return setCost('');
+                  if (Number(v) < 0) return;
+                  setCost(v);
                 }}
               />
             </div>

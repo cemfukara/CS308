@@ -75,6 +75,7 @@ export async function getAllProducts({
             quantity_in_stock,
             price,
             list_price,
+            cost,
             warranty_status,
             distributor_info,
             discount_ratio,
@@ -233,6 +234,7 @@ export async function createProduct(productData) {
     quantity_in_stock,
     price,
     list_price,
+    cost,
     warranty_status,
     distributor_info,
   } = productData;
@@ -248,9 +250,10 @@ export async function createProduct(productData) {
             quantity_in_stock,
             price,
             list_price,
+            cost,
             warranty_status,
             distributor_info
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `,
     [
       category_id || null,
@@ -261,6 +264,7 @@ export async function createProduct(productData) {
       quantity_in_stock ?? 0,
       price,
       list_price || null,
+      cost || null,
       warranty_status || null,
       distributor_info || null,
     ]
@@ -331,6 +335,7 @@ export async function getFeaturedProduct() {
       quantity_in_stock,
       price,
       list_price,
+      cost,
       warranty_status,
       distributor_info,
       discount_ratio,
