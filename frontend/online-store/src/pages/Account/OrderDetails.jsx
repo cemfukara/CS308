@@ -104,11 +104,23 @@ const OrderDetails = () => {
   // Logic: Show "Request Refund" button if eligible
   const orderStatusLower = order.status?.toLowerCase() || '';
   const isEligibleTime = (new Date() - new Date(order.order_date)) / (1000 * 3600 * 24) <= 30;
-  const isEligibleStatus = ['delivered', 'refund request sent', 'refund accepted', 'refund rejected'].includes(orderStatusLower);
-  const canRequestRefund = isEligibleStatus && isEligibleTime;
+  
+  // Statuses where the button should be VISIBLE
+  const isVisibleStatus = [
+    'delivered', 
+    'refund request sent', 
+    'refund accepted', 
+    'refund rejected'
+  ].includes(orderStatusLower);
 
-  // Check if a refund is currently pending to lock the button
-  const isRefundPending = orderStatusLower === 'refund request sent';
+  // Statuses where the button should be DISABLED (Locked)
+  const isLockedStatus = [
+    'refund request sent', 
+    'refund accepted', 
+    'refund rejected'
+  ].includes(orderStatusLower);
+
+  const canShowRefundButton = isVisibleStatus && isEligibleTime;
 
   // --- ITEM RENDERING LOGIC ---
   let visibleItems = [];
@@ -138,21 +150,25 @@ const OrderDetails = () => {
         <button className="back-btn" onClick={() => navigate('/account/orders')}>← Back to Orders</button>
         
         {/* Toggle Refund Mode Button */}
-        {canRequestRefund && !isRefundMode && (
+        {canShowRefundButton && !isRefundMode && (
           <button 
             className="refund-btn"
             onClick={() => setIsRefundMode(true)}
-            disabled={isRefundPending} // Lock button if pending
+            disabled={isLockedStatus}
             style={{ 
-              background: isRefundPending ? '#9ca3af' : '#e11d48', // Grey out if pending
+              background: isLockedStatus ? '#9ca3af' : '#e11d48',
               color: 'white', 
               border: 'none', 
               padding: '10px 20px', 
               borderRadius: '6px', 
-              cursor: isRefundPending ? 'not-allowed' : 'pointer' 
+              cursor: isLockedStatus ? 'not-allowed' : 'pointer',
+              opacity: isLockedStatus ? 0.7 : 1
             }}
           >
-            {isRefundPending ? 'Refund Request Pending' : 'Request Refund / Return'}
+            {orderStatusLower === 'refund request sent' && 'Refund Request Pending'}
+            {orderStatusLower === 'refund accepted' && 'Refund Completed'}
+            {orderStatusLower === 'refund rejected' && 'Refund Request Denied'}
+            {orderStatusLower === 'delivered' && 'Request Refund / Return'}
           </button>
         )}
 
@@ -227,7 +243,6 @@ const OrderDetails = () => {
                   <div className="item-info">
                     <h3>
                         {item.name} 
-                        {/* Show numbering if expanded: "Mouse #1", "Mouse #2" */}
                         {isRefundMode && item.quantity > 1 && (
                           <span style={{ fontSize: '0.9em', color: '#666', marginLeft: '8px' }}>
                              #{item.displayIndex}
@@ -236,10 +251,8 @@ const OrderDetails = () => {
                     </h3>
                     <p className="item-desc">{item.model || 'Standard Model'}</p>
                     
-                    {/* Only show "Quantity: X" in Normal Mode */}
                     {!isRefundMode && <p>Quantity: {item.quantity}</p>}
                     
-                    {/* Repurchase button only in Normal Mode */}
                     {!isRefundMode && (
                       <button className="repurchase-btn" onClick={() => handleRepurchase(item)} style={{ marginTop: '10px' }}>
                         Repurchase
@@ -256,7 +269,6 @@ const OrderDetails = () => {
           })}
         </div>
         
-        {/* Footer info (Address, etc.) */}
         <div className="address-section" style={{ marginTop: '30px', borderTop: '1px solid #eee', paddingTop: '20px' }}>
           <h4>Delivery Address</h4>
           <p>{order.shipping_address || 'Default Address'}</p>

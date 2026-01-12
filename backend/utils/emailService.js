@@ -9,4 +9,6 @@ export {
   sendAccountDeletionEmail,
   sendRefundApprovedEmail,
   sendRefundRejectedEmail,
+  sendStockNotificationEmail,
+  sendDiscountNotificationEmail,
 } from './gmailService.js';
