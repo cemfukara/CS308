@@ -39,7 +39,7 @@ export async function sendInvoiceEmail(
 
   // Get customer name and currency
   const customerName = orderDetails.customerName || 'Customer';
-  const currencySymbol = orderDetails.currency === 'TRY' ? '₺' : '$';
+  // const currencySymbol = orderDetails.currency === 'TRY' ? '₺' : '$'; // Unused, keeping for reference
 
   const mailOptions = {
     from: `"${senderName}" <${senderEmail}>`,
@@ -333,6 +333,204 @@ ${senderName}
       error.message
     );
     throw error;
+  }
+}
+
+/**
+<<<<<<< HEAD
+ * Send refund approval email to customer
+ * @param {string} email - Customer's email address
+ * @param {Object} refundDetails - Refund details object
+ * @param {number} refundDetails.refund_amount - Amount to be refunded
+ * @param {number} refundDetails.order_id - Order ID
+ * @param {string} refundDetails.product_name - Product name
+ * @param {string} refundDetails.product_model - Product model
+ * @param {number} refundDetails.quantity - Quantity refunded
+ * @param {string} refundDetails.currency - Currency code
+ * @returns {Promise<Object>} - Email send result
+ */
+export async function sendRefundApprovalEmail(email, refundDetails) {
+  const senderName = process.env.SENDER_NAME || 'Online Store';
+  const senderEmail = process.env.GMAIL_USER;
+
+  const {
+    refund_amount,
+    order_id,
+    product_name,
+    product_model,
+    quantity,
+    currency,
+  } = refundDetails;
+
+  // Format currency symbol
+  const currencySymbol = currency === 'TRY' || currency === 'TL' ? '₺' : '$';
+  const formattedAmount = `${currencySymbol}${refund_amount.toFixed(2)}`;
+=======
+ * Send refund approval email
+ * @param {string} email - Customer's email
+ * @param {number} amount - Refund amount
+ * @param {string} currency - Currency code
+ * @param {string} productName - Name of product being refunded
+ */
+export async function sendRefundApprovedEmail(email, amount, currency, productName) {
+  const senderName = process.env.SENDER_NAME || 'Online Store';
+  const senderEmail = process.env.GMAIL_USER;
+  
+  const formattedAmount = formatPrice(amount, currency);
+>>>>>>> a53fc339d42534d0784c53bda5f20306552af8f2
+
+  const mailOptions = {
+    from: `"${senderName}" <${senderEmail}>`,
+    to: email,
+<<<<<<< HEAD
+    subject: `Refund Approved - Order #${order_id}`,
+    text: `
+Dear Customer,
+
+Your refund request has been APPROVED!
+
+Order ID: ${order_id}
+Product: ${product_name} ${product_model ? `(${product_model})` : ''}
+Quantity: ${quantity}
+Refund Amount: ${formattedAmount}
+
+The refund will be processed to your original payment method within 5-7 business days.
+
+If you have any questions, please contact our support team.
+=======
+    subject: 'Refund Approved',
+    text: `
+Dear Customer,
+
+Your refund request for "${productName}" has been approved.
+
+Refund Amount: ${formattedAmount}
+
+The amount has been credited back to your original payment method.
+>>>>>>> a53fc339d42534d0784c53bda5f20306552af8f2
+
+Best regards,
+${senderName}
+    `.trim(),
+    html: `
+      <!DOCTYPE html>
+      <html>
+        <head>
+<<<<<<< HEAD
+          <style>
+=======
+           <style>
+>>>>>>> a53fc339d42534d0784c53bda5f20306552af8f2
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background-color: #4CAF50; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0; }
+            .content { padding: 30px; background-color: #f9f9f9; }
+<<<<<<< HEAD
+            .refund-box { 
+              background-color: white; 
+              padding: 20px; 
+              margin: 20px 0; 
+              border-left: 4px solid #4CAF50;
+              border-radius: 5px;
+            }
+            .refund-amount {
+              font-size: 28px;
+              font-weight: bold;
+              color: #4CAF50;
+              text-align: center;
+              margin: 15px 0;
+            }
+            .product-details {
+              background-color: #f5f5f5;
+              padding: 15px;
+              margin: 15px 0;
+              border-radius: 5px;
+            }
+            .footer { text-align: center; padding: 20px; font-size: 12px; color: #777; }
+            .success-icon { font-size: 48px; text-align: center; margin: 10px 0; }
+          </style>
+=======
+            .amount { font-size: 24px; font-weight: bold; color: #4CAF50; margin: 15px 0;}
+           </style>
+>>>>>>> a53fc339d42534d0784c53bda5f20306552af8f2
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+<<<<<<< HEAD
+              <h1>✅ Refund Approved!</h1>
+            </div>
+            <div class="content">
+              <div class="success-icon">✅</div>
+              <p>Dear Customer,</p>
+              <p>Great news! Your refund request has been <strong>APPROVED</strong>.</p>
+              
+              <div class="refund-box">
+                <h3>Refund Details</h3>
+                <div class="product-details">
+                  <p><strong>Order ID:</strong> #${order_id}</p>
+                  <p><strong>Product:</strong> ${product_name}</p>
+                  ${product_model ? `<p><strong>Model:</strong> ${product_model}</p>` : ''}
+                  <p><strong>Quantity:</strong> ${quantity}</p>
+                </div>
+                
+                <p style="text-align: center; margin-top: 20px;"><strong>Refund Amount:</strong></p>
+                <div class="refund-amount">${formattedAmount}</div>
+              </div>
+              
+              <p><strong>What happens next?</strong></p>
+              <ul>
+                <li>The refund will be processed to your original payment method</li>
+                <li>Processing time: 5-7 business days</li>
+                <li>You will receive a confirmation once the refund is completed</li>
+              </ul>
+              
+              <p>If you have any questions about your refund, please don't hesitate to contact our support team.</p>
+              
+              <p>Thank you for shopping with us!</p>
+              
+              <p>Best regards,<br>${senderName}</p>
+            </div>
+            <div class="footer">
+              <p>This is an automated email. Please do not reply to this message.</p>
+            </div>
+=======
+              <h1>Refund Approved</h1>
+            </div>
+            <div class="content">
+              <p>Dear Customer,</p>
+              <p>Your refund request for <strong>${productName}</strong> has been processed and approved.</p>
+              
+              <div class="amount">Refund Amount: ${formattedAmount}</div>
+              
+              <p>The amount has been credited back to your original payment method.</p>
+              
+              <br>
+              <p>Best regards,<br>${senderName}</p>
+            </div>
+>>>>>>> a53fc339d42534d0784c53bda5f20306552af8f2
+          </div>
+        </body>
+      </html>
+    `,
+  };
+
+  try {
+    const info = await transporter.sendMail(mailOptions);
+<<<<<<< HEAD
+    console.log('✅ Gmail: Refund approval email sent to:', email);
+=======
+    console.log(`✅ Refund email sent to ${email}`);
+>>>>>>> a53fc339d42534d0784c53bda5f20306552af8f2
+    console.log('📧 Message ID:', info.messageId);
+    return info;
+  } catch (error) {
+    console.error('❌ Gmail: Error sending refund email:', error.message);
+<<<<<<< HEAD
+    throw error;
+=======
+    // Don't throw, just log
+>>>>>>> a53fc339d42534d0784c53bda5f20306552af8f2
   }
 }
 

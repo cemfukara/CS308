@@ -534,9 +534,29 @@ DELIMITER ;
 -- PROFILE UPDATE & ACCOUNT DELETION VERIFICATION SYSTEM
 -- ===================================================================
 
+<<<<<<< Updated upstream
 -- Add phone_encrypted field to users table
 ALTER TABLE users 
 ADD COLUMN phone_encrypted BLOB AFTER address_encrypted;
+=======
+-- Verification Selects
+SELECT * FROM Orders;
+SELECT * FROM Order_Items;
+SELECT * FROM Payment_Methods;
+SELECT * FROM Reviews;
+SELECT * FROM Categories;
+SELECT * FROM Products;
+SELECT * FROM Users;
+SELECT * FROM User_Addresses;
+SELECT * FROM Wishlists;
+SELECT * FROM Product_Images;
+SELECT * FROM Notifications;
+SELECT * FROM Refunds;
+SELECT * FROM Verification_Codes;
+SELECT * FROM Support_Chats;
+SELECT * FROM Support_Messages;
+SELECT * FROM Support_Attachments;
+>>>>>>> Stashed changes
 
 -- Create verification_codes table for email verification
 CREATE TABLE IF NOT EXISTS verification_codes (

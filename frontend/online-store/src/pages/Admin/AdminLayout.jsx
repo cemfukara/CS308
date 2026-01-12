@@ -77,6 +77,10 @@ export default function AdminLayout() {
               <NavLink to="/admin/sm/revenue" className={styles.link}>
                 Revenue Dashboard
               </NavLink>
+              {/* NEW REFUND LINK */}
+              <NavLink to="/admin/sm/refunds" className={styles.link}>
+                Refund Requests
+              </NavLink>
             </>
           ) : null}
         </nav>

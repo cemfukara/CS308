@@ -50,6 +50,7 @@ import AdminComments from './pages/Admin/PM/AdminComments.jsx';
 import SMDiscounts from './pages/Admin/SM/SMDiscounts.jsx';
 import SMInvoices from './pages/Admin/SM/SMInvoices.jsx';
 import SMRevenue from './pages/Admin/SM/SMRevenue.jsx';
+import SMRefunds from './pages/Admin/SM/SMRefunds.jsx';
 
 export function AppContent() {
   const location = useLocation();
@@ -130,6 +131,7 @@ export function AppContent() {
           <Route path="sm/discounts" element={<SMDiscounts />} />
           <Route path="sm/invoices" element={<SMInvoices />} />
           <Route path="sm/revenue" element={<SMRevenue />} />
+          <Route path="sm/refunds" element={<SMRefunds />} />
         </Route>
 
         {/* Fallback */}

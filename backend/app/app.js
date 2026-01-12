@@ -15,7 +15,15 @@ import {
   reviewRoutes,
   paymentRoutes,
   supportChatRoutes,
+<<<<<<< Updated upstream
   currencyRoutes,
+=======
+<<<<<<< HEAD
+  refundRoutes,
+=======
+  refundRoutes, // NEW Import
+>>>>>>> a53fc339d42534d0784c53bda5f20306552af8f2
+>>>>>>> Stashed changes
 } from '../routes/index.js';
 const app = express();
 
@@ -43,6 +51,17 @@ app.use('/api/invoice', invoiceRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/api/support', supportChatRoutes);
+<<<<<<< Updated upstream
 app.use('/api/currencies', currencyRoutes);
+=======
+<<<<<<< HEAD
+app.use('/api/refund', refundRoutes);
+>>>>>>> Stashed changes
 
 export default app;
+
+=======
+app.use('/api/refunds', refundRoutes); // NEW Route Mounting
+
+export default app;
+>>>>>>> a53fc339d42534d0784c53bda5f20306552af8f2

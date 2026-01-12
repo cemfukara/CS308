@@ -1,5 +1,5 @@
-// app/routes/adminRoutes.js
-// Defines manager/admin-specific routes (discounts, analytics, etc.)
+// backend/routes/adminRoutes.js
+// Defines manager/admin-specific routes (discounts, analytics, refunds, etc.)
 
 import express from 'express';
 
@@ -49,6 +49,13 @@ import {
   deleteReviewController as deleteReviewPM,
 } from '../app/controllers/reviewController.js';
 
+// Refund Controllers
+import {
+  getRefundsQueue,
+  approveRefund,
+  rejectRefund,
+} from '../app/controllers/refundController.js';
+
 const router = express.Router();
 
 /* ============================================================
@@ -95,14 +102,28 @@ router.patch(
   setDiscount
 );
 
+// GET /refunds/pending
+router.get(
+  '/refunds/pending',
+  authenticate,
+  authorizeRoles('sales manager'),
+  getRefundsQueue
+);
+
 // PATCH /refunds/:id/approve
 router.patch(
   '/refunds/:id/approve',
   authenticate,
   authorizeRoles('sales manager'),
-  (req, res) => {
-    res.json({ message: 'Approve/decline refund is not implemented yet' });
-  }
+  approveRefund
+);
+
+// PATCH /refunds/:id/reject
+router.patch(
+  '/refunds/:id/reject',
+  authenticate,
+  authorizeRoles('sales manager'),
+  rejectRefund
 );
 
 /* ============================================================
