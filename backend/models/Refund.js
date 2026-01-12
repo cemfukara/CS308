@@ -1,3 +1,5 @@
+// backend/models/Refund.js
+
 import { db } from '../app/config/db.js';
 
 export async function createRefundRequest({
@@ -56,11 +58,20 @@ export async function updateRefundStatus(refundId, status, decidedByUserId) {
   return result.affectedRows > 0;
 }
 
-// Check if a refund already exists for this item to prevent duplicates
+// Check if a refund already exists for this item to prevent duplicates (Legacy)
 export async function getRefundByOrderItemId(orderItemId) {
   const [rows] = await db.query(
     `SELECT * FROM refunds WHERE order_item_id = ?`,
     [orderItemId]
   );
   return rows[0] || null;
+}
+
+// NEW: Get total quantity currently refunded or requested for an item
+export async function getRefundedQuantityByOrderItemId(orderItemId) {
+  const [rows] = await db.query(
+    `SELECT SUM(quantity) as total FROM refunds WHERE order_item_id = ? AND status != 'rejected'`,
+    [orderItemId]
+  );
+  return Number(rows[0]?.total || 0);
 }

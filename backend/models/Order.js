@@ -1,4 +1,4 @@
-// backend/app/models/Order.js
+// backend/models/Order.js
 
 import { db } from '../app/config/db.js';
 import { decrypt, encrypt } from '../utils/encrypter.js';
@@ -93,10 +93,9 @@ export async function getAllOrders() {
 }
 
 // --------------------------------------------------
-// Change order status (MAIN FIX HERE)
+// Change order status
 // --------------------------------------------------
 export async function updateOrderStatus(orderId, newStatus) {
-  // MUST WAIT for DB response — earlier version forgot "await"
   const [result] = await db.query(
     `
       UPDATE orders
@@ -112,7 +111,6 @@ export async function updateOrderStatus(orderId, newStatus) {
     [newStatus, newStatus, orderId]
   );
 
-  // result.affectedRows is the only truth
   return result.affectedRows > 0;
 }
 
@@ -145,9 +143,11 @@ export async function getUserOrders(userId) {
 }
 
 // --------------------------------------------------
-// Get items inside an order
+// Get items inside an order (UPDATED for Refund Logic)
 // --------------------------------------------------
 export async function getOrderItems(orderId, userId) {
+  // We Left Join with refunds to calculate how many of each item have been requested/refunded
+  // We exclude 'rejected' refunds so the user can try again if valid.
   const [rows] = await db.query(
     `
       SELECT
@@ -157,12 +157,15 @@ export async function getOrderItems(orderId, userId) {
         p.product_id,
         p.name,
         p.model,
-        p.currency
+        p.currency,
+        COALESCE(SUM(CASE WHEN r.status != 'rejected' THEN r.quantity ELSE 0 END), 0) AS refunded_quantity
       FROM order_items oi
       JOIN products p ON oi.product_id = p.product_id
       JOIN orders o ON oi.order_id = o.order_id
+      LEFT JOIN refunds r ON oi.order_item_id = r.order_item_id
       WHERE oi.order_id = ?
         AND o.user_id = ?
+      GROUP BY oi.order_item_id, oi.quantity, oi.price_at_purchase, p.product_id, p.name, p.model, p.currency
     `,
     [orderId, userId]
   );

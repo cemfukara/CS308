@@ -4,9 +4,10 @@ import {
   getPendingRefunds, 
   getRefundById, 
   updateRefundStatus, 
-  getRefundByOrderItemId 
+  getRefundByOrderItemId,
+  getRefundedQuantityByOrderItemId 
 } from '../../models/Refund.js';
-import { updateOrderStatus } from '../../models/Order.js'; // Import Order Updater
+import { updateOrderStatus } from '../../models/Order.js'; 
 import { db } from '../config/db.js'; 
 import { 
   sendRefundApprovedEmail,
@@ -41,8 +42,12 @@ export async function requestRefund(req, res) {
     const item = rows[0];
 
     // 2. Validate Status
-    if (item.status !== 'delivered') {
-      return res.status(400).json({ message: 'Refunds are only available for delivered orders.' });
+    // Allow refund if delivered OR if currently in a partial refund state
+    const validStatuses = ['delivered', 'refund request sent', 'refund accepted', 'refund rejected'];
+    const currentStatus = item.status?.toLowerCase();
+    
+    if (!validStatuses.includes(currentStatus)) {
+      return res.status(400).json({ message: `Refunds are not available for orders with status: ${item.status}` });
     }
 
     // 3. Validate Date (30 days)
@@ -54,21 +59,25 @@ export async function requestRefund(req, res) {
       return res.status(400).json({ message: 'Refund period (30 days) has expired.' });
     }
 
-    // 4. Validate Quantity
-    if (quantity > item.purchased_qty || quantity <= 0) {
+    // 4. Validate Quantity Logic (Partial Refunds)
+    // Check how many have ALREADY been refunded/requested
+    const currentRefundedQty = await getRefundedQuantityByOrderItemId(orderItemId);
+    const availableQty = item.purchased_qty - currentRefundedQty;
+
+    if (quantity > availableQty) {
+      return res.status(400).json({ 
+        message: `Cannot refund ${quantity} items. Only ${availableQty} remaining valid for refund.` 
+      });
+    }
+
+    if (quantity <= 0) {
       return res.status(400).json({ message: 'Invalid quantity.' });
     }
 
-    // 5. Check duplicate request
-    const existing = await getRefundByOrderItemId(orderItemId);
-    if (existing) {
-      return res.status(400).json({ message: 'A refund request already exists for this item.' });
-    }
-
-    // 6. Calculate Refund Amount
+    // 5. Calculate Refund Amount
     const refundAmount = Number(item.price_at_purchase) * Number(quantity);
 
-    // 7. Create Request
+    // 6. Create Request
     await createRefundRequest({
       order_item_id: orderItemId,
       order_id: orderId,
@@ -78,7 +87,8 @@ export async function requestRefund(req, res) {
       reason: reason || 'Customer request'
     });
 
-    // 8. UPDATE ORDER STATUS
+    // 7. UPDATE ORDER STATUS
+    // We update status to indicate activity
     await updateOrderStatus(orderId, 'Refund Request Sent');
 
     console.log(`[Refund Request] Success. Amount: ${refundAmount}`);
@@ -140,7 +150,7 @@ export async function approveRefund(req, res) {
 
     const details = rows[0];
 
-    // 4. Add Stock Back
+    // 4. Add Stock Back (Selective)
     await db.query(
       `UPDATE products SET quantity_in_stock = quantity_in_stock + ? WHERE product_id = ?`,
       [refund.quantity, details.product_id]
