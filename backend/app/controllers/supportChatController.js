@@ -7,6 +7,7 @@ import * as SupportAttachment from '../../models/SupportAttachment.js';
 import { getIO } from '../socket.js';
 import { v4 as uuidv4 } from 'uuid';
 import fs from 'fs';
+import logger from '../../utils/logger.js';
 
 /**
  * Initiate a new support chat
@@ -35,8 +36,17 @@ export async function initiateChat(req, res) {
       chat_id: chatId,
       guest_identifier: guestIdentifier,
     });
+
+    logger.info('Chat initiated', {
+      userId: req.user?.user_id,
+      guestId: req.cookies.guest_id,
+    });
   } catch (error) {
-    console.error('Error initiating chat:', error);
+    logger.error('Failed to initiate chat', {
+      userId: req.user?.user_id,
+      guestId: req.cookies.guest_id,
+      error,
+    });
     res.status(500).json({ message: 'Failed to initiate chat' });
   }
 }
@@ -59,7 +69,11 @@ export async function getCustomerChats(req, res) {
 
     res.json({ chats });
   } catch (error) {
-    console.error('Error fetching customer chats:', error);
+    logger.error('Error fetching customer chats:', {
+      userId: req.user?.user_id,
+      guestId: req.cookies.guest_id,
+      error,
+    });
     res.status(500).json({ message: 'Failed to fetch chats' });
   }
 }
@@ -101,7 +115,11 @@ export async function getChatMessages(req, res) {
 
     res.json({ messages });
   } catch (error) {
-    console.error('Error fetching messages:', error);
+    logger.error('Error fetching messages:', {
+      userId: req.user?.user_id,
+      guestId: req.cookies.guest_id,
+      error,
+    });
     res.status(500).json({ message: 'Failed to fetch messages' });
   }
 }
@@ -148,7 +166,11 @@ export async function uploadAttachment(req, res) {
       file_size: req.file.size,
     });
   } catch (error) {
-    console.error('Error uploading attachment:', error);
+    logger.error('Error uploading attachment:', {
+      userId: req.user?.user_id,
+      guestId: req.cookies.guest_id,
+      error,
+    });
     res.status(500).json({ message: 'Failed to upload file' });
   }
 }
@@ -190,7 +212,11 @@ export async function downloadAttachment(req, res) {
     // Send file
     res.download(attachment.file_path, attachment.file_name);
   } catch (error) {
-    console.error('Error downloading attachment:', error);
+    logger.error('Error downloading attachment:', {
+      userId: req.user?.user_id,
+      guestId: req.cookies.guest_id,
+      error,
+    });
     res.status(500).json({ message: 'Failed to download file' });
   }
 }
@@ -212,7 +238,11 @@ export async function getChatWithContext(req, res) {
 
     res.json({ chat: chatWithContext });
   } catch (error) {
-    console.error('Error fetching chat context:', error);
+    logger.error('Error fetching chat context:', {
+      userId: req.user?.user_id,
+      guestId: req.cookies.guest_id,
+      error,
+    });
     res.status(500).json({ message: 'Failed to fetch chat context' });
   }
 }
@@ -227,7 +257,11 @@ export async function getWaitingQueue(req, res) {
 
     res.json({ chats: waitingChats });
   } catch (error) {
-    console.error('Error fetching waiting queue:', error);
+    logger.error('Error fetching waiting queue:', {
+      userId: req.user?.user_id,
+      guestId: req.cookies.guest_id,
+      error,
+    });
     res.status(500).json({ message: 'Failed to fetch waiting queue' });
   }
 }
@@ -244,7 +278,11 @@ export async function getActiveChats(req, res) {
 
     res.json({ chats: activeChats });
   } catch (error) {
-    console.error('Error fetching active chats:', error);
+    logger.error('Error fetching active chats:', {
+      userId: req.user?.user_id,
+      guestId: req.cookies.guest_id,
+      error,
+    });
     res.status(500).json({ message: 'Failed to fetch active chats' });
   }
 }
@@ -268,7 +306,11 @@ export async function claimChat(req, res) {
 
     res.json({ message: 'Chat claimed successfully' });
   } catch (error) {
-    console.error('Error claiming chat:', error);
+    logger.error('Error claiming chat:', {
+      userId: req.user?.user_id,
+      guestId: req.cookies.guest_id,
+      error,
+    });
     res.status(500).json({ message: 'Failed to claim chat' });
   }
 }
@@ -305,7 +347,11 @@ export async function closeChat(req, res) {
 
     res.json({ message: 'Chat status updated successfully' });
   } catch (error) {
-    console.error('Error closing chat:', error);
+    logger.error('Error closing chat:', {
+      userId: req.user?.user_id,
+      guestId: req.cookies.guest_id,
+      error,
+    });
     res.status(500).json({ message: 'Failed to close chat' });
   }
 }
