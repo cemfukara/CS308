@@ -32,7 +32,6 @@ const Orders = () => {
   const handleCancelOrder = async (orderId) => {
     try {
       await cancelOrder(orderId);
-
       // update UI instantly
       setOrders(prev =>
         prev.map(o =>
@@ -60,44 +59,51 @@ const Orders = () => {
         <p className="empty">You have no orders yet.</p>
       ) : (
         <div className="orders-list">
-          {displayOrders.map(order => (
-            <div className="order-card" key={order.order_id}>
-              <div className="order-summary">
-                <div>
-                  <h3>Order #{order.order_id}</h3>
-                  <p>
-                    Date:{' '}
-                    {order.order_date || order.created_at
-                      ? new Date(order.order_date || order.created_at).toLocaleString()
-                      : '—'}
-                  </p>
-                  <p>Total: {formatPrice(order.total_price, order.currency)}</p>
-                </div>
+          {displayOrders.map(order => {
+            // FIX: Replace spaces with hyphens for CSS classes
+            // "Refund Rejected" -> "refund-rejected"
+            const statusClass = order.status.toLowerCase().replace(/\s+/g, '-');
 
-                <div className="order-actions">
-                  <span className={`status ${order.status.toLowerCase()}`}>
-                    {order.status}
-                  </span>
+            return (
+              <div className="order-card" key={order.order_id}>
+                <div className="order-summary">
+                  <div>
+                    <h3>Order #{order.order_id}</h3>
+                    <p>
+                      Date:{' '}
+                      {order.order_date || order.created_at
+                        ? new Date(order.order_date || order.created_at).toLocaleString()
+                        : '—'}
+                    </p>
+                    <p>Total: {formatPrice(order.total_price, order.currency)}</p>
+                  </div>
 
-                  <button
-                    className="details-btn"
-                    onClick={() => navigate(`/account/orders/${order.order_id}`)}
-                  >
-                    See Details
-                  </button>
+                  <div className="order-actions">
+                    {/* Apply the fixed class name */}
+                    <span className={`status ${statusClass}`}>
+                      {order.status}
+                    </span>
 
-                  {order.status === 'processing' && (
                     <button
-                      className="cancel-btn"
-                      onClick={() => handleCancelOrder(order.order_id)}
+                      className="details-btn"
+                      onClick={() => navigate(`/account/orders/${order.order_id}`)}
                     >
-                      Cancel Order
+                      See Details
                     </button>
-                  )}
+
+                    {order.status === 'processing' && (
+                      <button
+                        className="cancel-btn"
+                        onClick={() => handleCancelOrder(order.order_id)}
+                      >
+                        Cancel Order
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

@@ -53,14 +53,17 @@
   gap: 8px;
 }
 
+/* --- STATUS BADGES --- */
 .status {
   font-size: 0.9rem;
   font-weight: 600;
   padding: 5px 10px;
   border-radius: 8px;
   text-transform: capitalize;
+  border: 1px solid transparent; /* default border */
 }
 
+/* Standard Statuses */
 .status.processing {
   background-color: #fde68a;
   color: #92400e;
@@ -76,6 +79,39 @@
   color: #065f46;
 }
 
+.status.cancelled {
+  background-color: #f3f4f6;
+  color: #374151;
+  text-decoration: line-through;
+}
+
+/* NEW Refund Statuses (hyphenated) */
+
+/* "Refund Request Sent" -> "refund-request-sent" */
+.status.refund-request-sent, 
+.status.refund-requested {
+  background-color: #ffedd5; /* Light Orange */
+  color: #ea580c; /* Dark Orange */
+  border-color: #fed7aa;
+}
+
+/* "Refund Accepted" -> "refund-accepted" */
+.status.refund-accepted,
+.status.refunded {
+  background-color: #d1fae5; /* Light Emerald */
+  color: #059669; /* Emerald Green */
+  border-color: #10b981;
+}
+
+/* "Refund Rejected" -> "refund-rejected" */
+.status.refund-rejected {
+  background-color: #fee2e2; /* Light Red */
+  color: #b91c1c; /* Dark Red */
+  border-color: #fca5a5;
+}
+
+/* --- BUTTONS --- */
+
 .details-btn {
   background-color: #2563eb;
   color: white;
@@ -89,7 +125,6 @@
 .details-btn:hover {
   background-color: #1d4ed8;
 }
-
 
 .cancel-btn {
   background: #c62828;

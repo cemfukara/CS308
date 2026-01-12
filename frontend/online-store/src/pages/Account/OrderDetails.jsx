@@ -82,13 +82,7 @@ const OrderDetails = () => {
             View Cart
           </button>
         </div>
-        <p
-          style={{
-            fontWeight: '800',
-            fontSize: '1.2rem',
-            color: '#00FF7F',
-          }}
-        >
+        <p style={{ fontWeight: '800', fontSize: '1.2rem', color: '#00FF7F' }}>
           {formatPrice(Number(item.price_at_purchase || 0), order.currency)}
         </p>
       </div>
@@ -107,6 +101,13 @@ const OrderDetails = () => {
         reason: reason
       });
       toast.success('Refund request submitted! The Sales Manager will review it.');
+      
+      // INSTANTLY UPDATE LOCAL STATE TO DISABLE BUTTON
+      setOrder(prev => ({
+        ...prev,
+        status: 'Refund Request Sent'
+      }));
+
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to submit refund request.');
     }
@@ -135,13 +136,17 @@ const OrderDetails = () => {
     order.shipping_address || '123 Main Street, Istanbul, Türkiye (default delivery)';
   const invoiceAddress = 'Invoice address same as delivery';
 
-  // Check eligibility: Delivered AND < 30 days
+  // 1. Check if the order is generally eligible (Delivered OR already in refund process)
   const isDelivered = order.status === 'delivered';
+  const isRefundStatus = order.status.toLowerCase().includes('refund'); // Check for 'Refund Request Sent', etc.
+  
   const orderDate = new Date(order.order_date);
   const diffTime = Math.abs(new Date() - orderDate);
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
   const isWithin30Days = diffDays <= 30;
-  const canRefund = isDelivered && isWithin30Days;
+
+  // 2. Logic: Show button if Delivered (and eligible) OR if it is already in a Refund state (to show it disabled)
+  const showRefundButton = (isDelivered && isWithin30Days) || isRefundStatus;
 
   return (
     <div className="order-details-page">
@@ -152,7 +157,10 @@ const OrderDetails = () => {
       <div className="order-details-card">
         <h2>Order Details #{order.order_id}</h2>
         <p style={{marginBottom: '5px'}}>Ordered on: {new Date(order.order_date).toLocaleDateString()}</p>
-        <p style={{marginBottom: '20px'}}>Status: <span style={{fontWeight:'bold', textTransform:'capitalize'}}>{order.status}</span></p>
+        {/* Helper to clean up status display if needed */}
+        <p style={{marginBottom: '20px'}}>
+            Status: <span style={{fontWeight:'bold', textTransform:'capitalize'}}>{order.status}</span>
+        </p>
 
         <div className="order-items">
           {order.items.map(item => {
@@ -171,13 +179,15 @@ const OrderDetails = () => {
                           Repurchase
                         </button>
 
-                        {canRefund && (
-                        <button 
-                            className="refund-btn" 
-                            onClick={() => handleRefundRequest(item)}
-                        >
-                            Refund
-                        </button>
+                        {showRefundButton && (
+                          <button 
+                              className="refund-btn" 
+                              onClick={() => handleRefundRequest(item)}
+                              disabled={isRefundStatus} // Disable if any refund status is active
+                              title={isRefundStatus ? "Refund request already active" : "Request a refund"}
+                          >
+                              {isRefundStatus ? "Refund Requested" : "Refund"}
+                          </button>
                         )}
                     </div>
                   </div>
@@ -191,6 +201,7 @@ const OrderDetails = () => {
           })}
         </div>
 
+        {/* ... existing summary section ... */}
         <div className="order-summary">
           <h3>Summary</h3>
           <div className="summary-column">

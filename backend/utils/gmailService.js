@@ -410,6 +410,71 @@ ${senderName}
   }
 }
 
+
+/**
+ * Send refund rejection email
+ * @param {string} email - Customer's email
+ * @param {string} productName - Name of product
+ */
+export async function sendRefundRejectedEmail(email, productName) {
+  const senderName = process.env.SENDER_NAME || 'Online Store';
+  const senderEmail = process.env.GMAIL_USER;
+
+  const mailOptions = {
+    from: `"${senderName}" <${senderEmail}>`,
+    to: email,
+    subject: 'Update on Your Refund Request',
+    text: `
+Dear Customer,
+
+We regret to inform you that your refund request for "${productName}" has been rejected after review.
+
+If you believe this decision was made in error or have further questions, please contact our support team.
+
+Best regards,
+${senderName}
+    `.trim(),
+    html: `
+      <!DOCTYPE html>
+      <html>
+        <head>
+           <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background-color: #dc2626; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0; }
+            .content { padding: 30px; background-color: #f9f9f9; }
+           </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>Refund Request Update</h1>
+            </div>
+            <div class="content">
+              <p>Dear Customer,</p>
+              <p>We regret to inform you that your refund request for <strong>${productName}</strong> has been declined after review.</p>
+              
+              <p>If you believe this decision was made in error, please contact our support team for further assistance.</p>
+              
+              <br>
+              <p>Best regards,<br>${senderName}</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `,
+  };
+
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`✅ Refund rejection email sent to ${email}`);
+    return info;
+  } catch (error) {
+    console.error('❌ Gmail: Error sending refund rejection email:', error.message);
+  }
+}
+
+
 // Test email configuration
 export async function testEmailConfig() {
   try {

@@ -92,6 +92,29 @@
   background: #1d4ed8;
 }
 
+.refund-btn {
+  /* Professional Amber/Yellow Color */
+  background-color: #f59e0b; 
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.refund-btn:hover:not(:disabled) {
+  background-color: #d97706; /* Darker amber on hover */
+}
+
+.refund-btn:disabled {
+  background-color: #fbbf24; /* Lighter/washed out yellow */
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none; /* Prevent click animation if any */
+}
+
 .item-price {
   text-align: right;
   min-width: 120px;

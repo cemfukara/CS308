@@ -6,8 +6,12 @@ import {
   updateRefundStatus, 
   getRefundByOrderItemId 
 } from '../../models/Refund.js';
+import { updateOrderStatus } from '../../models/Order.js'; // Import Order Updater
 import { db } from '../config/db.js'; 
-import { sendRefundApprovedEmail } from '../../utils/emailService.js';
+import { 
+  sendRefundApprovedEmail,
+  sendRefundRejectedEmail 
+} from '../../utils/emailService.js';
 
 // POST /api/refunds/request
 export async function requestRefund(req, res) {
@@ -46,7 +50,6 @@ export async function requestRefund(req, res) {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    // Note: If orderDate > thirtyDaysAgo, it is RECENT. 
     if (orderDate < thirtyDaysAgo) {
       return res.status(400).json({ message: 'Refund period (30 days) has expired.' });
     }
@@ -74,6 +77,9 @@ export async function requestRefund(req, res) {
       refund_amount: refundAmount,
       reason: reason || 'Customer request'
     });
+
+    // 8. UPDATE ORDER STATUS
+    await updateOrderStatus(orderId, 'Refund Request Sent');
 
     console.log(`[Refund Request] Success. Amount: ${refundAmount}`);
     res.status(201).json({ message: 'Refund request submitted successfully.' });
@@ -115,7 +121,10 @@ export async function approveRefund(req, res) {
     // 1. Update Refund Status
     await updateRefundStatus(refundId, 'approved', smUserId);
 
-    // 2. Fetch details for Stock Update & Email
+    // 2. Update ORDER Status
+    await updateOrderStatus(refund.order_id, 'Refund Accepted');
+
+    // 3. Fetch details for Stock Update & Email
     const [rows] = await db.query(
       `
       SELECT oi.product_id, p.name, u.email, o.user_id, o.shipping_address_encrypted
@@ -131,13 +140,13 @@ export async function approveRefund(req, res) {
 
     const details = rows[0];
 
-    // 3. Add Stock Back
+    // 4. Add Stock Back
     await db.query(
       `UPDATE products SET quantity_in_stock = quantity_in_stock + ? WHERE product_id = ?`,
       [refund.quantity, details.product_id]
     );
 
-    // 4. Send Email
+    // 5. Send Email
     await sendRefundApprovedEmail(
       details.email, 
       refund.refund_amount, 
@@ -168,7 +177,29 @@ export async function rejectRefund(req, res) {
       return res.status(400).json({ message: `Refund is already ${refund.status}` });
     }
 
+    // 1. Update Refund Status
     await updateRefundStatus(refundId, 'rejected', smUserId);
+
+    // 2. Update ORDER Status
+    await updateOrderStatus(refund.order_id, 'Refund Rejected');
+
+    // 3. Fetch details for Email
+    const [rows] = await db.query(
+      `
+      SELECT u.email, p.name AS product_name
+      FROM refunds r
+      JOIN order_items oi ON r.order_item_id = oi.order_item_id
+      JOIN products p ON oi.product_id = p.product_id
+      JOIN users u ON r.user_id = u.user_id
+      WHERE r.refund_id = ?
+      `,
+      [refundId]
+    );
+
+    // 4. Send Email if details found
+    if (rows.length > 0) {
+      await sendRefundRejectedEmail(rows[0].email, rows[0].product_name);
+    }
 
     res.json({ message: 'Refund rejected.' });
   } catch (err) {

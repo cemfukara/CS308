@@ -85,7 +85,17 @@ CREATE TABLE payment_methods (
 CREATE TABLE orders (
     order_id INT PRIMARY KEY AUTO_INCREMENT,
     user_id INT NOT NULL,
-    status ENUM('cart', 'processing', 'in-transit', 'delivered', 'cancelled') NOT NULL DEFAULT 'cart',
+    -- Updated ENUM with refund statuses
+    status ENUM(
+        'cart', 
+        'processing', 
+        'in-transit', 
+        'delivered', 
+        'cancelled', 
+        'Refund Request Sent', 
+        'Refund Accepted', 
+        'Refund Rejected'
+    ) NOT NULL DEFAULT 'cart',
     total_price DECIMAL(10, 2),
     shipping_country VARCHAR(100),
     shipping_city VARCHAR(100),

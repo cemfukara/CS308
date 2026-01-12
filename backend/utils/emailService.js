@@ -8,4 +8,5 @@ export {
   sendVerificationEmail,
   sendAccountDeletionEmail,
   sendRefundApprovedEmail,
+  sendRefundRejectedEmail,
 } from './gmailService.js';
