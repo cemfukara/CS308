@@ -60,14 +60,15 @@ const Orders = () => {
       ) : (
         <div className="orders-list">
           {displayOrders.map(order => {
-            // Logic to display "Delivered" for Refund Accepted/Rejected
             let displayStatus = order.status;
             if (['Refund Accepted', 'Refund Rejected'].includes(order.status)) {
               displayStatus = 'Delivered';
             }
 
-            // CSS class based on the DISPLAYED status
             const statusClass = displayStatus.toLowerCase().replace(/\s+/g, '-');
+
+            // ✅ FIX: Prioritize created_at here as well
+            const displayDate = order.created_at || order.order_date;
 
             return (
               <div className="order-card" key={order.order_id}>
@@ -76,15 +77,14 @@ const Orders = () => {
                     <h3>Order #{order.order_id}</h3>
                     <p>
                       Date:{' '}
-                      {order.order_date || order.created_at
-                        ? new Date(order.order_date || order.created_at).toLocaleString()
+                      {displayDate
+                        ? new Date(displayDate).toLocaleString()
                         : '—'}
                     </p>
                     <p>Total: {formatPrice(order.total_price, order.currency)}</p>
                   </div>
 
                   <div className="order-actions">
-                    {/* Apply the fixed class name */}
                     <span className={`status ${statusClass}`}>
                       {displayStatus}
                     </span>
