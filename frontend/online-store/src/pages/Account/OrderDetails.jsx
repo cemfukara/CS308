@@ -3,16 +3,16 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import useCartStore from '@/store/cartStore';
 import './OrderDetails.css';
-import { getOrderById } from '@/lib/ordersApi';
+import { getOrderById, downloadInvoice } from '@/lib/ordersApi';
 import { formatPrice } from '@/utils/formatPrice';
-import { api } from '@/lib/api'; 
+import { api } from '@/lib/api';
 
 const OrderDetails = () => {
   const { id } = useParams();
   const [order, setOrder] = useState(null);
   const [isRefundMode, setIsRefundMode] = useState(false);
   const [selectedKeys, setSelectedKeys] = useState(new Set());
-  
+
   // Refund Modal State
   const [showRefundModal, setShowRefundModal] = useState(false);
   const [refundReason, setRefundReason] = useState("");
@@ -57,7 +57,7 @@ const OrderDetails = () => {
       toast.error("Please select items to refund.");
       return;
     }
-    setRefundReason(""); 
+    setRefundReason("");
     setShowRefundModal(true);
   };
 
@@ -69,10 +69,10 @@ const OrderDetails = () => {
 
     setIsSubmittingRefund(true);
 
-    const refundsMap = {}; 
-    
+    const refundsMap = {};
+
     selectedKeys.forEach(key => {
-      const [itemId] = key.split('_'); 
+      const [itemId] = key.split('_');
       refundsMap[itemId] = (refundsMap[itemId] || 0) + 1;
     });
 
@@ -125,24 +125,24 @@ const OrderDetails = () => {
 
   // --- REFUND ELIGIBILITY LOGIC ---
   const orderStatusLower = order.status?.toLowerCase() || '';
-  
+
   // ✅ FIX: Prioritize created_at because database only has created_at
   const orderDate = new Date(order.created_at || order.order_date);
-  
+
   const diffTime = Math.abs(new Date() - orderDate);
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   const isEligibleTime = diffDays <= 30;
 
   const isVisibleStatus = [
-    'delivered', 
-    'refund request sent', 
-    'refund accepted', 
+    'delivered',
+    'refund request sent',
+    'refund accepted',
     'refund rejected'
   ].includes(orderStatusLower);
 
   const isLockedStatus = [
-    'refund request sent', 
-    'refund accepted', 
+    'refund request sent',
+    'refund accepted',
     'refund rejected'
   ].includes(orderStatusLower);
 
@@ -158,7 +158,7 @@ const OrderDetails = () => {
       return Array.from({ length: totalQty }).map((_, idx) => ({
         ...item,
         uniqueKey: getExpandedKey(item.order_item_id, idx),
-        isAlreadyRefunded: idx < refundedQty, 
+        isAlreadyRefunded: idx < refundedQty,
         displayIndex: idx + 1
       }));
     });
@@ -175,18 +175,18 @@ const OrderDetails = () => {
     <div className="order-details-page">
       <div className="header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <button className="back-btn" onClick={() => navigate('/account/orders')}>← Back to Orders</button>
-        
+
         {canShowRefundButton && !isRefundMode && (
-          <button 
+          <button
             className="refund-btn"
             onClick={() => setIsRefundMode(true)}
             disabled={isLockedStatus}
-            style={{ 
+            style={{
               background: isLockedStatus ? '#9ca3af' : '#e11d48',
-              color: 'white', 
-              border: 'none', 
-              padding: '10px 20px', 
-              borderRadius: '6px', 
+              color: 'white',
+              border: 'none',
+              padding: '10px 20px',
+              borderRadius: '6px',
               cursor: isLockedStatus ? 'not-allowed' : 'pointer',
               opacity: isLockedStatus ? 0.7 : 1
             }}
@@ -199,24 +199,47 @@ const OrderDetails = () => {
         )}
 
         {!canShowRefundButton && orderStatusLower === 'delivered' && (
-           <span style={{ color: '#6b7280', fontSize: '0.9rem', fontStyle: 'italic' }}>
-             Return window closed (30 days)
-           </span>
+          <span style={{ color: '#6b7280', fontSize: '0.9rem', fontStyle: 'italic' }}>
+            Return window closed (30 days)
+          </span>
         )}
+
+        <button
+          onClick={async () => {
+            try {
+              await downloadInvoice(order.order_id);
+              toast.success('Invoice downloaded');
+            } catch (err) {
+              console.error(err);
+              toast.error('Failed to download invoice');
+            }
+          }}
+          style={{
+            background: '#2563eb',
+            color: 'white',
+            border: 'none',
+            padding: '10px 20px',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            marginLeft: '10px'
+          }}
+        >
+          Download Invoice
+        </button>
 
         {isRefundMode && (
           <div style={{ display: 'flex', gap: '10px' }}>
-            <button 
+            <button
               className="cancel-btn"
               style={{ background: '#6b7280', color: 'white', padding: '8px 16px', borderRadius: '6px', border: 'none', cursor: 'pointer' }}
               onClick={() => { setIsRefundMode(false); setSelectedKeys(new Set()); }}
             >
               Cancel
             </button>
-            <button 
+            <button
               className="submit-refund-btn"
               style={{ background: '#e11d48', color: 'white', padding: '8px 16px', borderRadius: '6px', border: 'none', cursor: 'pointer' }}
-              onClick={handleRefundClick} 
+              onClick={handleRefundClick}
             >
               Request Refund ({selectedKeys.size})
             </button>
@@ -226,7 +249,7 @@ const OrderDetails = () => {
 
       <div className="order-details-card">
         <h2>
-          Order #{order.order_id} 
+          Order #{order.order_id}
           {isRefundMode && <span style={{ color: '#e11d48', marginLeft: '10px', fontSize: '0.8em' }}>(Select items to return)</span>}
         </h2>
         <p style={{ marginBottom: '20px' }}>
@@ -238,9 +261,9 @@ const OrderDetails = () => {
           {visibleItems.map(item => {
             const isSelected = isRefundMode && selectedKeys.has(item.uniqueKey);
             const isRefunded = isRefundMode && item.isAlreadyRefunded;
-            
-            const displayPrice = isRefundMode 
-              ? Number(item.price_at_purchase) 
+
+            const displayPrice = isRefundMode
+              ? Number(item.price_at_purchase)
               : Number(item.price_at_purchase) * (item.quantity || 1);
 
             const requestedQty = Number(item.refund_requested_qty || 0);
@@ -253,47 +276,47 @@ const OrderDetails = () => {
             if (rejectedQty > 0) refundStatusParts.push(`Refund Rejected: ${rejectedQty}`);
 
             return (
-              <div 
-                className="order-item-row" 
+              <div
+                className="order-item-row"
                 key={isRefundMode ? item.uniqueKey : item.order_item_id}
                 style={{
-                   border: isSelected ? '2px solid #e11d48' : '1px solid #eee',
-                   background: isRefunded ? '#f3f4f6' : (isSelected ? '#fff1f2' : 'white'),
-                   opacity: isRefunded ? 0.6 : 1,
-                   transition: 'all 0.2s'
+                  border: isSelected ? '2px solid #e11d48' : '1px solid #eee',
+                  background: isRefunded ? '#f3f4f6' : (isSelected ? '#fff1f2' : 'white'),
+                  opacity: isRefunded ? 0.6 : 1,
+                  transition: 'all 0.2s'
                 }}
               >
                 {isRefundMode && (
-                   <div style={{ marginRight: '15px', display: 'flex', alignItems: 'center' }}>
-                     {isRefunded ? (
-                        <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#666', background: '#ddd', padding: '2px 6px', borderRadius: '4px' }}>
-                          REFUNDED
-                        </span>
-                     ) : (
-                        <input 
-                          type="checkbox" 
-                          checked={isSelected} 
-                          onChange={() => toggleSelection(item.uniqueKey)}
-                          style={{ width: '20px', height: '20px', cursor: 'pointer', accentColor: '#e11d48' }}
-                        />
-                     )}
-                   </div>
+                  <div style={{ marginRight: '15px', display: 'flex', alignItems: 'center' }}>
+                    {isRefunded ? (
+                      <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#666', background: '#ddd', padding: '2px 6px', borderRadius: '4px' }}>
+                        REFUNDED
+                      </span>
+                    ) : (
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggleSelection(item.uniqueKey)}
+                        style={{ width: '20px', height: '20px', cursor: 'pointer', accentColor: '#e11d48' }}
+                      />
+                    )}
+                  </div>
                 )}
 
                 <div className="item-left">
                   <div className="item-info">
                     <h3>
-                        {item.name} 
-                        {isRefundMode && item.quantity > 1 && (
-                          <span style={{ fontSize: '0.9em', color: '#666', marginLeft: '8px' }}>
-                             #{item.displayIndex}
-                          </span>
-                        )}
+                      {item.name}
+                      {isRefundMode && item.quantity > 1 && (
+                        <span style={{ fontSize: '0.9em', color: '#666', marginLeft: '8px' }}>
+                          #{item.displayIndex}
+                        </span>
+                      )}
                     </h3>
                     <p className="item-desc">{item.model || 'Standard Model'}</p>
-                    
+
                     {!isRefundMode && <p>Quantity: {item.quantity}</p>}
-                    
+
                     {!isRefundMode && (
                       <button className="repurchase-btn" onClick={() => handleRepurchase(item)} style={{ marginTop: '10px' }}>
                         Repurchase
@@ -303,9 +326,9 @@ const OrderDetails = () => {
                     {!isRefundMode && refundStatusParts.length > 0 && (
                       <div className="refund-status-breakdown" style={{ marginTop: '5px', fontSize: '0.85rem', fontWeight: '500', color: '#666' }}>
                         {refundStatusParts.map((part, i) => (
-                           <span key={i} style={{ marginRight: '15px', color: part.includes('Rejected') ? '#e11d48' : part.includes('Accepted') ? '#10b981' : '#f59e0b' }}>
-                             {part}
-                           </span>
+                          <span key={i} style={{ marginRight: '15px', color: part.includes('Rejected') ? '#e11d48' : part.includes('Accepted') ? '#10b981' : '#f59e0b' }}>
+                            {part}
+                          </span>
                         ))}
                       </div>
                     )}
@@ -319,7 +342,7 @@ const OrderDetails = () => {
             );
           })}
         </div>
-        
+
         <div className="address-section" style={{ marginTop: '30px', borderTop: '1px solid #eee', paddingTop: '20px' }}>
           <h4>Delivery Address</h4>
           <p>{order.shipping_address || 'Default Address'}</p>
@@ -332,8 +355,8 @@ const OrderDetails = () => {
             <h3>Request Refund</h3>
             <p>You are requesting a refund for <strong>{selectedKeys.size}</strong> item(s).</p>
             <p className="refund-subtitle">Please explain why you are returning these items:</p>
-            
-            <textarea 
+
+            <textarea
               className="refund-textarea"
               placeholder="e.g. Item defective, arrived damaged, changed mind..."
               value={refundReason}
@@ -342,15 +365,15 @@ const OrderDetails = () => {
             />
 
             <div className="refund-modal-actions">
-              <button 
-                className="cancel-btn modal-btn" 
+              <button
+                className="cancel-btn modal-btn"
                 onClick={() => setShowRefundModal(false)}
                 disabled={isSubmittingRefund}
               >
                 Cancel
               </button>
-              <button 
-                className="submit-refund-btn modal-btn" 
+              <button
+                className="submit-refund-btn modal-btn"
                 onClick={submitRefundRequest}
                 disabled={isSubmittingRefund}
               >
