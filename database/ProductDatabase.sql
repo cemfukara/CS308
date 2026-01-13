@@ -1,5 +1,5 @@
 -- Use below line once for refreshing your database
--- drop schema mydb; create schema mydb;
+drop schema mydb; create schema mydb;
 USE mydb;
 
 -- 01_schema.sql
@@ -483,22 +483,22 @@ END$$
 DELIMITER ;
 
 
---Verification Selects
-SELECT * FROM Orders
-SELECT * FROM Order_Items
-SELECT * FROM Payment_Methods
-SELECT * FROM Reviews
-SELECT * FROM Categories
-SELECT * FROM Products
-SELECT * FROM Users
-SELECT * FROM User_Addresses
-SELECT * FROM Wishlists
-SELECT * FROM Product_Images
-SELECT * FROM Notifications
-SELECT * FROM Refunds
-SELECT * FROM Verification_Codes
-SELECT * FROM Support_Chats
-SELECT * FROM Support_Messages
-SELECT * FROM Support_Attachments
+-- Verification Selects
+SELECT * FROM Orders;
+SELECT * FROM Order_Items;
+SELECT * FROM Payment_Methods;
+SELECT * FROM Reviews;
+SELECT * FROM Categories;
+SELECT * FROM Products;
+SELECT * FROM Users;
+SELECT * FROM User_Addresses;
+SELECT * FROM Wishlists;
+SELECT * FROM Product_Images;
+SELECT * FROM Notifications;
+SELECT * FROM Refunds;
+SELECT * FROM Verification_Codes;
+SELECT * FROM Support_Chats;
+SELECT * FROM Support_Messages;
+SELECT * FROM Support_Attachments;
 
 
