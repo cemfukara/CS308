@@ -1,38 +1,34 @@
 // backend/app/controllers/paymentController.js
 // Logic for validating payment information (mock implementation)
 
+import logger from '../../utils/logger.js';
 /**
  * Validates card expiry date
- * @param {string} expiry - Format: MM/YY
- * @returns {boolean}
  */
 function isExpiryValid(expiry) {
   if (!expiry) return false;
-  
+
   const cleaned = expiry.replace(/\D/g, '');
   if (cleaned.length < 4) return false;
-  
+
   const mm = parseInt(cleaned.slice(0, 2), 10);
   const yy = parseInt(cleaned.slice(2), 10);
-  
+
   if (Number.isNaN(mm) || Number.isNaN(yy)) return false;
   if (mm < 1 || mm > 12) return false;
-  
-  // Check if card is expired
+
   const now = new Date();
-  const currentYear = now.getFullYear() % 100; // Get last 2 digits
-  const currentMonth = now.getMonth() + 1; // 1-12
-  
+  const currentYear = now.getFullYear() % 100;
+  const currentMonth = now.getMonth() + 1;
+
   if (yy < currentYear) return false;
   if (yy === currentYear && mm < currentMonth) return false;
-  
+
   return true;
 }
 
 /**
  * Validates CVV
- * @param {string} cvv
- * @returns {boolean}
  */
 function isCvvValid(cvv) {
   if (!cvv) return false;
@@ -42,39 +38,45 @@ function isCvvValid(cvv) {
 
 /**
  * Validates card number
- * @param {string} cardNumber
- * @returns {boolean}
  */
 function isCardNumberValid(cardNumber) {
   if (!cardNumber) return false;
   const cleaned = cardNumber.replace(/\D/g, '');
-  
-  // Only accept exactly 16 digits
+
   if (cleaned.length !== 16) return false;
-  
-  // Mock rule: Reject cards ending in 0000 (simulating declined cards)
   if (cleaned.endsWith('0000')) return false;
-  
+
   return true;
 }
 
 // ==========================================================
 // POST /api/payment/validate
-//  - Validates payment information before order creation
 // ==========================================================
 export async function validatePayment(req, res) {
+  const userId = req.user?.user_id || null;
+
   try {
     const { method, cardName, cardNumber, expiry, cvv } = req.body;
 
     if (!method) {
+      logger.warn('Payment validation failed: missing method', {
+        userId,
+      });
+
       return res.status(400).json({
         success: false,
         message: 'Payment method is required',
       });
     }
 
-    // Cash on Delivery is always accepted
+    // -----------------------------
+    // Cash on Delivery
+    // -----------------------------
     if (method === 'Cash on Delivery' || method === 'cod') {
+      logger.info('Payment validated (Cash on Delivery)', {
+        userId,
+      });
+
       return res.status(200).json({
         success: true,
         message: 'Payment validated successfully',
@@ -82,49 +84,75 @@ export async function validatePayment(req, res) {
       });
     }
 
-    // Credit Card validation
+    // -----------------------------
+    // Credit Card
+    // -----------------------------
     if (method === 'Credit Card' || method === 'card') {
-      // Validate all required fields are present
       if (!cardName || !cardNumber || !expiry || !cvv) {
+        logger.warn('Card payment validation failed: missing fields', {
+          userId,
+        });
+
         return res.status(400).json({
           success: false,
           message: 'All card details are required',
         });
       }
 
-      // Validate card name
       if (cardName.trim().length < 3) {
+        logger.warn('Card payment validation failed: invalid cardholder name', {
+          userId,
+        });
+
         return res.status(400).json({
           success: false,
           message: 'Invalid cardholder name',
         });
       }
 
-      // Validate card number
       if (!isCardNumberValid(cardNumber)) {
+        logger.warn(
+          'Card payment validation failed: invalid or declined card',
+          {
+            userId,
+          }
+        );
+
         return res.status(400).json({
           success: false,
           message: 'Invalid or declined card number',
         });
       }
 
-      // Validate expiry
       if (!isExpiryValid(expiry)) {
+        logger.warn(
+          'Card payment validation failed: expired or invalid expiry',
+          {
+            userId,
+          }
+        );
+
         return res.status(400).json({
           success: false,
           message: 'Invalid or expired card',
         });
       }
 
-      // Validate CVV
       if (!isCvvValid(cvv)) {
+        logger.warn('Card payment validation failed: invalid CVV', {
+          userId,
+        });
+
         return res.status(400).json({
           success: false,
           message: 'Invalid CVV',
         });
       }
 
-      // All validations passed
+      logger.info('Payment validated (Credit Card)', {
+        userId,
+      });
+
       return res.status(200).json({
         success: true,
         message: 'Payment validated successfully',
@@ -132,13 +160,24 @@ export async function validatePayment(req, res) {
       });
     }
 
-    // Unknown payment method
+    // -----------------------------
+    // Unknown method
+    // -----------------------------
+    logger.warn('Payment validation failed: unknown method', {
+      userId,
+      method,
+    });
+
     return res.status(400).json({
       success: false,
       message: 'Invalid payment method',
     });
   } catch (err) {
-    console.error('❌ Error validating payment:', err);
+    logger.error('Payment validation error', {
+      userId,
+      error: err,
+    });
+
     res.status(500).json({
       success: false,
       message: 'Server error during payment validation',

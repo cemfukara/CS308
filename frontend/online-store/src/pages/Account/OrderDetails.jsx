@@ -10,8 +10,14 @@ import { api } from '@/lib/api';
 const OrderDetails = () => {
   const { id } = useParams();
   const [order, setOrder] = useState(null);
-  const [isRefundMode, setIsRefundMode] = useState(false); // Controls visibility of checkboxes/expanded view
-  const [selectedKeys, setSelectedKeys] = useState(new Set()); // Tracks selected items (using unique keys)
+  const [isRefundMode, setIsRefundMode] = useState(false);
+  const [selectedKeys, setSelectedKeys] = useState(new Set());
+  
+  // Refund Modal State
+  const [showRefundModal, setShowRefundModal] = useState(false);
+  const [refundReason, setRefundReason] = useState("");
+  const [isSubmittingRefund, setIsSubmittingRefund] = useState(false);
+
   const navigate = useNavigate();
   const { addToCart } = useCartStore();
 
@@ -35,7 +41,6 @@ const OrderDetails = () => {
     }
   };
 
-  // Helper: Create unique key for expanded items (e.g., "105_0", "105_1")
   const getExpandedKey = (itemId, index) => `${itemId}_${index}`;
 
   const toggleSelection = (key) => {
@@ -47,44 +52,61 @@ const OrderDetails = () => {
     });
   };
 
-  const handleRefundSubmit = async () => {
+  const handleRefundClick = () => {
     if (selectedKeys.size === 0) {
       toast.error("Please select items to refund.");
       return;
     }
+    setRefundReason(""); 
+    setShowRefundModal(true);
+  };
 
-    const reason = prompt("Please enter a reason for the refund:");
-    if (!reason) return;
+  const submitRefundRequest = async () => {
+    if (!refundReason.trim()) {
+      toast.error("Please enter a reason for the refund.");
+      return;
+    }
 
-    // 1. Aggregate selections: Count how many units of each item are selected
-    const refundsMap = {}; // { orderItemId: quantity }
+    setIsSubmittingRefund(true);
+
+    const refundsMap = {}; 
     
     selectedKeys.forEach(key => {
       const [itemId] = key.split('_'); 
       refundsMap[itemId] = (refundsMap[itemId] || 0) + 1;
     });
 
-    // 2. Send requests sequentially (or parallel)
     let successCount = 0;
+    let errorOccurred = false;
+
     for (const [itemId, qty] of Object.entries(refundsMap)) {
       try {
         await api.post('/refunds/request', {
           orderId: order.order_id,
           orderItemId: itemId,
           quantity: qty,
-          reason: reason
+          reason: refundReason
         });
         successCount += qty;
       } catch (err) {
+        console.error(err);
+        errorOccurred = true;
         toast.error(err.response?.data?.message || "Error processing refund.");
       }
     }
 
+    setIsSubmittingRefund(false);
+
     if (successCount > 0) {
-      toast.success(`Refund requested for ${successCount} item(s).`);
+      if (!errorOccurred) {
+        toast.success(`Refund requested for ${successCount} item(s).`);
+      } else {
+        toast('Some refunds were requested successfully, but errors occurred for others.', { icon: '⚠️' });
+      }
       setIsRefundMode(false);
       setSelectedKeys(new Set());
-      fetchOrder(true); // Refresh data to update status and disabled rows
+      setShowRefundModal(false);
+      fetchOrder(true);
     }
   };
 
@@ -101,20 +123,34 @@ const OrderDetails = () => {
 
   if (!order) return <div className="order-details-page"><p>Loading...</p></div>;
 
-  // Logic: Show "Request Refund" button if eligible
+  // --- REFUND ELIGIBILITY LOGIC ---
   const orderStatusLower = order.status?.toLowerCase() || '';
-  const isEligibleTime = (new Date() - new Date(order.order_date)) / (1000 * 3600 * 24) <= 30;
-  const isEligibleStatus = ['delivered', 'refund request sent', 'refund accepted', 'refund rejected'].includes(orderStatusLower);
-  const canRequestRefund = isEligibleStatus && isEligibleTime;
+  
+  // ✅ FIX: Prioritize created_at because database only has created_at
+  const orderDate = new Date(order.created_at || order.order_date);
+  
+  const diffTime = Math.abs(new Date() - orderDate);
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+  const isEligibleTime = diffDays <= 30;
 
-  // Check if a refund is currently pending to lock the button
-  const isRefundPending = orderStatusLower === 'refund request sent';
+  const isVisibleStatus = [
+    'delivered', 
+    'refund request sent', 
+    'refund accepted', 
+    'refund rejected'
+  ].includes(orderStatusLower);
 
-  // --- ITEM RENDERING LOGIC ---
+  const isLockedStatus = [
+    'refund request sent', 
+    'refund accepted', 
+    'refund rejected'
+  ].includes(orderStatusLower);
+
+  const canShowRefundButton = isVisibleStatus && isEligibleTime;
+
   let visibleItems = [];
 
   if (isRefundMode) {
-    // EXPAND ITEMS: If quantity is 3, create 3 rows
     visibleItems = order.items.flatMap(item => {
       const totalQty = item.quantity || 1;
       const refundedQty = Number(item.refunded_quantity || 0);
@@ -122,14 +158,17 @@ const OrderDetails = () => {
       return Array.from({ length: totalQty }).map((_, idx) => ({
         ...item,
         uniqueKey: getExpandedKey(item.order_item_id, idx),
-        // The first N items are considered "already refunded"
         isAlreadyRefunded: idx < refundedQty, 
         displayIndex: idx + 1
       }));
     });
   } else {
-    // STANDARD VIEW: One row per product type
     visibleItems = order.items;
+  }
+
+  let displayOrderStatus = order.status;
+  if (['Refund Accepted', 'Refund Rejected'].includes(order.status)) {
+    displayOrderStatus = 'Delivered';
   }
 
   return (
@@ -137,26 +176,34 @@ const OrderDetails = () => {
       <div className="header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <button className="back-btn" onClick={() => navigate('/account/orders')}>← Back to Orders</button>
         
-        {/* Toggle Refund Mode Button */}
-        {canRequestRefund && !isRefundMode && (
+        {canShowRefundButton && !isRefundMode && (
           <button 
             className="refund-btn"
             onClick={() => setIsRefundMode(true)}
-            disabled={isRefundPending} // Lock button if pending
+            disabled={isLockedStatus}
             style={{ 
-              background: isRefundPending ? '#9ca3af' : '#e11d48', // Grey out if pending
+              background: isLockedStatus ? '#9ca3af' : '#e11d48',
               color: 'white', 
               border: 'none', 
               padding: '10px 20px', 
               borderRadius: '6px', 
-              cursor: isRefundPending ? 'not-allowed' : 'pointer' 
+              cursor: isLockedStatus ? 'not-allowed' : 'pointer',
+              opacity: isLockedStatus ? 0.7 : 1
             }}
           >
-            {isRefundPending ? 'Refund Request Pending' : 'Request Refund / Return'}
+            {orderStatusLower === 'refund request sent' && 'Refund Request Pending'}
+            {orderStatusLower === 'refund accepted' && 'Refund Request Concluded'}
+            {orderStatusLower === 'refund rejected' && 'Refund Request Concluded'}
+            {orderStatusLower === 'delivered' && 'Request Refund / Return'}
           </button>
         )}
 
-        {/* Action Buttons inside Refund Mode */}
+        {!canShowRefundButton && orderStatusLower === 'delivered' && (
+           <span style={{ color: '#6b7280', fontSize: '0.9rem', fontStyle: 'italic' }}>
+             Return window closed (30 days)
+           </span>
+        )}
+
         {isRefundMode && (
           <div style={{ display: 'flex', gap: '10px' }}>
             <button 
@@ -169,9 +216,9 @@ const OrderDetails = () => {
             <button 
               className="submit-refund-btn"
               style={{ background: '#e11d48', color: 'white', padding: '8px 16px', borderRadius: '6px', border: 'none', cursor: 'pointer' }}
-              onClick={handleRefundSubmit}
+              onClick={handleRefundClick} 
             >
-              Submit Refund ({selectedKeys.size})
+              Request Refund ({selectedKeys.size})
             </button>
           </div>
         )}
@@ -182,17 +229,28 @@ const OrderDetails = () => {
           Order #{order.order_id} 
           {isRefundMode && <span style={{ color: '#e11d48', marginLeft: '10px', fontSize: '0.8em' }}>(Select items to return)</span>}
         </h2>
-        <p style={{ marginBottom: '20px' }}>Status: <strong>{order.status}</strong></p>
+        <p style={{ marginBottom: '20px' }}>
+          Date: <strong>{orderDate.toLocaleString()}</strong>
+        </p>
+        <p style={{ marginBottom: '20px' }}>Status: <strong>{displayOrderStatus}</strong></p>
 
         <div className="order-items">
           {visibleItems.map(item => {
             const isSelected = isRefundMode && selectedKeys.has(item.uniqueKey);
             const isRefunded = isRefundMode && item.isAlreadyRefunded;
             
-            // In Refund Mode, we show unit price. In Normal Mode, we show line total.
             const displayPrice = isRefundMode 
               ? Number(item.price_at_purchase) 
               : Number(item.price_at_purchase) * (item.quantity || 1);
+
+            const requestedQty = Number(item.refund_requested_qty || 0);
+            const approvedQty = Number(item.refund_approved_qty || 0);
+            const rejectedQty = Number(item.refund_rejected_qty || 0);
+
+            const refundStatusParts = [];
+            if (requestedQty > 0) refundStatusParts.push(`Refund Pending: ${requestedQty}`);
+            if (approvedQty > 0) refundStatusParts.push(`Refund Accepted: ${approvedQty}`);
+            if (rejectedQty > 0) refundStatusParts.push(`Refund Rejected: ${rejectedQty}`);
 
             return (
               <div 
@@ -205,7 +263,6 @@ const OrderDetails = () => {
                    transition: 'all 0.2s'
                 }}
               >
-                {/* CHECKBOX - Only visible in Refund Mode */}
                 {isRefundMode && (
                    <div style={{ marginRight: '15px', display: 'flex', alignItems: 'center' }}>
                      {isRefunded ? (
@@ -227,7 +284,6 @@ const OrderDetails = () => {
                   <div className="item-info">
                     <h3>
                         {item.name} 
-                        {/* Show numbering if expanded: "Mouse #1", "Mouse #2" */}
                         {isRefundMode && item.quantity > 1 && (
                           <span style={{ fontSize: '0.9em', color: '#666', marginLeft: '8px' }}>
                              #{item.displayIndex}
@@ -236,14 +292,22 @@ const OrderDetails = () => {
                     </h3>
                     <p className="item-desc">{item.model || 'Standard Model'}</p>
                     
-                    {/* Only show "Quantity: X" in Normal Mode */}
                     {!isRefundMode && <p>Quantity: {item.quantity}</p>}
                     
-                    {/* Repurchase button only in Normal Mode */}
                     {!isRefundMode && (
                       <button className="repurchase-btn" onClick={() => handleRepurchase(item)} style={{ marginTop: '10px' }}>
                         Repurchase
                       </button>
+                    )}
+
+                    {!isRefundMode && refundStatusParts.length > 0 && (
+                      <div className="refund-status-breakdown" style={{ marginTop: '5px', fontSize: '0.85rem', fontWeight: '500', color: '#666' }}>
+                        {refundStatusParts.map((part, i) => (
+                           <span key={i} style={{ marginRight: '15px', color: part.includes('Rejected') ? '#e11d48' : part.includes('Accepted') ? '#10b981' : '#f59e0b' }}>
+                             {part}
+                           </span>
+                        ))}
+                      </div>
                     )}
                   </div>
                 </div>
@@ -256,12 +320,46 @@ const OrderDetails = () => {
           })}
         </div>
         
-        {/* Footer info (Address, etc.) */}
         <div className="address-section" style={{ marginTop: '30px', borderTop: '1px solid #eee', paddingTop: '20px' }}>
           <h4>Delivery Address</h4>
           <p>{order.shipping_address || 'Default Address'}</p>
         </div>
       </div>
+
+      {showRefundModal && (
+        <div className="refund-modal-overlay">
+          <div className="refund-modal">
+            <h3>Request Refund</h3>
+            <p>You are requesting a refund for <strong>{selectedKeys.size}</strong> item(s).</p>
+            <p className="refund-subtitle">Please explain why you are returning these items:</p>
+            
+            <textarea 
+              className="refund-textarea"
+              placeholder="e.g. Item defective, arrived damaged, changed mind..."
+              value={refundReason}
+              onChange={(e) => setRefundReason(e.target.value)}
+              autoFocus
+            />
+
+            <div className="refund-modal-actions">
+              <button 
+                className="cancel-btn modal-btn" 
+                onClick={() => setShowRefundModal(false)}
+                disabled={isSubmittingRefund}
+              >
+                Cancel
+              </button>
+              <button 
+                className="submit-refund-btn modal-btn" 
+                onClick={submitRefundRequest}
+                disabled={isSubmittingRefund}
+              >
+                {isSubmittingRefund ? 'Submitting...' : 'Confirm Request'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

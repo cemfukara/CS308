@@ -60,9 +60,15 @@ const Orders = () => {
       ) : (
         <div className="orders-list">
           {displayOrders.map(order => {
-            // FIX: Replace spaces with hyphens for CSS classes
-            // "Refund Rejected" -> "refund-rejected"
-            const statusClass = order.status.toLowerCase().replace(/\s+/g, '-');
+            let displayStatus = order.status;
+            if (['Refund Accepted', 'Refund Rejected'].includes(order.status)) {
+              displayStatus = 'Delivered';
+            }
+
+            const statusClass = displayStatus.toLowerCase().replace(/\s+/g, '-');
+
+            // ✅ FIX: Prioritize created_at here as well
+            const displayDate = order.created_at || order.order_date;
 
             return (
               <div className="order-card" key={order.order_id}>
@@ -71,17 +77,16 @@ const Orders = () => {
                     <h3>Order #{order.order_id}</h3>
                     <p>
                       Date:{' '}
-                      {order.order_date || order.created_at
-                        ? new Date(order.order_date || order.created_at).toLocaleString()
+                      {displayDate
+                        ? new Date(displayDate).toLocaleString()
                         : '—'}
                     </p>
                     <p>Total: {formatPrice(order.total_price, order.currency)}</p>
                   </div>
 
                   <div className="order-actions">
-                    {/* Apply the fixed class name */}
                     <span className={`status ${statusClass}`}>
-                      {order.status}
+                      {displayStatus}
                     </span>
 
                     <button

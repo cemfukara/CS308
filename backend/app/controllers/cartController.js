@@ -9,6 +9,8 @@ import {
   updateCartItemQuantity,
 } from '../../models/Cart.js';
 
+import logger from '../../utils/logger.js';
+
 //------------------------------------------------------
 // GET /cart  →  Get user's active cart + items
 //------------------------------------------------------
@@ -22,13 +24,22 @@ export async function getCart(req, res) {
     // Fetch cart items
     const items = await getCartItems(cart.order_id);
 
+    logger.info('Cart fetched', {
+      userId,
+      orderId: cart.order_id,
+      itemCount: items.length,
+    });
+
     res.status(200).json({
       success: true,
       cart,
       items,
     });
   } catch (error) {
-    console.error('Error getting cart:', error);
+    logger.error('Error getting cart', {
+      userId,
+      error,
+    });
     res.status(500).json({ success: false, message: 'Server error' });
   }
 }
@@ -41,10 +52,12 @@ export async function addItemToCart(req, res) {
     const userId = req.user.user_id;
     const { productId, quantity } = req.body;
 
-    if (!productId)
+    if (!productId) {
+      logger.warn('Add to cart failed: missing productId', { userId });
       return res
         .status(400)
         .json({ success: false, message: 'productId required' });
+    }
 
     // Get or create cart
     const cart = await getOrCreateCart(userId);
@@ -54,6 +67,12 @@ export async function addItemToCart(req, res) {
 
     // Check if there was a stock error
     if (result && result.stockError) {
+      logger.warn('Stock error while adding to cart', {
+        userId,
+        productId,
+        availableStock: result.availableStock,
+        currentCartQuantity: result.currentCartQuantity,
+      });
       return res.status(400).json({
         success: false,
         message: result.error,
@@ -63,12 +82,23 @@ export async function addItemToCart(req, res) {
       });
     }
 
+    logger.info('Item added to cart', {
+      userId,
+      productId,
+      quantity: quantity ?? 1,
+      orderId: cart.order_id,
+    });
+
     res.status(200).json({
       success: true,
       message: 'Item added to cart',
     });
   } catch (error) {
-    console.error('Error adding item:', error);
+    logger.error('Error adding item to cart', {
+      userId,
+      productId,
+      error,
+    });
     res.status(500).json({ success: false, message: 'Server error' });
   }
 }
@@ -82,6 +112,7 @@ export async function deleteCartItem(req, res) {
     const { productId } = req.params;
 
     if (!productId) {
+      logger.warn('Delete cart item failed: missing productId', { userId });
       return res.status(400).json({
         success: false,
         message: 'productId required',
@@ -97,12 +128,21 @@ export async function deleteCartItem(req, res) {
       });
     }
 
+    logger.info('Item removed from cart', {
+      userId,
+      productId,
+    });
+
     res.status(200).json({
       success: true,
       message: 'Item removed from cart',
     });
   } catch (error) {
-    console.error('Error removing item:', error);
+    logger.error('Error removing cart item', {
+      userId,
+      productId,
+      error,
+    });
     res.status(500).json({
       success: false,
       message: 'Server error',
@@ -120,6 +160,11 @@ export async function updateCartItem(req, res) {
     const { quantity } = req.body;
 
     if (!productId || !quantity) {
+      logger.warn('Update cart item failed: missing data', {
+        userId,
+        productId,
+        quantity,
+      });
       return res.status(400).json({
         success: false,
         message: 'productId and quantity required',
@@ -130,10 +175,20 @@ export async function updateCartItem(req, res) {
     const cart = await getOrCreateCart(userId);
 
     // Update item quantity
-    const result = await updateCartItemQuantity(cart.order_id, productId, quantity);
+    const result = await updateCartItemQuantity(
+      cart.order_id,
+      productId,
+      quantity
+    );
 
     // Check if there was a stock error
     if (result && result.stockError) {
+      logger.warn('Stock error while updating cart item', {
+        userId,
+        productId,
+        requestedQuantity: quantity,
+        availableStock: result.availableStock,
+      });
       return res.status(400).json({
         success: false,
         message: result.error,
@@ -142,12 +197,24 @@ export async function updateCartItem(req, res) {
       });
     }
 
+    logger.info('Cart item updated', {
+      userId,
+      productId,
+      quantity,
+      orderId: cart.order_id,
+    });
+
     res.status(200).json({
       success: true,
       message: 'Cart item updated',
     });
   } catch (error) {
-    console.error('Error updating cart item:', error);
+    logger.error('Error updating cart item', {
+      userId,
+      productId,
+      quantity,
+      error,
+    });
     res.status(500).json({ success: false, message: 'Server error' });
   }
 }
@@ -163,13 +230,20 @@ export async function clearUserCart(req, res) {
 
     await clearCart(cart.order_id);
 
+    logger.info('Cart cleared', {
+      userId,
+      orderId: cart.order_id,
+    });
+
     res.status(200).json({
       success: true,
       message: 'Cart cleared',
     });
   } catch (error) {
-    console.error('Error clearing cart:', error);
+    logger.error('Error clearing cart', {
+      userId,
+      error,
+    });
     res.status(500).json({ success: false, message: 'Server error' });
   }
 }
-

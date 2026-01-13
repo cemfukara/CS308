@@ -1,5 +1,4 @@
 // backend/app/controllers/productController.js
-// This file handles product-related logic such as listing, creating, or updating products.
 import {
   getAllProducts,
   getProductById,
@@ -12,15 +11,28 @@ import {
 
 import { getWishlistedUsers } from '../../models/Wishlist.js';
 
-import { notifyUsers } from '../../models/Notification.js';
+// IMPORTANT: Import BOTH email functions
+import {
+  sendStockNotificationEmail,
+  sendDiscountNotificationEmail,
+} from '../../utils/emailService.js';
 
-// --- ENHANCED: fetchProducts (Handles GET /api/products) ---
+import logger from '../../utils/logger.js';
+
+// --- fetchProducts (Handles GET /api/products) ---
 export async function fetchProducts(req, res) {
   try {
-    // Extract query parameters for sorting, pagination, search, and category
     const { page, limit, sortBy, sortOrder, search, category } = req.query;
 
-    // Call the enhanced model function
+    logger.info('Fetching products', {
+      page,
+      limit,
+      sortBy,
+      sortOrder,
+      search,
+      category,
+    });
+
     const data = await getAllProducts({
       page: page,
       limit: limit,
@@ -30,45 +42,101 @@ export async function fetchProducts(req, res) {
       category: category,
     });
 
-    // The model now returns an object with products, totalCount, etc.
     res.status(200).json(data);
   } catch (err) {
-    // Use your consistent error handling utility if you have one
-    console.error('Error fetching products:', err);
+    logger.error('Failed to fetch products', { error: err });
     res.status(500).json({ error: 'Internal server error' });
   }
 }
 
-// --- NEW: fetchProductDetails (Handles GET /api/products/:id) ---
+/**
+ * Helper to notify all users who have a specific product in their wishlist
+ */
+async function notifyWishlistUsers(productId, type, data) {
+  try {
+    const emails = await getWishlistedUsers(productId);
+
+    if (!emails || emails.length === 0) {
+      logger.info('No wishlist users to notify', { productId, type });
+      return;
+    }
+
+    logger.info('Sending wishlist notifications', {
+      productId,
+      type,
+      recipientCount: emails.length,
+    });
+
+    // 2. Send emails
+    const emailPromises = emails.map((email) => {
+      // Ensure email is valid before attempting to send
+      if (!email) return Promise.resolve();
+
+      if (type === 'stock') {
+        return sendStockNotificationEmail(email, data.productName);
+      } else if (type === 'discount') {
+        return sendDiscountNotificationEmail(
+          email,
+          data.productName,
+          data.discountRate
+        );
+      }
+    });
+
+    await Promise.all(emailPromises);
+
+    logger.info('Wishlist notifications sent', {
+      productId,
+      type,
+    });
+  } catch (err) {
+    logger.error('Failed to send wishlist notifications', {
+      productId,
+      type,
+      error: err,
+    });
+  }
+}
+
+// fetchProductDetails (Handles GET /api/products/:id)
 export async function fetchProductDetails(req, res) {
   try {
     const { id } = req.params;
+
+    logger.info('Fetching product details', { productId: id });
+
     const product = await getProductById(id);
 
     if (!product) {
-      // Consistent 404 response
+      logger.warn('Product not found', { productId: id });
       return res.status(404).json({ message: 'Product not found' });
     }
 
     res.status(200).json(product);
   } catch (err) {
-    console.error('Error fetching product details:', err);
+    logger.error('Failed to fetch product details', {
+      productId: req.params.id,
+      error: err,
+    });
     res.status(500).json({ error: 'Internal server error' });
   }
 }
 
-// --- NEW: fetchFeaturedProduct (GET /api/products/featured) ---
+// fetchFeaturedProduct (GET /api/products/featured)
 export async function fetchFeaturedProduct(req, res) {
   try {
+    logger.info('Fetching featured product');
+
     const product = await getFeaturedProduct();
 
     if (!product) {
+      logger.warn('No featured product found');
       return res.status(404).json({ message: 'No discounted product found' });
     }
 
     res.status(200).json(product);
   } catch (err) {
-    console.error('Error fetching featured product:', err);
+    logger.error('Failed to fetch featured product', { error: err });
     res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -83,38 +151,47 @@ export async function setDiscount(req, res) {
   try {
     const { productId, discountRate } = req.body;
 
-    if (!productId || isNaN(discountRate)) {
-      return res
-        .status(400)
-        .json({ message: 'productId and discountRate are required' });
+    if (!productId || discountRate === undefined) {
+      logger.warn('Invalid discount request', req.body);
+      return res.status(400).json({
+        message: 'productId and discountRate are required',
+      });
     }
 
-    // 1) Apply discount (THIS is the critical operation)
+    logger.info('Applying discount', {
+      productId,
+      discountRate,
+      actor: req.user?.user_id,
+    });
+
+    const product = await getProductById(productId);
+    if (!product) {
+      logger.warn('Product not found for discount', { productId });
+      return res.status(404).json({ message: 'Product not found' });
+    }
+
     const updatedProduct = await applyDiscount(productId, discountRate);
 
-    let wishlistedUsers = [];
-
-    try {
-      // 2) Try to notify users (non-critical)
-      wishlistedUsers = await getWishlistedUsers(productId);
-      await notifyUsers(wishlistedUsers, productId, discountRate);
-    } catch (notifyErr) {
-      console.error(
-        `Discount applied but notification failed for product ${productId}`,
-        notifyErr
-      );
-      // IMPORTANT: do NOT throw
+    // Trigger notification: Only if discount is > 0
+    // Coerce discountRate to number to ensure safe comparison
+    if (Number(discountRate) > 0) {
+      // Run in background (do not await) to keep API fast
+      notifyWishlistUsers(productId, 'discount', {
+        productName: product.name,
+        discountRate: discountRate,
+      });
     }
 
-    // 3) Always return success if discount was applied
-    return res.json({
+    res.json({
       message: 'Discount applied',
       product: updatedProduct,
-      notifiedUsers: wishlistedUsers.length || 0,
     });
   } catch (err) {
-    console.error(err);
-    return res.status(500).json({ message: 'Internal server error' });
+    logger.error('Failed to apply discount', {
+      productId: req.body?.productId,
+      error: err,
+    });
+    res.status(500).json({ message: 'Internal server error' });
   }
 }
 
@@ -124,66 +201,99 @@ export async function setDiscount(req, res) {
 ---------------------------------------------------
 */
 
-// --- NEW: createProduct (Handles POST /api/products - Admin) ---
+// --- createProduct (Handles POST /api/products - Admin) ---
 export async function addProduct(req, res) {
   try {
-    // Note: Validation should ideally run before this (Story 3)
     const productData = req.body;
     const newProductId = await createProduct(productData);
 
-    // Respond with the ID of the newly created resource
     res.status(201).json({
       message: 'Product created successfully',
       id: newProductId,
     });
+
+    logger.info('Creating product', {
+      actor: req.user?.user_id,
+      payload: req.body,
+    });
   } catch (err) {
-    console.error('Error creating product:', err);
+    logger.error('Failed to create product', {
+      error: err,
+      payload: req.body,
+    });
     res.status(500).json({ error: 'Internal server error' });
   }
 }
 
-// --- NEW: updateProduct (Handles PUT /api/products/:id - Admin) ---
+// updateProductDetails (Handles PUT /api/products/:id - Admin)
 export async function updateProductDetails(req, res) {
   try {
     const { id } = req.params;
-    const productData = req.body; // Data to update
+    const productData = req.body;
+
+    // 1. Get current state to check stock transition
+    const oldProduct = await getProductById(id);
+    if (!oldProduct) {
+      logger.warn('Product not found for update', { productId: id });
+      return res.status(404).json({ message: 'Product not found' });
+    }
 
     const affectedRows = await updateProduct(id, productData);
 
-    if (affectedRows === 0) {
-      // Check if product exists before updating
-      const product = await getProductById(id);
-      if (!product) {
-        return res.status(404).json({ message: 'Product not found' });
+    if (affectedRows > 0) {
+      // 2. Check Trigger: Stock went from 0 to Positive
+      const oldStock = parseInt(oldProduct.quantity_in_stock || 0);
+
+      // Ensure we allow 0 as a valid number, but check if property exists in update
+      if (productData.quantity_in_stock !== undefined) {
+        const newStock = parseInt(productData.quantity_in_stock);
+
+        if (oldStock === 0 && newStock > 0) {
+          // Run in background
+          notifyWishlistUsers(id, 'stock', { productName: oldProduct.name });
+        }
       }
-      // If product found but 0 rows affected, likely nothing changed
-      return res
-        .status(200)
-        .json({ message: 'Product updated successfully (no changes made)' });
     }
 
-    res.status(200).json({
-      message: 'Product updated successfully',
+    logger.info('Updating product', {
+      productId: id,
+      actor: req.user?.user_id,
+      updates: productData,
     });
+
+    res.status(200).json({ message: 'Product updated successfully' });
   } catch (err) {
-    console.error('Error updating product:', err);
+    logger.error('Failed to update product', {
+      productId: req.params.id,
+      error: err,
+    });
     res.status(500).json({ error: 'Internal server error' });
   }
 }
 
-// --- NEW: deleteProduct (Handles DELETE /api/products/:id - Admin) ---
+// --- removeProduct (Handles DELETE /api/products/:id - Admin) ---
 export async function removeProduct(req, res) {
   try {
     const { id } = req.params;
+
+    logger.info('Deleting product', {
+      productId: id,
+      actor: req.user?.user_id,
+    });
+
     const affectedRows = await deleteProduct(id);
 
     if (affectedRows === 0) {
+      logger.warn('Product not found for deletion', { productId: id });
       return res.status(404).json({ message: 'Product not found' });
     }
 
     res.status(200).json({ message: 'Product deleted successfully' });
   } catch (err) {
-    console.error('Error deleting product:', err);
+    logger.error('Failed to delete product', {
+      productId: req.params.id,
+      error: err,
+    });
     res.status(500).json({ error: 'Internal server error' });
   }
 }

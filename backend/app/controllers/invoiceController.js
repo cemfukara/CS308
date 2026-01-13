@@ -7,10 +7,14 @@ import {
   getRevenueProfitBetweenDates as modelGetRevenueProfitBetweenDates,
   getRevenueProfitChart as modelGetRevenueProfitChart,
 } from '../../models/Invoice.js';
+import logger from '../../utils/logger.js';
 
+//------------------------------------------------------
 // Utility to parse & validate date query params
+//------------------------------------------------------
 function parseDateRange(query) {
   const { start, end } = query;
+
   if (!start || !end) {
     const err = new Error(
       'Both start and end query parameters are required, e.g. ?start=2025-01-01&end=2025-01-31'
@@ -32,54 +36,75 @@ function parseDateRange(query) {
 }
 
 // -----------------------------------------------
-// GET /api/invoices/range?start=YYYY-MM-DD&end=YYYY-MM-DD
+// GET /api/invoices/range
 // -----------------------------------------------
 export async function getInvoicesByDateRange(req, res) {
   try {
     const { start, end } = parseDateRange(req.query);
     const invoices = await modelGetInvoicesByDateRange(start, end);
+
+    logger.info('Invoices fetched by date range', {
+      start,
+      end,
+      count: invoices.length,
+    });
+
     res.json(invoices);
   } catch (err) {
-    console.error(err);
-    return res.status(500).json({ message: 'Internal server error' });
+    logger.error('Error fetching invoices by date range', {
+      query: req.query,
+      error: err,
+    });
+
+    res.status(err.status || 500).json({ message: 'Internal server error' });
   }
 }
 
 // -----------------------------------------------
 // GET /api/invoices/:orderId/pdf
-// Generate professional PDF invoice with customer details
 // -----------------------------------------------
 export async function generateInvoicePDF(req, res) {
   try {
     const orderId = parseInt(req.params.orderId, 10);
+
     if (!orderId) {
+      logger.warn('Generate invoice PDF failed: invalid orderId', {
+        orderId: req.params.orderId,
+      });
+
       return res.status(400).json({ message: 'Invalid order ID' });
     }
 
     const invoice = await modelGetInvoiceById(orderId);
+
     if (!invoice) {
+      logger.warn('Invoice PDF generation failed: invoice not found', {
+        orderId,
+      });
+
       return res.status(404).json({ message: 'Invoice/order not found' });
     }
 
     const items = await modelGetInvoiceItems(orderId);
 
-    // Get user information for customer details (tax ID, address)
-    // Handle cases where user_id might not be available (e.g., in tests)
     let userInfo = null;
     if (invoice.user_id) {
       try {
         userInfo = await findUserById(invoice.user_id);
       } catch (err) {
-        console.warn(`Could not fetch user info for user_id ${invoice.user_id}:`, err.message);
+        logger.warn('Failed to fetch user info for invoice PDF', {
+          orderId,
+          userId: invoice.user_id,
+          error: err.message,
+        });
       }
     }
 
-    // Prepare customer name
     const customerName = userInfo
-      ? `${userInfo.first_name || ''} ${userInfo.last_name || ''}`.trim() || 'Customer'
+      ? `${userInfo.first_name || ''} ${userInfo.last_name || ''}`.trim() ||
+        'Customer'
       : 'Customer';
 
-    // Generate professional PDF using our unified generator
     const pdfBuffer = await generateProfessionalInvoice(
       {
         order_id: orderId,
@@ -96,7 +121,11 @@ export async function generateInvoicePDF(req, res) {
       items
     );
 
-    // Send PDF as response
+    logger.info('Invoice PDF generated', {
+      orderId,
+      itemCount: items.length,
+    });
+
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader(
       'Content-Disposition',
@@ -104,8 +133,12 @@ export async function generateInvoicePDF(req, res) {
     );
     res.send(pdfBuffer);
   } catch (err) {
-    console.error('PDF generation error:', err);
-    return res.status(500).json({ message: 'Internal server error' });
+    logger.error('Invoice PDF generation error', {
+      orderId: req.params.orderId,
+      error: err,
+    });
+
+    res.status(500).json({ message: 'Internal server error' });
   }
 }
 
@@ -117,14 +150,23 @@ export async function getRevenueProfit(req, res) {
     const { start, end } = parseDateRange(req.query);
     const totals = await modelGetRevenueProfitBetweenDates(start, end);
 
+    logger.info('Revenue & profit calculated', {
+      start,
+      end,
+    });
+
     res.json({
       revenue: Number(totals.total_revenue || 0),
       cost: Number(totals.total_cost || 0),
       profit: Number(totals.total_profit || 0),
     });
   } catch (err) {
-    console.error(err);
-    return res.status(500).json({ message: 'Internal server error' });
+    logger.error('Error calculating revenue & profit', {
+      query: req.query,
+      error: err,
+    });
+
+    res.status(err.status || 500).json({ message: 'Internal server error' });
   }
 }
 
@@ -136,6 +178,12 @@ export async function getRevenueProfitChartController(req, res) {
     const { start, end } = parseDateRange(req.query);
     const rows = await modelGetRevenueProfitChart(start, end);
 
+    logger.info('Revenue/profit chart data fetched', {
+      start,
+      end,
+      days: rows.length,
+    });
+
     const chartData = rows.map((r) => ({
       day: r.day,
       revenue: Number(r.revenue || 0),
@@ -145,8 +193,12 @@ export async function getRevenueProfitChartController(req, res) {
 
     res.json(chartData);
   } catch (err) {
-    console.error(err);
-    return res.status(500).json({ message: 'Internal server error' });
+    logger.error('Error fetching revenue/profit chart data', {
+      query: req.query,
+      error: err,
+    });
+
+    res.status(err.status || 500).json({ message: 'Internal server error' });
   }
 }
 
@@ -156,20 +208,33 @@ export async function getRevenueProfitChartController(req, res) {
 export async function getInvoiceJson(req, res) {
   try {
     const orderId = parseInt(req.params.orderId, 10);
+
     if (!orderId) {
+      logger.warn('Get invoice JSON failed: invalid orderId', {
+        orderId: req.params.orderId,
+      });
+
       return res.status(400).json({ message: 'Invalid order ID' });
     }
 
-    // Get main invoice data
     const invoice = await modelGetInvoiceById(orderId);
+
     if (!invoice) {
+      logger.warn('Get invoice JSON failed: invoice not found', {
+        orderId,
+      });
+
       return res.status(404).json({ message: 'Invoice/order not found' });
     }
 
     // Get line items
     const items = await modelGetInvoiceItems(orderId);
 
-    // Format response exactly how the frontend expects
+    logger.info('Invoice JSON fetched', {
+      orderId,
+      itemCount: items.length,
+    });
+
     return res.json({
       invoice: {
         order_id: invoice.order_id,
@@ -186,7 +251,11 @@ export async function getInvoiceJson(req, res) {
       })),
     });
   } catch (err) {
-    console.error('getInvoiceJson error:', err);
-    return res.status(500).json({ message: 'Failed to load invoice' });
+    logger.error('Error fetching invoice JSON', {
+      orderId,
+      error: err,
+    });
+
+    res.status(500).json({ message: 'Failed to load invoice' });
   }
 }

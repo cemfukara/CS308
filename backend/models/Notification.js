@@ -1,11 +1,5 @@
 import { db } from '../app/config/db.js';
 
-// Helper for DB queries
-async function query(sql, params = []) {
-  const [rows] = await db.execute(sql, params);
-  return rows;
-}
-
 /**
  * Insert notifications for all users.
  */

@@ -5,6 +5,7 @@ import * as SupportChat from '../models/SupportChat.js';
 import * as SupportMessage from '../models/SupportMessage.js';
 import jwt from 'jsonwebtoken';
 import cookie from 'cookie';
+import logger from '../utils/logger.js';
 
 /**
  * Initialize Socket.io event handlers
@@ -12,8 +13,11 @@ import cookie from 'cookie';
  */
 export function initializeSocketHandlers(io) {
   io.on('connection', (socket) => {
-    console.log(`Client connected: ${socket.id}`);
-
+    logger.info('Socket connected', {
+      socketId: socket.id,
+      ip: socket.handshake.address,
+      userAgent: socket.handshake.headers['user-agent'],
+    });
 
     let currentUser = null;
     let currentChatId = null;
@@ -53,9 +57,18 @@ export function initializeSocketHandlers(io) {
           currentUser = null;
         }
 
+        logger.info('Socket authenticated', {
+          socketId: socket.id,
+          user: currentUser,
+          authType: jwtToken ? 'jwt' : 'guest',
+        });
+
         socket.emit('authenticated', { success: true, user: currentUser });
       } catch (error) {
-        console.error('Authentication error:', error);
+        logger.warn('Socket authentication failed', {
+          socketId: socket.id,
+          error: error.message,
+        });
         socket.emit('authenticated', {
           success: false,
           error: 'Invalid token',
@@ -87,19 +100,21 @@ export function initializeSocketHandlers(io) {
 
         currentChatId = chatId;
         socket.join(`chat_${chatId}`);
-        console.log(
-          'CUSTOMER JOINED ROOM',
-          `chat_${chatId}`,
-          'socket:',
-          socket.id,
-          'currentUser:',
-          currentUser
-        );
+
+        logger.info('Customer joined chat', {
+          socketId: socket.id,
+          chatId,
+          user: currentUser,
+        });
 
         const messages = await SupportMessage.getMessagesByChatId(chatId);
         socket.emit('chat:joined', { chatId, messages });
       } catch (err) {
-        console.error(err);
+        logger.error('Customer failed to join chat', {
+          socketId: socket.id,
+          chatId,
+          error: err,
+        });
         socket.emit('error', { message: 'Failed to join chat' });
       }
     });
@@ -110,9 +125,7 @@ export function initializeSocketHandlers(io) {
     socket.on('customer:send-message', async ({ chatId, messageText }) => {
       try {
         socket.join(`chat_${chatId}`);
-        const senderUserId = currentUser?.isGuest
-          ? null
-          : currentUser?.user_id;
+        const senderUserId = currentUser?.isGuest ? null : currentUser?.user_id;
 
         const messageId = await SupportMessage.createMessage(
           chatId,
@@ -132,8 +145,19 @@ export function initializeSocketHandlers(io) {
         if (chat.status === 'waiting') {
           io.to('agent_queue').emit('queue:update');
         }
+
+        logger.info('Customer sent message', {
+          chatId,
+          socketId: socket.id,
+          sender: currentUser,
+          messageLength: messageText?.length,
+        });
       } catch (err) {
-        console.error(err);
+        logger.error('Customer message failed', {
+          chatId,
+          socketId: socket.id,
+          error: err,
+        });
         socket.emit('error', { message: 'Failed to send message' });
       }
     });
@@ -150,8 +174,17 @@ export function initializeSocketHandlers(io) {
         socket.join('agent_queue');
         const waitingChats = await SupportChat.getWaitingChats();
         socket.emit('queue:chats', { chats: waitingChats });
+
+        logger.info('Agent joined queue', {
+          socketId: socket.id,
+          agentId: currentUser.user_id,
+          email: currentUser.email,
+        });
       } catch (err) {
-        console.error(err);
+        logger.error('Agent failed to join queue', {
+          socketId: socket.id,
+          error: err,
+        });
         socket.emit('error', { message: 'Failed to join queue' });
       }
     });
@@ -187,8 +220,18 @@ export function initializeSocketHandlers(io) {
         io.to(`chat_${chatId}`).emit('agent:joined', {
           agent_email: currentUser.email,
         });
+
+        logger.info('Chat claimed by agent', {
+          chatId,
+          agentId: currentUser.user_id,
+          socketId: socket.id,
+        });
       } catch (err) {
-        console.error(err);
+        logger.error('Agent failed to claim chat', {
+          chatId,
+          agentId: currentUser?.user_id,
+          error: err,
+        });
         socket.emit('error', { message: 'Failed to claim chat' });
       }
     });
@@ -213,7 +256,10 @@ export function initializeSocketHandlers(io) {
         const messages = await SupportMessage.getMessagesByChatId(chatId);
         socket.emit('chat:joined', { chatId, messages });
       } catch (err) {
-        console.error(err);
+        logger.error('Agent failed to join chat', {
+          socketId: socket.id,
+          error: err,
+        });
         socket.emit('error', { message: 'Failed to join chat' });
       }
     });
@@ -222,7 +268,6 @@ export function initializeSocketHandlers(io) {
     // AGENT SEND MESSAGE
     // -----------------------------
     socket.on('agent:send-message', async ({ chatId, messageText }) => {
-
       try {
         if (!currentUser || currentUser.role !== 'support agent') {
           return socket.emit('error', { message: 'Access denied' });
@@ -246,70 +291,89 @@ export function initializeSocketHandlers(io) {
           sender_email: currentUser.email,
           attachments: [],
         });
+
+        logger.info('Agent sent message', {
+          chatId,
+          agentId: currentUser.user_id,
+          messageLength: messageText?.length,
+        });
       } catch (err) {
-        console.error(err);
+        logger.error('Agent message failed', {
+          chatId,
+          agentId: currentUser?.user_id,
+          error: err,
+        });
         socket.emit('error', { message: 'Failed to send message' });
       }
     });
     // -----------------------------
-// AGENT RESOLVES CHAT  ✅ FIXED
-// -----------------------------
-socket.on('agent:resolve-chat', async ({ chatId }) => {
-  try {
-    if (!currentUser || currentUser.role !== 'support agent') {
-      return socket.emit('error', { message: 'Access denied' });
-    }
+    // AGENT RESOLVES CHAT  ✅ FIXED
+    // -----------------------------
+    socket.on('agent:resolve-chat', async ({ chatId }) => {
+      try {
+        if (!currentUser || currentUser.role !== 'support agent') {
+          return socket.emit('error', { message: 'Access denied' });
+        }
 
-    if (!currentChatId || currentChatId !== chatId) {
-      return socket.emit('error', { message: 'Not in this chat room' });
-    }
+        if (!currentChatId || currentChatId !== chatId) {
+          return socket.emit('error', { message: 'Not in this chat room' });
+        }
 
-    // 1️⃣ Update DB
-    await SupportChat.updateChatStatus(chatId, 'resolved');
+        // 1️⃣ Update DB
+        await SupportChat.updateChatStatus(chatId, 'resolved');
 
-    // 2️⃣ Emit to agent (always works)
-    socket.emit('chat:ended', {
-      chatId,
-      status: 'resolved',
+        // 2️⃣ Emit to agent (always works)
+        socket.emit('chat:ended', {
+          chatId,
+          status: 'resolved',
+        });
+
+        // 3️⃣ Emit to EVERY socket that EVER joined the room
+        io.to(`chat_${chatId}`).emit('chat:ended', {
+          chatId,
+          status: 'resolved',
+        });
+
+        // 4️⃣ 🔑 SAFETY NET: fetch chat & emit directly
+        const chat = await SupportChat.getChatById(chatId);
+
+        if (chat?.guest_identifier) {
+          for (const [id, s] of io.of('/').sockets) {
+            if (s.currentUser?.guest_id === chat.guest_identifier) {
+              s.emit('chat:ended', { chatId, status: 'resolved' });
+            }
+          }
+        }
+
+        if (chat?.user_id) {
+          for (const [id, s] of io.of('/').sockets) {
+            if (s.currentUser?.user_id === chat.user_id) {
+              s.emit('chat:ended', { chatId, status: 'resolved' });
+            }
+          }
+        }
+        logger.info('Chat resolved', {
+          chatId,
+          agentId: currentUser.user_id,
+        });
+      } catch (err) {
+        logger.error('Failed to resolve chat', {
+          chatId,
+          agentId: currentUser?.user_id,
+          error: err,
+        });
+        socket.emit('error', { message: 'Failed to resolve chat' });
+      }
     });
 
-    // 3️⃣ Emit to EVERY socket that EVER joined the room
-    io.to(`chat_${chatId}`).emit('chat:ended', {
-      chatId,
-      status: 'resolved',
-    });
-
-    // 4️⃣ 🔑 SAFETY NET: fetch chat & emit directly
-    const chat = await SupportChat.getChatById(chatId);
-
-    if (chat?.guest_identifier) {
-      for (const [id, s] of io.of('/').sockets) {
-        if (s.currentUser?.guest_id === chat.guest_identifier) {
-          s.emit('chat:ended', { chatId, status: 'resolved' });
-        }
-      }
-    }
-
-    if (chat?.user_id) {
-      for (const [id, s] of io.of('/').sockets) {
-        if (s.currentUser?.user_id === chat.user_id) {
-          s.emit('chat:ended', { chatId, status: 'resolved' });
-        }
-      }
-    }
-
-  } catch (err) {
-    console.error(err);
-    socket.emit('error', { message: 'Failed to resolve chat' });
-  }
-});
-
-    socket.on('disconnect', () => {
-      console.log(`Client disconnected: ${socket.id}`);
+    socket.on('disconnect', (reason) => {
+      logger.info('Socket disconnected', {
+        socketId: socket.id,
+        reason,
+        user: socket.currentUser,
+      });
     });
   });
-
-  
 
   return io;
 }

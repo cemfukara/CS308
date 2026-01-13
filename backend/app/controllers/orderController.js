@@ -11,17 +11,19 @@ import {
   cancelOrder,
   refundOrder,
 } from '../../models/Order.js';
+
 import { findById as findUserById } from '../../models/User.js';
-// Email services when mailjet is working
-// import { sendInvoiceEmail } from '../../utils/emailService.js';
-// Email services when mailjet is not working
+
+// Email services
 import { sendInvoiceEmail } from '../../utils/gmailService.js';
+
 // PDF generator
 import { generateInvoicePDF } from '../../utils/pdfGenerator.js';
 
+import logger from '../../utils/logger.js';
+
 // ==========================================================
 // GET /api/orders
-//  - Get orders for the logged-in customer
 // ==========================================================
 export async function getOrders(req, res) {
   try {
@@ -29,33 +31,52 @@ export async function getOrders(req, res) {
 
     const orders = await getUserOrders(userId);
 
+    logger.info('User orders fetched', {
+      userId,
+      count: orders.length,
+    });
+
     res.status(200).json({ success: true, orders });
   } catch (err) {
-    console.error('❌ Error fetching orders:', err);
+    logger.error('Error fetching user orders', {
+      userId,
+      error: err,
+    });
+
     res.status(500).json({ success: false, message: 'Server error' });
   }
 }
 
 // ==========================================================
 // GET /api/orders/:id
-//  - Get the items inside a specific order
 // ==========================================================
 export async function getOrderDetails(req, res) {
   try {
-    const user = req.user;
+    const userId = req.user.user_id;
     const orderId = req.params.id;
 
     const [order, items] = await Promise.all([
-      getOrderById(orderId, user.user_id),
-      getOrderItems(orderId, user.user_id),
+      getOrderById(orderId, userId),
+      getOrderItems(orderId, userId),
     ]);
 
     if (!order) {
+      logger.warn('Order details not found', {
+        userId,
+        orderId,
+      });
+
       return res.status(404).json({
         success: false,
         message: 'Order not found',
       });
     }
+
+    logger.info('Order details fetched', {
+      userId,
+      orderId,
+      itemCount: items.length,
+    });
 
     res.status(200).json({
       success: true,
@@ -63,7 +84,12 @@ export async function getOrderDetails(req, res) {
       items,
     });
   } catch (err) {
-    console.error('❌ Error fetching order items:', err);
+    logger.error('Error fetching order details', {
+      userId,
+      orderId,
+      error: err,
+    });
+
     res.status(500).json({
       success: false,
       message: 'Server error',
@@ -73,7 +99,6 @@ export async function getOrderDetails(req, res) {
 
 // ==========================================================
 // POST /api/orders
-//  - Create new order
 // ==========================================================
 export async function createOrderController(req, res) {
   try {
@@ -81,6 +106,8 @@ export async function createOrderController(req, res) {
     const { items, address, payment } = req.body;
 
     if (!Array.isArray(items) || items.length === 0) {
+      logger.warn('Create order failed: empty items', { userId });
+
       return res.status(400).json({
         success: false,
         message: 'Order must contain at least one item',
@@ -88,6 +115,8 @@ export async function createOrderController(req, res) {
     }
 
     if (!address) {
+      logger.warn('Create order failed: missing address', { userId });
+
       return res.status(400).json({
         success: false,
         message: 'Shipping address is required',
@@ -98,6 +127,7 @@ export async function createOrderController(req, res) {
       product_id: it.product_id,
       quantity: it.quantity || 1,
       price: Number(it.price) || 0,
+      //currency: it.currency,
     }));
 
     const totalPrice = normalizedItems.reduce(
@@ -112,25 +142,31 @@ export async function createOrderController(req, res) {
       totalPrice,
     });
 
-    // Send invoice email after successful order creation
+    logger.info('Order created', {
+      userId,
+      orderId: order_id,
+      totalPrice,
+      itemCount: normalizedItems.length,
+    });
+
+    // ------------------------------
+    // Invoice email (best-effort)
+    // ------------------------------
     try {
-      // Fetch the complete order details, items, and user info
       const [orderDetails, orderItems, userInfo] = await Promise.all([
         getOrderById(order_id, userId),
         getOrderItems(order_id, userId),
         findUserById(userId),
       ]);
 
-      if (orderDetails && orderDetails.customer_email) {
-        // Determine currency from items (use first item's currency or default to TRY)
+      if (orderDetails?.customer_email) {
         const currency = normalizedItems[0]?.currency || 'TRY';
 
-        // Get customer name
         const customerName = userInfo
-          ? `${userInfo.first_name || ''} ${userInfo.last_name || ''}`.trim() || 'Customer'
+          ? `${userInfo.first_name || ''} ${userInfo.last_name || ''}`.trim() ||
+            'Customer'
           : 'Customer';
 
-        // Generate PDF invoice
         const pdfBuffer = await generateInvoicePDF(
           {
             order_id,
@@ -147,7 +183,6 @@ export async function createOrderController(req, res) {
           orderItems
         );
 
-        // Send email with PDF attachment
         await sendInvoiceEmail(
           orderDetails.customer_email,
           order_id,
@@ -159,17 +194,17 @@ export async function createOrderController(req, res) {
           }
         );
 
-        console.log(
-          `✅ Invoice email sent successfully for order #${order_id}`
-        );
+        logger.info('Invoice email sent', {
+          orderId: order_id,
+          userId,
+        });
       }
     } catch (emailError) {
-      // Log email error but don't fail the order
-      console.error('❌ Failed to send invoice email:', emailError.message);
-      console.error(
-        'Order was created successfully but email failed. Order ID:',
-        order_id
-      );
+      logger.error('Invoice email failed (order still created)', {
+        orderId: order_id,
+        userId,
+        error: emailError.message,
+      });
     }
 
     res.status(201).json({
@@ -179,9 +214,11 @@ export async function createOrderController(req, res) {
       payment: payment || null,
     });
   } catch (err) {
-    console.error('❌ Error creating order:', err);
+    logger.error('Error creating order', {
+      userId,
+      error: err,
+    });
 
-    // Check if it's a stock validation error
     if (err.stockErrors && Array.isArray(err.stockErrors)) {
       return res.status(400).json({
         success: false,
@@ -201,14 +238,22 @@ export async function createOrderController(req, res) {
 */
 
 // ==========================================================
-// GET /deliveries  (Product Manager)
+// GET /deliveries
 // ==========================================================
 export const getDeliveries = async (req, res) => {
   try {
     const orders = await getAllOrders();
+
+    logger.info('Deliveries fetched', {
+      count: orders.length,
+    });
+
     res.status(200).json({ orders });
   } catch (error) {
-    console.error('❌ Error loading deliveries:', error);
+    logger.error('Error loading deliveries', {
+      error,
+    });
+
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -219,7 +264,7 @@ const ALLOWED_STATUS_SET = new Set([
   'in-transit',
   'delivered',
   'cancelled',
-  'refunded'
+  'refunded',
 ]);
 
 Object.freeze(ALLOWED_STATUS_SET);
@@ -233,29 +278,51 @@ export const updateOrderStatusController = async (req, res) => {
     const order_id = parseInt(req.params.id);
 
     if (!ALLOWED_STATUS_SET.has(status)) {
+      logger.warn('Invalid order status update attempt', {
+        orderId: order_id,
+        status,
+      });
+
       return res.status(400).json({ message: 'Invalid status value' });
     }
 
     if (isNaN(order_id)) {
+      logger.warn('Invalid order ID in status update', {
+        orderId: req.params.id,
+      });
+
       return res.status(400).json({ message: 'Invalid order id' });
     }
 
     const updated = await updateOrderStatus(order_id, status);
 
     if (!updated) {
+      logger.warn('Order status update failed: not found', {
+        orderId: order_id,
+      });
+
       return res.status(404).json({ message: 'Order not found' });
     }
 
+    logger.info('Order status updated', {
+      orderId: order_id,
+      status,
+    });
+
     res.status(200).json({ message: 'Delivery status updated' });
   } catch (err) {
-    console.error('❌ Status update error:', err);
+    logger.error('Order status update error', {
+      orderId: order_id,
+      status,
+      error: err,
+    });
+
     res.status(500).json({ message: 'Server error' });
   }
 };
 
 // ==========================================================
 // POST /api/orders/:id/cancel
-//  - Cancel an order (only if status is 'processing')
 // ==========================================================
 export async function cancelOrderController(req, res) {
   try {
@@ -263,6 +330,11 @@ export async function cancelOrderController(req, res) {
     const orderId = parseInt(req.params.id);
 
     if (isNaN(orderId)) {
+      logger.warn('Cancel order failed: invalid orderId', {
+        userId,
+        orderId: req.params.id,
+      });
+
       return res.status(400).json({
         success: false,
         message: 'Invalid order ID',
@@ -272,12 +344,28 @@ export async function cancelOrderController(req, res) {
     const result = await cancelOrder(orderId, userId);
 
     if (!result.success) {
+      logger.warn('Cancel order rejected', {
+        userId,
+        orderId,
+        reason: result.message,
+      });
+
       return res.status(400).json(result);
     }
 
+    logger.info('Order cancelled', {
+      userId,
+      orderId,
+    });
+
     res.status(200).json(result);
   } catch (err) {
-    console.error('❌ Error cancelling order:', err);
+    logger.error('Error cancelling order', {
+      userId,
+      orderId,
+      error: err,
+    });
+
     res.status(500).json({
       success: false,
       message: 'Server error',
@@ -287,7 +375,6 @@ export async function cancelOrderController(req, res) {
 
 // ==========================================================
 // POST /api/orders/:id/refund
-//  - Refund an order (only if status is 'delivered')
 // ==========================================================
 export async function refundOrderController(req, res) {
   try {
@@ -295,6 +382,11 @@ export async function refundOrderController(req, res) {
     const orderId = parseInt(req.params.id);
 
     if (isNaN(orderId)) {
+      logger.warn('Refund order failed: invalid orderId', {
+        userId,
+        orderId: req.params.id,
+      });
+
       return res.status(400).json({
         success: false,
         message: 'Invalid order ID',
@@ -304,12 +396,28 @@ export async function refundOrderController(req, res) {
     const result = await refundOrder(orderId, userId);
 
     if (!result.success) {
+      logger.warn('Refund order rejected', {
+        userId,
+        orderId,
+        reason: result.message,
+      });
+
       return res.status(400).json(result);
     }
 
+    logger.info('Order refunded', {
+      userId,
+      orderId,
+    });
+
     res.status(200).json(result);
   } catch (err) {
-    console.error('❌ Error refunding order:', err);
+    logger.error('Error refunding order', {
+      userId,
+      orderId,
+      error: err,
+    });
+
     res.status(500).json({
       success: false,
       message: 'Server error',

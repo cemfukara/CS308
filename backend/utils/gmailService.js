@@ -39,7 +39,6 @@ export async function sendInvoiceEmail(
 
   // Get customer name and currency
   const customerName = orderDetails.customerName || 'Customer';
-  // const currencySymbol = orderDetails.currency === 'TRY' ? '₺' : '$'; // Unused, keeping for reference
 
   const mailOptions = {
     from: `"${senderName}" <${senderEmail}>`,
@@ -401,7 +400,7 @@ ${senderName}
 
   try {
     const info = await transporter.sendMail(mailOptions);
-    console.log(`✅ Refund email sent to ${email}`);
+    console.log(`✅ Gmail: Refund email sent to ${email}`);
     console.log('📧 Message ID:', info.messageId);
     return info;
   } catch (error) {
@@ -467,7 +466,7 @@ ${senderName}
 
   try {
     const info = await transporter.sendMail(mailOptions);
-    console.log(`✅ Refund rejection email sent to ${email}`);
+    console.log(`✅ Gmail: Refund rejection email sent to ${email}`);
     return info;
   } catch (error) {
     console.error('❌ Gmail: Error sending refund rejection email:', error.message);
@@ -484,5 +483,121 @@ export async function testEmailConfig() {
   } catch (error) {
     console.error('❌ Gmail SMTP configuration error:', error.message);
     return false;
+  }
+}
+
+/**
+ * Notify user that a favorited product is back in stock
+ */
+export async function sendStockNotificationEmail(email, productName) {
+  // Use a consistent sender name to help with delivery
+  const senderName = "Store Notifications"; 
+  
+  const mailOptions = {
+    from: `"${senderName}" <${process.env.GMAIL_USER}>`,
+    to: email,
+    subject: `Back in Stock: ${productName}`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background-color: #2196F3; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0; }
+            .content { padding: 30px; background-color: #f9f9f9; }
+            .footer { text-align: center; padding: 20px; font-size: 12px; color: #777; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>Item Back in Stock!</h1>
+            </div>
+            <div class="content">
+              <h3>Great News!</h3>
+              <p>The product <strong>${productName}</strong> is back in stock.</p>
+              <p>Check it out before it sells out again!</p>
+            </div>
+            <div class="footer">
+              <p>This is an automated email. Please do not reply to this message.</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `
+  };
+
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`✅ Gmail: Stock notification sent to ${email} for ${productName}`);
+    return info;
+  } catch (error) {
+    console.error(`❌ Gmail: Failed to send stock notification to ${email}:`, error.message);
+    throw error;
+  }
+}
+
+/**
+ * Notify user of a new discount on a favorited product
+ */
+export async function sendDiscountNotificationEmail(email, productName, discountRate) {
+  // Use consistent sender name
+  const senderName = "Store Notifications";
+
+  const mailOptions = {
+    from: `"${senderName}" <${process.env.GMAIL_USER}>`,
+    to: email,
+    subject: `Price Drop: ${productName}`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background-color: #FF9800; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0; }
+            .content { padding: 30px; background-color: #f9f9f9; }
+            .footer { text-align: center; padding: 20px; font-size: 12px; color: #777; }
+            .discount-tag { 
+              font-size: 24px; 
+              font-weight: bold; 
+              color: #FF9800; 
+              border: 2px dashed #FF9800;
+              padding: 10px;
+              display: inline-block;
+              margin: 15px 0;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>Price Drop Alert!</h1>
+            </div>
+            <div class="content">
+              <p>We thought you'd like to know:</p>
+              <p>A new discount has been applied to <strong>${productName}</strong>.</p>
+              
+              <div class="discount-tag">${discountRate}% OFF</div>
+              
+              <p>Grab it while the price is low!</p>
+            </div>
+            <div class="footer">
+              <p>This is an automated email. Please do not reply to this message.</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `
+  };
+
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`✅ Gmail: Discount notification sent to ${email} for ${productName} (${discountRate}%)`);
+    return info;
+  } catch (error) {
+    console.error(`❌ Gmail: Failed to send discount notification to ${email}:`, error.message);
+    throw error;
   }
 }
