@@ -15,6 +15,7 @@ import { validateProductInput } from '../app/middlewares/validationMiddleware.js
 // Product Controllers
 import {
   setDiscount,
+  setListPrice,
   addProduct,
   updateProductDetails,
   removeProduct,
@@ -124,6 +125,14 @@ router.patch(
   authenticate,
   authorizeRoles('sales manager'),
   rejectRefund
+);
+
+// PUT /api/sales/set-list-price
+router.put(
+  '/sales/set-list-price',
+  authenticate,
+  authorizeRoles('sales manager'),
+  setListPrice
 );
 
 /* ============================================================

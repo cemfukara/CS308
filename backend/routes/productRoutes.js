@@ -8,6 +8,7 @@ import {
   addProduct,
   updateProductDetails,
   removeProduct,
+  setListPrice,   
 } from '../app/controllers/productController.js';
 import {
   authenticate,
@@ -27,6 +28,7 @@ const router = express.Router();
 router.get('/', fetchProducts);
 
 router.get('/featured', fetchFeaturedProduct);
+
 /**
  * @route   GET /api/products/:id
  * @desc    Get single product by ID

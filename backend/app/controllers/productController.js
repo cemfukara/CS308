@@ -195,6 +195,47 @@ export async function setDiscount(req, res) {
   }
 }
 
+// Sales Manager: set list_price
+export async function setListPrice(req, res) {
+  try {
+    const { productId, listPrice } = req.body;
+
+    if (!productId || isNaN(listPrice)) {
+      return res.status(400).json({ message: 'productId and listPrice required' });
+    }
+
+    // 1️⃣ Get current product
+    const product = await getProductById(productId);
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+
+    const discountRatio = product.discount_ratio || 0;
+
+    // 2️⃣ Recalculate price using EXISTING discount
+    const newPrice =
+      discountRatio > 0
+        ? listPrice - (listPrice * discountRatio) / 100
+        : listPrice;
+
+    // 3️⃣ Update BOTH list_price and price
+    await updateProduct(productId, {
+      list_price: listPrice,
+      price: newPrice,
+    });
+
+    res.json({
+      message: 'List price updated',
+      list_price: listPrice,
+      price: newPrice,
+      discount_ratio: discountRatio,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+}
+
 /*
 ---------------------------------------------------
 ---------------Product Manager Controllers---------

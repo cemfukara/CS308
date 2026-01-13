@@ -39,6 +39,50 @@ export default function SMDiscounts() {
   const [sortBy, setSortBy] = useState('name');
   const [sortOrder, setSortOrder] = useState('ASC');
 
+  const [priceModalOpen, setPriceModalOpen] = useState(false);
+  const [priceProduct, setPriceProduct] = useState(null); // product object
+  const [newListPrice, setNewListPrice] = useState('');
+
+  const openPriceModal = (product) => {
+    setPriceProduct(product);
+    setNewListPrice(product?.list_price ?? '');
+    setPriceModalOpen(true);
+  };
+  
+  const closePriceModal = () => {
+    setPriceModalOpen(false);
+    setPriceProduct(null);
+    setNewListPrice('');
+  };
+  
+  const submitListPrice = async () => {
+    const val = Number(newListPrice);
+  
+    if (!priceProduct) return;
+    if (isNaN(val) || val <= 0) {
+      toast.error('Enter a valid list price (> 0).');
+      return;
+    }
+  
+    try {
+      setLoading(true);
+  
+      await api.put('/sales/set-list-price', {
+        productId: priceProduct.product_id,
+        listPrice: val,
+      });
+  
+      toast.success('List price updated.');
+      await fetchProducts(); // refresh table
+      closePriceModal();
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to update list price.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // ============= FETCH PRODUCTS =============
   const fetchProducts = useCallback(async () => {
     try {
@@ -196,6 +240,37 @@ export default function SMDiscounts() {
         </button>
       </div>
 
+      {priceModalOpen && (
+  <div className={styles.modalOverlay}>
+    <div className={styles.modal}>
+      <h2 style={{ marginBottom: 10 }}>Set List Price</h2>
+
+      <div style={{ marginBottom: 10 }}>
+        <div style={{ fontSize: 14, opacity: 0.8 }}>
+          Product: <b>{priceProduct?.name}</b> (ID: {priceProduct?.product_id})
+        </div>
+      </div>
+
+      <input
+        type="number"
+        value={newListPrice}
+        onChange={(e) => setNewListPrice(e.target.value)}
+        className={styles.searchInput}
+        placeholder="New list price"
+      />
+
+      <div style={{ display: 'flex', gap: 10, marginTop: 12 }}>
+        <button type="button" className={styles.searchButton} onClick={submitListPrice}>
+          Apply
+        </button>
+        <button type="button" className={styles.cancelBtn} onClick={closePriceModal}>
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
       {/* Search / Sort Controls */}
       <form className={styles.controlsRow} onSubmit={handleSearchSubmit}>
         <input
@@ -287,6 +362,7 @@ export default function SMDiscounts() {
               </th>
 
               <th className={styles.th}>Distributor</th>
+              <th className={styles.th}>Set Price</th>
             </tr>
           </thead>
 
@@ -330,6 +406,15 @@ export default function SMDiscounts() {
 
                   <td className={styles.td}>{p.quantity_in_stock}</td>
                   <td className={styles.td}>{p.distributor_info}</td>
+                  <td className={styles.td}>
+  <button
+    className={styles.searchButton}
+    type="button"
+    onClick={() => openPriceModal(p)}
+  >
+    Edit
+  </button>
+</td>
                 </tr>
               );
             })}
