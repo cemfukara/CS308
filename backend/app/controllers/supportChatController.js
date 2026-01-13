@@ -159,6 +159,26 @@ export async function uploadAttachment(req, res) {
       fileData
     );
 
+    // Get the updated message with attachments
+    const updatedMessage = await SupportMessage.getMessageById(messageId);
+
+    // Broadcast the updated message to all participants in the chat
+    const io = getIO();
+    if (io) {
+      io.to(`chat_${chatId}`).emit('message:updated', {
+        ...updatedMessage,
+      });
+
+      logger.info('Attachment uploaded and broadcast', {
+        chatId,
+        messageId,
+        attachmentId,
+        fileName: req.file.originalname,
+      });
+    } else {
+      logger.warn('Socket.io instance not available for broadcast');
+    }
+
     res.status(201).json({
       message: 'File uploaded successfully',
       attachment_id: attachmentId,

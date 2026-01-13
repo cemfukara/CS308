@@ -34,9 +34,11 @@ export default function SupportAgentChatPage() {
   const bottomRef = useRef(null);
   const socketRef = useRef(null);
   const listenersAttachedRef = useRef(false); // ✅ ADD THIS
+  const messagesRef = useRef([]); // ✅ Track current messages for async functions
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesRef.current = messages; // Keep ref in sync
   }, [messages]);
 
   // 1) Load initial data (REST)
@@ -104,6 +106,14 @@ export default function SupportAgentChatPage() {
       setMessages(prev => [...prev, msg]);
     };
 
+    const onMessageUpdated = updatedMsg => {
+      if (String(updatedMsg?.chat_id) !== String(chatId)) return;
+      console.log('📎 Agent received message:updated event:', updatedMsg);
+      setMessages(prev =>
+        prev.map(m => (m.message_id === updatedMsg.message_id ? updatedMsg : m))
+      );
+    };
+
     const onError = e => setError(e?.message || 'Socket error');
     const onChatEnded = payload => {
       if (String(payload?.chatId) !== String(chatId)) return;
@@ -116,12 +126,14 @@ export default function SupportAgentChatPage() {
 
     s.on('chat:joined', onJoined);
     s.on('message:new', onNewMessage);
+    s.on('message:updated', onMessageUpdated);
     s.on('error', onError);
     s.on('chat:ended', onChatEnded);
 
     return () => {
       s.off('chat:joined', onJoined);
       s.off('message:new', onNewMessage);
+      s.off('message:updated', onMessageUpdated);
       s.off('error', onError);
       s.off('chat:ended', onChatEnded);
       listenersAttachedRef.current = false; // ✅ reset on unmount
@@ -173,7 +185,8 @@ export default function SupportAgentChatPage() {
     return new Promise(resolve => {
       const start = Date.now();
       const tick = () => {
-        const last = [...messages].reverse().find(m => m.sender_type === 'agent');
+        // Use messagesRef.current to get the latest messages (avoid stale closure)
+        const last = [...messagesRef.current].reverse().find(m => m.sender_type === 'agent');
         if (last?.message_id) return resolve(last.message_id);
         if (Date.now() - start > timeoutMs) return resolve(null);
         setTimeout(tick, 120);

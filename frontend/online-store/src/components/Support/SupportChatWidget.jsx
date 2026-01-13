@@ -26,6 +26,7 @@ export default function SupportChatWidget() {
   const bottomRef = useRef(null);
   const activeChatIdRef = useRef(null);
   const listenersAttachedRef = useRef(false); // ✅ ONLY NEW REF
+  const messagesRef = useRef([]); // ✅ Track current messages for async functions
 
   /* -----------------------------
      Restore guestId on first load
@@ -46,6 +47,7 @@ export default function SupportChatWidget() {
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesRef.current = messages; // Keep ref in sync
   }, [messages]);
 
   async function openChat() {
@@ -134,6 +136,15 @@ export default function SupportChatWidget() {
           setMessages(prev => [...prev, message]);
         });
 
+        socketRef.current.on('message:updated', updatedMessage => {
+          console.log('📎 Received message:updated event:', updatedMessage);
+          setMessages(prev =>
+            prev.map(m =>
+              m.message_id === updatedMessage.message_id ? updatedMessage : m
+            )
+          );
+        });
+
         socketRef.current.on('error', e => {
           setError(e.message || 'Socket error');
         });
@@ -147,6 +158,7 @@ export default function SupportChatWidget() {
     socket.off('chat:ended');
     socket.off('chat:joined');
     socket.off('message:new');
+    socket.off('message:updated');
     socket.off('error');
   }
   function resetChat() {
@@ -199,15 +211,13 @@ export default function SupportChatWidget() {
           return;
         }
 
+        console.log('Uploading attachment for message:', msgId);
+
         // Upload the attachment
         await uploadChatAttachment(activeId, msgId, file);
 
-        // Refresh messages to show the attachment
-        setTimeout(() => {
-          socketRef.current.emit('customer:join-chat', {
-            chatId: activeId,
-          });
-        }, 300);
+        console.log('Attachment uploaded successfully');
+        // No need to re-join - message:updated listener will handle the update
       } catch (error) {
         console.error('Failed to upload attachment:', error);
       }
@@ -218,7 +228,8 @@ export default function SupportChatWidget() {
     return new Promise((resolve) => {
       const start = Date.now();
       const tick = () => {
-        const last = [...messages].reverse().find(m => m.sender_type === 'customer');
+        // Use messagesRef.current to get the latest messages (avoid stale closure)
+        const last = [...messagesRef.current].reverse().find(m => m.sender_type === 'customer');
         if (last?.message_id) return resolve(last.message_id);
         if (Date.now() - start > timeoutMs) return resolve(null);
         setTimeout(tick, 120);
