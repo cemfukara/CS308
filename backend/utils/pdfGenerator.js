@@ -124,14 +124,13 @@ export function generateInvoicePDF(orderData, items) {
       }
 
       // Customer Address (prefer customer's address over shipping address)
-      const billingAddress = orderData.customer_address || orderData.shipping_address;
+      const billingAddress =
+        orderData.customer_address || orderData.shipping_address;
       if (billingAddress) {
         yPos += 14;
         const addressLines = billingAddress.split('\n');
         addressLines.forEach((line) => {
-          doc
-            .fillColor(secondaryColor)
-            .text(line, leftCol, yPos);
+          doc.fillColor(secondaryColor).text(line, leftCol, yPos);
           yPos += 12;
         });
       }
@@ -150,32 +149,23 @@ export function generateInvoicePDF(orderData, items) {
         .fontSize(9)
         .font('Helvetica')
         .text('Invoice Date:', rightCol, yPos);
-      doc
-        .fillColor(darkColor)
-        .text(invoiceDate, rightCol + 100, yPos);
+      doc.fillColor(darkColor).text(invoiceDate, rightCol + 100, yPos);
 
       yPos += 14;
-      doc
-        .fillColor(secondaryColor)
-        .text('Order ID:', rightCol, yPos);
+      doc.fillColor(secondaryColor).text('Order ID:', rightCol, yPos);
       doc
         .fillColor(darkColor)
         .text(`#${orderData.order_id}`, rightCol + 100, yPos);
 
       yPos += 14;
-      doc
-        .fillColor(secondaryColor)
-        .text('Status:', rightCol, yPos);
+      doc.fillColor(secondaryColor).text('Status:', rightCol, yPos);
       doc
         .fillColor(darkColor)
         .text(orderData.status || 'Processing', rightCol + 100, yPos);
 
       // Store information box
       yPos += 30;
-      doc
-        .fillColor(lightGray)
-        .rect(rightCol, yPos, 195, 80)
-        .fill();
+      doc.fillColor(lightGray).rect(rightCol, yPos, 195, 80).fill();
 
       yPos += 10;
       doc
@@ -198,10 +188,7 @@ export function generateInvoicePDF(orderData, items) {
       yPos = 320;
 
       // Table header with background
-      doc
-        .fillColor(primaryColor)
-        .rect(50, yPos, 495, 25)
-        .fill();
+      doc.fillColor(primaryColor).rect(50, yPos, 495, 25).fill();
 
       doc
         .fillColor('#ffffff')
@@ -221,7 +208,7 @@ export function generateInvoicePDF(orderData, items) {
         const unitPrice = Number(item.price_at_purchase || 0);
         const quantity = Number(item.quantity || 1);
         const lineTotal = unitPrice * quantity;
-        const productName = item.name || 'Unknown Product';
+        const productName = item.product_name || 'Unknown Product';
 
         // Alternating row background
         if (index % 2 === 0) {
@@ -236,8 +223,14 @@ export function generateInvoicePDF(orderData, items) {
           .fontSize(9)
           .text(productName, 60, yPos, { width: 220, align: 'left' })
           .text(`${quantity}`, 290, yPos, { width: 50, align: 'center' })
-          .text(formatPrice(unitPrice, orderData.currency, false), 350, yPos, { width: 80, align: 'right' })
-          .text(formatPrice(lineTotal, orderData.currency, false), 440, yPos, { width: 95, align: 'right' });
+          .text(formatPrice(unitPrice, orderData.currency, false), 350, yPos, {
+            width: 80,
+            align: 'right',
+          })
+          .text(formatPrice(lineTotal, orderData.currency, false), 440, yPos, {
+            width: 95,
+            align: 'right',
+          });
 
         yPos += 20;
       });
@@ -256,17 +249,30 @@ export function generateInvoicePDF(orderData, items) {
         .text('Subtotal:', totalsX, yPos, { width: 80, align: 'left' });
       doc
         .fillColor(darkColor)
-        .text(formatPrice(vatBreakdown.subtotal, orderData.currency, false), 440, yPos, { width: 95, align: 'right' });
+        .text(
+          formatPrice(vatBreakdown.subtotal, orderData.currency, false),
+          440,
+          yPos,
+          { width: 95, align: 'right' }
+        );
 
       yPos += 18;
 
       // VAT
       doc
         .fillColor(secondaryColor)
-        .text(`VAT (${vatBreakdown.vatRate * 100}%):`, totalsX, yPos, { width: 80, align: 'left' });
+        .text(`VAT (${vatBreakdown.vatRate * 100}%):`, totalsX, yPos, {
+          width: 80,
+          align: 'left',
+        });
       doc
         .fillColor(darkColor)
-        .text(formatPrice(vatBreakdown.vat, orderData.currency, false), 440, yPos, { width: 95, align: 'right' });
+        .text(
+          formatPrice(vatBreakdown.vat, orderData.currency, false),
+          440,
+          yPos,
+          { width: 95, align: 'right' }
+        );
 
       yPos += 18;
 
@@ -286,8 +292,12 @@ export function generateInvoicePDF(orderData, items) {
         .fontSize(12)
         .font('Helvetica-Bold')
         .text('TOTAL:', totalsX, yPos, { width: 80, align: 'left' });
-      doc
-        .text(formatPrice(vatBreakdown.total, orderData.currency, false), 440, yPos, { width: 95, align: 'right' });
+      doc.text(
+        formatPrice(vatBreakdown.total, orderData.currency, false),
+        440,
+        yPos,
+        { width: 95, align: 'right' }
+      );
 
       // ===== FOOTER =====
       yPos += 60;
@@ -297,7 +307,10 @@ export function generateInvoicePDF(orderData, items) {
         .fillColor(secondaryColor)
         .fontSize(8)
         .font('Helvetica')
-        .text(INVOICE_CONFIG.paymentTerms, 50, yPos, { align: 'center', width: 495 });
+        .text(INVOICE_CONFIG.paymentTerms, 50, yPos, {
+          align: 'center',
+          width: 495,
+        });
 
       yPos += 15;
 
@@ -306,7 +319,10 @@ export function generateInvoicePDF(orderData, items) {
         .fillColor(primaryColor)
         .fontSize(10)
         .font('Helvetica-Bold')
-        .text(INVOICE_CONFIG.thankYouMessage, 50, yPos, { align: 'center', width: 495 });
+        .text(INVOICE_CONFIG.thankYouMessage, 50, yPos, {
+          align: 'center',
+          width: 495,
+        });
 
       yPos += 20;
 
@@ -315,7 +331,10 @@ export function generateInvoicePDF(orderData, items) {
         .fillColor(secondaryColor)
         .fontSize(7)
         .font('Helvetica')
-        .text(INVOICE_CONFIG.footerNote, 50, yPos, { align: 'center', width: 495 });
+        .text(INVOICE_CONFIG.footerNote, 50, yPos, {
+          align: 'center',
+          width: 495,
+        });
 
       yPos += 12;
 

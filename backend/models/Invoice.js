@@ -2,18 +2,8 @@ import { db } from '../app/config/db.js'; // MUST have .js extension when using 
 
 // Helper: run a query and return [rows, fields]
 async function query(sql, params = []) {
-  // if db.pool is available
-  if (db.pool && typeof db.pool.query === 'function') {
-    return db.pool.query(sql, params); // returns [rows, fields]
-  }
-
-  // if db.query is available
-  if (typeof db.query === 'function') {
-    const [rows] = await db.query(sql, params);
-    return [rows];
-  }
-
-  throw new Error('db module must export pool or query');
+  const [rows, fields] = await db.query(sql, params);
+  return [rows, fields];
 }
 
 // ---------- EXPORT FUNCTIONS USING ESM ----------

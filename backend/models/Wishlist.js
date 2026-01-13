@@ -44,12 +44,6 @@ export async function clearWishlistByID(user_id) {
 ---------------------------------------------------
 */
 
-// Helper for DB queries
-async function query(sql, params = []) {
-  const [rows] = await db.execute(sql, params);
-  return rows;
-}
-
 /**
  * Get all users' emails who have this product in their wishlist.
  */
@@ -57,8 +51,8 @@ export async function getWishlistedUsers(productId) {
   const [rows] = await db.query(
     `SELECT u.email FROM wishlists w 
      JOIN users u ON w.user_id = u.user_id 
-     WHERE w.product_id = ?`, 
+     WHERE w.product_id = ?`,
     [productId]
   );
-  return rows.map(row => row.email);
+  return rows.map((row) => row.email);
 }
