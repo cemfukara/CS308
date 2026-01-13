@@ -18,7 +18,9 @@ export const getAllCategories = async (req, res) => {
 
     res.json(rows);
   } catch (err) {
-    logger.error('Error fetching categories', { error: err });
+    logger.error('Error fetching categories', {
+      error: err,
+    });
 
     res.status(500).json({ error: 'Failed to fetch categories' });
   }
@@ -70,7 +72,7 @@ export const createCategory = async (req, res) => {
     });
   } catch (err) {
     logger.error('Error creating category', {
-      name: trimmed,
+      name: req.body?.name ?? null,
       error: err,
     });
 
@@ -136,8 +138,8 @@ export const updateCategory = async (req, res) => {
     res.json({ message: 'Category updated successfully.' });
   } catch (err) {
     logger.error('Error updating category', {
-      categoryId: id,
-      name: trimmed,
+      categoryId: req.params?.id ?? null,
+      name: req.body?.name ?? null,
       error: err,
     });
 
@@ -192,7 +194,7 @@ export const deleteCategory = async (req, res) => {
     res.json({ message: 'Category deleted successfully.' });
   } catch (err) {
     logger.error('Error deleting category', {
-      categoryId: id,
+      categoryId: req.params?.id ?? null,
       error: err,
     });
 
@@ -245,8 +247,8 @@ export const reassignAndDeleteCategory = async (req, res) => {
     res.json({ message: 'Products reassigned and category deleted.' });
   } catch (err) {
     logger.error('Error reassigning and deleting category', {
-      categoryId: id,
-      targetCategoryId,
+      categoryId: req.params?.id ?? null,
+      targetCategoryId: req.body?.targetCategoryId ?? null,
       error: err,
     });
 

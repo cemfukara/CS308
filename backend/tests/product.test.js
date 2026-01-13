@@ -1,26 +1,39 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import request from 'supertest';
-import app from '../app/app.js';
 
-// 1. Mock the Product Model
-import * as ProductModel from '../models/Product.js';
-import * as NotificationModel from '../models/Notification.js';
-import * as WishlistModel from '../models/Wishlist.js';
-import {
-  authenticate,
-  authorizeRoles,
-} from '../app/middlewares/authMiddleware.js';
+/* =================================================
+   MOCKS — MUST BE FIRST (NO IMPORTS ABOVE THESE)
+================================================= */
 
+// Models used by controller
 vi.mock('../models/Product.js');
-vi.mock('../models/Notification.js');
 vi.mock('../models/Wishlist.js');
 
-vi.mock('../app/middlewares/validationMiddleware.js', () => {
-  return {
-    // We replace the complex validation array with a single simple pass-through function
-    validateProductInput: [(req, res, next) => next()],
-  };
-});
+// Email service used by controller
+vi.mock('../utils/emailService.js', () => ({
+  sendStockNotificationEmail: vi.fn(),
+  sendDiscountNotificationEmail: vi.fn(),
+}));
+
+// Validation middleware (simplified)
+vi.mock('../app/middlewares/validationMiddleware.js', () => ({
+  validateProductInput: [(req, res, next) => next()],
+}));
+
+/* =================================================
+   IMPORTS — AFTER MOCKS
+================================================= */
+
+import app from '../app/app.js';
+
+import * as ProductModel from '../models/Product.js';
+import * as WishlistModel from '../models/Wishlist.js';
+
+import { sendDiscountNotificationEmail } from '../utils/emailService.js';
+
+/* =================================================
+   TESTS
+================================================= */
 
 describe('Product Controller', () => {
   beforeEach(() => {
@@ -34,6 +47,7 @@ describe('Product Controller', () => {
       totalCount: 1,
       currentPage: 1,
     };
+
     ProductModel.getAllProducts.mockResolvedValue(mockData);
 
     const res = await request(app).get('/api/products?page=1');
@@ -46,6 +60,7 @@ describe('Product Controller', () => {
   // Test 2: fetchProductDetails
   it('GET /api/products/:id - should return single product', async () => {
     const mockProduct = { id: 1, name: 'Phone', description: 'Smart' };
+
     ProductModel.getProductById.mockResolvedValue(mockProduct);
 
     const res = await request(app).get('/api/products/1');
@@ -56,7 +71,7 @@ describe('Product Controller', () => {
 
   // Test 3: addProduct
   it('POST /api/products - should create product', async () => {
-    ProductModel.createProduct.mockResolvedValue(101); // Returns new ID
+    ProductModel.createProduct.mockResolvedValue(101);
 
     const res = await request(app).post('/api/products').send({
       name: 'New Item',
@@ -71,7 +86,8 @@ describe('Product Controller', () => {
 
   // Test 4: updateProductDetails
   it('PUT /api/products/:id - should update product', async () => {
-    ProductModel.updateProduct.mockResolvedValue(1); // 1 row affected
+    ProductModel.getProductById.mockResolvedValue({ quantity_in_stock: 5 });
+    ProductModel.updateProduct.mockResolvedValue(1);
 
     const res = await request(app)
       .put('/api/products/1')
@@ -83,7 +99,7 @@ describe('Product Controller', () => {
 
   // Test 5: removeProduct
   it('DELETE /api/products/:id - should delete product', async () => {
-    ProductModel.deleteProduct.mockResolvedValue(1); // 1 row affected
+    ProductModel.deleteProduct.mockResolvedValue(1);
 
     const res = await request(app).delete('/api/products/1');
 
@@ -93,19 +109,32 @@ describe('Product Controller', () => {
 
   // Test 6: setDiscount (Sales Manager feature)
   it('PATCH /api/discount - should apply discount and notify', async () => {
-    const mockProduct = { product_id: 1, price: 80, list_price: 100 };
+    const mockProduct = {
+      product_id: 1,
+      name: 'Test Product',
+      price: 80,
+      list_price: 100,
+    };
 
-    // Mock the chain of calls
+    ProductModel.getProductById.mockResolvedValue(mockProduct);
     ProductModel.applyDiscount.mockResolvedValue(mockProduct);
-    WishlistModel.getWishlistedUsers.mockResolvedValue([{ user_id: 5 }]);
-    NotificationModel.notifyUsers.mockResolvedValue(true);
+
+    WishlistModel.getWishlistedUsers.mockResolvedValue(['test@example.com']);
+
+    sendDiscountNotificationEmail.mockResolvedValue(true);
 
     const res = await request(app)
       .patch('/api/discount')
       .send({ productId: 1, discountRate: 20 });
 
     expect(res.status).toBe(200);
+
     expect(ProductModel.applyDiscount).toHaveBeenCalledWith(1, 20);
-    expect(NotificationModel.notifyUsers).toHaveBeenCalled();
+
+    expect(sendDiscountNotificationEmail).toHaveBeenCalledWith(
+      'test@example.com',
+      'Test Product',
+      20
+    );
   });
 });

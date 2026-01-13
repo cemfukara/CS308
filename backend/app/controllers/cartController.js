@@ -37,7 +37,7 @@ export async function getCart(req, res) {
     });
   } catch (error) {
     logger.error('Error getting cart', {
-      userId,
+      userId: req.user?.user_id ?? null,
       error,
     });
     res.status(500).json({ success: false, message: 'Server error' });
@@ -95,8 +95,8 @@ export async function addItemToCart(req, res) {
     });
   } catch (error) {
     logger.error('Error adding item to cart', {
-      userId,
-      productId,
+      userId: req.user?.user_id ?? null,
+      productId: req.body?.productId ?? null,
       error,
     });
     res.status(500).json({ success: false, message: 'Server error' });
@@ -110,6 +110,7 @@ export async function deleteCartItem(req, res) {
   try {
     const user = req.user;
     const { productId } = req.params;
+    const userId = req.user.user_id;
 
     if (!productId) {
       logger.warn('Delete cart item failed: missing productId', { userId });
@@ -139,8 +140,8 @@ export async function deleteCartItem(req, res) {
     });
   } catch (error) {
     logger.error('Error removing cart item', {
-      userId,
-      productId,
+      userId: req.user?.user_id ?? null,
+      productId: req.params?.productId ?? null,
       error,
     });
     res.status(500).json({
@@ -210,9 +211,9 @@ export async function updateCartItem(req, res) {
     });
   } catch (error) {
     logger.error('Error updating cart item', {
-      userId,
-      productId,
-      quantity,
+      userId: req.user?.user_id ?? null,
+      productId: req.params?.productId ?? null,
+      quantity: req.body?.quantity ?? null,
       error,
     });
     res.status(500).json({ success: false, message: 'Server error' });
@@ -241,7 +242,7 @@ export async function clearUserCart(req, res) {
     });
   } catch (error) {
     logger.error('Error clearing cart', {
-      userId,
+      userId: req.user?.user_id ?? null,
       error,
     });
     res.status(500).json({ success: false, message: 'Server error' });

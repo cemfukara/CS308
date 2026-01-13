@@ -174,7 +174,7 @@ export async function validatePayment(req, res) {
     });
   } catch (err) {
     logger.error('Payment validation error', {
-      userId,
+      userId: req.user?.user_id ?? null,
       error: err,
     });
 

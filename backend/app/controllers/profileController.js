@@ -84,7 +84,7 @@ export const requestProfileUpdate = async (req, res) => {
     });
   } catch (error) {
     logger.error('requestProfileUpdate failed', {
-      userId: req.user?.user_id,
+      userId: req.user?.user_id ?? null,
       error,
     });
     res.status(500).json({ message: 'Server error' });
@@ -183,7 +183,7 @@ export const confirmProfileUpdate = async (req, res) => {
     });
   } catch (error) {
     logger.error('confirmProfileUpdate failed', {
-      userId: req.user?.user_id,
+      userId: req.user?.user_id ?? null,
       error,
     });
     res.status(500).json({ message: 'Server error' });
@@ -225,7 +225,7 @@ export const requestAccountDeletion = async (req, res) => {
     });
   } catch (error) {
     logger.error('requestAccountDeletion failed', {
-      userId: req.user?.user_id,
+      userId: req.user?.user_id ?? null,
       error,
     });
     res.status(500).json({ message: 'Server error' });
@@ -275,7 +275,7 @@ export const confirmAccountDeletion = async (req, res) => {
     });
   } catch (error) {
     logger.error('confirmAccountDeletion failed', {
-      userId: req.user?.user_id,
+      userId: req.user?.user_id ?? null,
       error,
     });
     res.status(500).json({ message: 'Server error' });

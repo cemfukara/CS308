@@ -24,7 +24,7 @@ export const getProductReviewsController = async (req, res) => {
     res.json({ reviews });
   } catch (err) {
     logger.error('Failed to fetch product reviews', {
-      productId: req.params.productId,
+      productId: req.params?.productId ?? null,
       error: err,
     });
     res.status(500).json({ message: 'Internal server error' });
@@ -42,7 +42,7 @@ export const getProductAverageRatingController = async (req, res) => {
     res.json(stats);
   } catch (err) {
     logger.error('Failed to fetch product average rating', {
-      productId: req.params.productId,
+      productId: req.params?.productId ?? null,
       error: err,
     });
     res.status(500).json({ message: 'Internal server error' });
@@ -61,7 +61,7 @@ export const getUserReviewsController = async (req, res) => {
     res.json({ reviews });
   } catch (err) {
     logger.error('Failed to fetch user reviews', {
-      userId: req.params.userId,
+      userId: req.params?.userId ?? null,
       error: err,
     });
     res.status(500).json({ message: 'Internal server error' });
@@ -136,8 +136,8 @@ export const createReviewController = async (req, res) => {
     res.status(201).json({ message, review });
   } catch (err) {
     logger.error('Failed to create review', {
-      userId: req.user?.user_id,
-      productId: req.params.productId,
+      userId: req.user?.user_id ?? null,
+      productId: req.params?.productId ?? null,
       error: err,
     });
 
@@ -188,8 +188,8 @@ export const updateReviewController = async (req, res) => {
     res.json({ message: 'Review updated', review: updated });
   } catch (err) {
     logger.error('Failed to update review', {
-      userId: req.user?.user_id,
-      reviewId: req.params.reviewId,
+      userId: req.user?.user_id ?? null,
+      reviewId: req.params?.reviewId ?? null,
       error: err,
     });
 
@@ -224,8 +224,8 @@ export const deleteReviewController = async (req, res) => {
     res.json({ message: 'Review deleted', ...result });
   } catch (err) {
     logger.error('Failed to delete review', {
-      userId: req.user?.user_id,
-      reviewId: req.params.reviewId,
+      userId: req.user?.user_id ?? null,
+      reviewId: req.params?.reviewId ?? null,
       error: err,
     });
 
@@ -291,7 +291,7 @@ export const approveReviewCommentController = async (req, res) => {
     res.json({ message: 'Review approved successfully' });
   } catch (err) {
     logger.error('Failed to approve review comment', {
-      reviewId: req.params.reviewId,
+      reviewId: req.params?.reviewId ?? null,
       error: err,
     });
     res
@@ -323,7 +323,7 @@ export const rejectReviewCommentController = async (req, res) => {
     res.json({ message: 'Review rejected successfully' });
   } catch (err) {
     logger.error('Failed to reject review comment', {
-      reviewId: req.params.reviewId,
+      reviewId: req.params?.reviewId ?? null,
       error: err,
     });
     res.status(500).json({ message: err.message || 'Failed to reject review' });

@@ -39,7 +39,7 @@ export async function getOrders(req, res) {
     res.status(200).json({ success: true, orders });
   } catch (err) {
     logger.error('Error fetching user orders', {
-      userId,
+      userId: req.user_id,
       error: err,
     });
 
@@ -85,8 +85,8 @@ export async function getOrderDetails(req, res) {
     });
   } catch (err) {
     logger.error('Error fetching order details', {
-      userId,
-      orderId,
+      userId: req.user_id,
+      orderId: req.params.id,
       error: err,
     });
 
@@ -201,8 +201,8 @@ export async function createOrderController(req, res) {
       }
     } catch (emailError) {
       logger.error('Invoice email failed (order still created)', {
-        orderId: order_id,
-        userId,
+        userId: req.user_id,
+        orderId: req.params.id,
         error: emailError.message,
       });
     }
@@ -215,7 +215,7 @@ export async function createOrderController(req, res) {
     });
   } catch (err) {
     logger.error('Error creating order', {
-      userId,
+      userId: req.user_id,
       error: err,
     });
 
@@ -313,7 +313,7 @@ export const updateOrderStatusController = async (req, res) => {
   } catch (err) {
     logger.error('Order status update error', {
       orderId: order_id,
-      status,
+      status: req.body.status?.toLowerCase(),
       error: err,
     });
 
@@ -361,8 +361,8 @@ export async function cancelOrderController(req, res) {
     res.status(200).json(result);
   } catch (err) {
     logger.error('Error cancelling order', {
-      userId,
-      orderId,
+      userId: req.user_id,
+      orderId: req.params.id,
       error: err,
     });
 
@@ -413,8 +413,8 @@ export async function refundOrderController(req, res) {
     res.status(200).json(result);
   } catch (err) {
     logger.error('Error refunding order', {
-      userId,
-      orderId,
+      userId: req.user_id,
+      orderId: req.params.id,
       error: err,
     });
 

@@ -115,7 +115,7 @@ export async function fetchProductDetails(req, res) {
     res.status(200).json(product);
   } catch (err) {
     logger.error('Failed to fetch product details', {
-      productId: req.params.id,
+      productId: req.params?.id ?? null,
       error: err,
     });
     res.status(500).json({ error: 'Internal server error' });
@@ -182,13 +182,13 @@ export async function setDiscount(req, res) {
       });
     }
 
-    res.json({
+    res.status(200).json({
       message: 'Discount applied',
       product: updatedProduct,
     });
   } catch (err) {
     logger.error('Failed to apply discount', {
-      productId: req.body?.productId,
+      productId: req.body?.productId ?? null,
       error: err,
     });
     res.status(500).json({ message: 'Internal server error' });
@@ -219,7 +219,7 @@ export async function addProduct(req, res) {
   } catch (err) {
     logger.error('Failed to create product', {
       error: err,
-      payload: req.body,
+      payload: req.body ?? null,
     });
     res.status(500).json({ error: 'Internal server error' });
   }
@@ -264,7 +264,7 @@ export async function updateProductDetails(req, res) {
     res.status(200).json({ message: 'Product updated successfully' });
   } catch (err) {
     logger.error('Failed to update product', {
-      productId: req.params.id,
+      productId: req.params?.id ?? null,
       error: err,
     });
     res.status(500).json({ error: 'Internal server error' });
@@ -291,7 +291,7 @@ export async function removeProduct(req, res) {
     res.status(200).json({ message: 'Product deleted successfully' });
   } catch (err) {
     logger.error('Failed to delete product', {
-      productId: req.params.id,
+      productId: req.params?.id ?? null,
       error: err,
     });
     res.status(500).json({ error: 'Internal server error' });

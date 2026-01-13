@@ -126,7 +126,7 @@ export async function requestRefund(req, res) {
     res.status(201).json({ message: 'Refund request submitted successfully.' });
   } catch (err) {
     logger.error('Refund request processing failed', {
-      userId: req.user?.user_id,
+      userId: req.user?.user_id ?? null,
       error: err,
     });
     res
@@ -224,7 +224,7 @@ export async function approveRefund(req, res) {
     });
   } catch (err) {
     logger.error('Refund approval failed', {
-      refundId: req.params.id,
+      refundId: req.params?.id ?? null,
       error: err,
     });
     res.status(500).json({ message: 'Server error approving refund' });
@@ -285,7 +285,7 @@ export async function rejectRefund(req, res) {
     res.json({ message: 'Refund rejected.' });
   } catch (err) {
     logger.error('Refund rejection failed', {
-      refundId: req.params.id,
+      refundId: req.params?.id ?? null,
       error: err,
     });
     res.status(500).json({ message: 'Server error rejecting refund' });

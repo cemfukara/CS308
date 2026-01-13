@@ -20,7 +20,9 @@ vi.mock('../models/User.js');
 
 // 3. Mock the PDF Generator to avoid actual PDF generation
 vi.mock('../utils/pdfGenerator.js', () => ({
-  generateInvoicePDF: vi.fn(() => Promise.resolve(Buffer.from('fake-pdf-content'))),
+  generateInvoicePDF: vi.fn(() =>
+    Promise.resolve(Buffer.from('fake-pdf-content'))
+  ),
 }));
 
 // 4. Mock PDFKit to prevent actual PDF generation and verify stream logic
@@ -101,7 +103,7 @@ describe('Invoice Controller Tests', () => {
         '/invoices/range?start=2025-01-01'
       ); // Missing end
 
-      expect(response.status).toBe(500); // Controller throws, caught by error handler (mocked app defaults to 500 html/text)
+      expect(response.status).toBe(400); // Controller throws, caught by error handler (mocked app defaults to 500 html/text)
       // Note: In a real app with proper error middleware, this might check for 400 JSON.
       // Based on your controller code: it throws new Error(400), which ends up in catch block responding 500.
     });

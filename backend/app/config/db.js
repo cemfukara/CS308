@@ -10,7 +10,9 @@ try {
     // If a test hits this, it means mocking failed, but at least we don't hang.
     console.log('Test environment: Skipping real DB connection in db.js');
     db = {
-      query: async () => { throw new Error('DB not mocked in test!'); }
+      query: async () => {
+        throw new Error('DB not mocked in test!');
+      },
     };
   } else {
     db = await mysql.createConnection({

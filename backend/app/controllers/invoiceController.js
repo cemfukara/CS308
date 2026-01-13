@@ -52,11 +52,13 @@ export async function getInvoicesByDateRange(req, res) {
     res.json(invoices);
   } catch (err) {
     logger.error('Error fetching invoices by date range', {
-      query: req.query,
+      query: req.query ?? null,
       error: err,
     });
 
-    res.status(err.status || 500).json({ message: 'Internal server error' });
+    res.status(err.status || 500).json({
+      message: err.status ? err.message : 'Internal server error',
+    });
   }
 }
 
@@ -134,11 +136,13 @@ export async function generateInvoicePDF(req, res) {
     res.send(pdfBuffer);
   } catch (err) {
     logger.error('Invoice PDF generation error', {
-      orderId: req.params.orderId,
+      orderId: req.params?.orderId ?? null,
       error: err,
     });
 
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(err.status || 500).json({
+      message: err.status ? err.message : 'Internal server error',
+    });
   }
 }
 
@@ -162,11 +166,11 @@ export async function getRevenueProfit(req, res) {
     });
   } catch (err) {
     logger.error('Error calculating revenue & profit', {
-      query: req.query,
+      query: req.query ?? null,
       error: err,
     });
 
-    res.status(err.status || 500).json({ message: 'Internal server error' });
+    res.status(500).json('Internal Server Error');
   }
 }
 
@@ -194,11 +198,13 @@ export async function getRevenueProfitChartController(req, res) {
     res.json(chartData);
   } catch (err) {
     logger.error('Error fetching revenue/profit chart data', {
-      query: req.query,
+      query: req.query ?? null,
       error: err,
     });
 
-    res.status(err.status || 500).json({ message: 'Internal server error' });
+    res.status(err.status || 500).json({
+      message: err.status ? err.message : 'Internal server error',
+    });
   }
 }
 
@@ -252,7 +258,7 @@ export async function getInvoiceJson(req, res) {
     });
   } catch (err) {
     logger.error('Error fetching invoice JSON', {
-      orderId,
+      orderId: req.params?.orderId ?? null,
       error: err,
     });
 
