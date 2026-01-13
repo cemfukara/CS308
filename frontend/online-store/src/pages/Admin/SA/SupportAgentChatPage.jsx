@@ -74,16 +74,16 @@ export default function SupportAgentChatPage() {
   // 2) Socket join for realtime
   useEffect(() => {
     if (!isSupportAgent) return;
-  
+
     if (!socketRef.current) {
       socketRef.current = connectSupportSocket();
     }
-  
+
     const s = socketRef.current;
-  
+
     if (listenersAttachedRef.current) return; // 🚨 PREVENT DUPLICATES
     listenersAttachedRef.current = true;
-  
+
     (async () => {
       try {
         await authenticateSupportSocket();
@@ -92,33 +92,33 @@ export default function SupportAgentChatPage() {
         setError(e?.message || 'Socket auth failed');
       }
     })();
-  
+
     const onJoined = payload => {
       if (String(payload?.chatId) === String(chatId)) {
         setMessages(payload.messages || []);
       }
     };
-  
+
     const onNewMessage = msg => {
       if (String(msg?.chat_id) !== String(chatId)) return;
       setMessages(prev => [...prev, msg]);
     };
-  
+
     const onError = e => setError(e?.message || 'Socket error');
     const onChatEnded = payload => {
       if (String(payload?.chatId) !== String(chatId)) return;
-    
+
       console.log('CHAT ENDED RECEIVED (agent)', payload);
-    
+
       // now it is safe to leave
       navigate('/admin/support/active');
     };
-  
+
     s.on('chat:joined', onJoined);
     s.on('message:new', onNewMessage);
     s.on('error', onError);
     s.on('chat:ended', onChatEnded);
-  
+
     return () => {
       s.off('chat:joined', onJoined);
       s.off('message:new', onNewMessage);
@@ -184,14 +184,14 @@ export default function SupportAgentChatPage() {
 
   function handleResolve() {
     const s = socketRef.current;
-  
+
     if (!s) {
       setError('Socket not connected');
       return;
     }
-  
+
     console.log('RESOLVE CLICKED', chatId);
-  
+
     // ONLY emit. The listener is already attached in the useEffect.
     s.emit('agent:resolve-chat', { chatId });
   }
@@ -384,6 +384,39 @@ function Bubble({ msg }) {
   // Minimal bubble styling; keeps your layout clean.
   const isAgent = msg?.sender_type === 'agent';
 
+  const handleDownloadAttachment = async (attachmentId, fileName) => {
+    try {
+      const response = await fetch(getAttachmentDownloadUrl(attachmentId), {
+        method: 'GET',
+        credentials: 'include', // Important: send cookies for authentication
+      });
+
+      if (!response.ok) {
+        console.error('Download failed:', response.status, response.statusText);
+        alert('Failed to download attachment. Please try again.');
+        return;
+      }
+
+      // Create blob from response
+      const blob = await response.blob();
+
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName || 'attachment';
+      document.body.appendChild(link);
+      link.click();
+
+      // Cleanup
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading attachment:', error);
+      alert('Failed to download attachment. Please try again.');
+    }
+  };
+
   return (
     <div style={{ display: 'flex', justifyContent: isAgent ? 'flex-end' : 'flex-start' }}>
       <div
@@ -400,15 +433,32 @@ function Bubble({ msg }) {
         {Array.isArray(msg?.attachments) && msg.attachments.length > 0 ? (
           <div style={{ marginTop: 8, display: 'grid', gap: 6 }}>
             {msg.attachments.map(a => (
-              <a
+              <button
                 key={a.attachment_id || a.url || a.file_name}
-                className={styles.tableLink}
-                href={getAttachmentDownloadUrl(a.attachment_id)}
-                target="_blank"
-                rel="noreferrer"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleDownloadAttachment(a.attachment_id, a.file_name);
+                }}
+                style={{
+                  display: 'block',
+                  width: '100%',
+                  background: 'none',
+                  border: 'none',
+                  color: '#2563eb',
+                  textDecoration: 'underline',
+                  cursor: 'pointer',
+                  padding: '4px 0',
+                  font: 'inherit',
+                  textAlign: 'left',
+                  position: 'relative',
+                  zIndex: 10,
+                }}
+                onMouseEnter={(e) => e.target.style.color = '#1d4ed8'}
+                onMouseLeave={(e) => e.target.style.color = '#2563eb'}
               >
                 📎 {a.file_name || 'attachment'}
-              </a>
+              </button>
             ))}
           </div>
         ) : null}

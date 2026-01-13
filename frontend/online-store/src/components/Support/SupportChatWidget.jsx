@@ -81,11 +81,9 @@ export default function SupportChatWidget() {
     if (!socketRef.current) {
       socketRef.current = connectSupportSocket();
 
-      if (!activeGuestId) {
-        throw new Error('Guest ID missing during socket authentication');
-      }
-
-      await authenticateSupportSocket({ guestId: activeGuestId });
+      // Logged-in users authenticate via cookies (withCredentials: true)
+      // Guests authenticate via guestId
+      await authenticateSupportSocket({ guestId: activeGuestId || undefined });
 
       socketRef.current.emit('customer:join-chat', {
         chatId: activeChatId,
@@ -113,16 +111,16 @@ export default function SupportChatWidget() {
         socketRef.current.on('chat:ended', payload => {
           console.log('🔥 RAW chat:ended payload (customer)', payload);
           console.log('🔥 activeChatIdRef.current', activeChatIdRef.current);
-        
+
           const endedChatId = payload?.chatId;
-        
+
           if (String(activeChatIdRef.current) !== String(endedChatId)) {
             console.log('❌ chat:ended ignored – chatId mismatch');
             return;
           }
-        
+
           console.log('✅ CHAT ENDED CONFIRMED (customer)');
-        
+
           setChatStatus('ended');
           setInput('');
           setPendingFile(null);
@@ -144,7 +142,7 @@ export default function SupportChatWidget() {
   }
   function detachSocketListeners(socket) {
     if (!socket) return;
-  
+
     socket.off('agent:joined');
     socket.off('chat:ended');
     socket.off('chat:joined');
@@ -157,12 +155,12 @@ export default function SupportChatWidget() {
     setChatStatus(null);
     setInput('');
     setPendingFile(null);
-  
+
     activeChatIdRef.current = null;
-  
+
     // ✅ allow openChat() to attach listeners again
     listenersAttachedRef.current = false;
-  
+
     // ✅ force a fresh socket + fresh room join on next openChat()
     if (socketRef.current) {
       detachSocketListeners(socketRef.current); // 👈 THIS IS THE FIX
@@ -176,21 +174,57 @@ export default function SupportChatWidget() {
     const activeId = chatId || activeChatIdRef.current;
     if (!canSend || !socketRef.current || !activeId) return;
 
+    const text = input.trim();
+    const sendingFile = !!pendingFile;
+    const messageText = text.length ? text : sendingFile ? '📎 Attachment' : '';
+
+    // Send message via socket
     socketRef.current.emit('customer:send-message', {
       chatId: activeId,
-      messageText: input || '📎 Attachment',
+      messageText,
     });
 
     setInput('');
 
-    if (pendingFile) {
+    // If there's a file, upload it after the message is created
+    if (sendingFile) {
+      const file = pendingFile;
       setPendingFile(null);
-      setTimeout(() => {
-        socketRef.current.emit('customer:join-chat', {
-          chatId: activeId,
-        });
-      }, 300);
+
+      try {
+        // Wait for the message to appear in the messages array
+        const msgId = await waitForLatestCustomerMessageId(4000);
+        if (!msgId) {
+          console.error('Could not get message ID for attachment upload');
+          return;
+        }
+
+        // Upload the attachment
+        await uploadChatAttachment(activeId, msgId, file);
+
+        // Refresh messages to show the attachment
+        setTimeout(() => {
+          socketRef.current.emit('customer:join-chat', {
+            chatId: activeId,
+          });
+        }, 300);
+      } catch (error) {
+        console.error('Failed to upload attachment:', error);
+      }
     }
+  }
+
+  function waitForLatestCustomerMessageId(timeoutMs) {
+    return new Promise((resolve) => {
+      const start = Date.now();
+      const tick = () => {
+        const last = [...messages].reverse().find(m => m.sender_type === 'customer');
+        if (last?.message_id) return resolve(last.message_id);
+        if (Date.now() - start > timeoutMs) return resolve(null);
+        setTimeout(tick, 120);
+      };
+      tick();
+    });
   }
 
   return (
@@ -237,7 +271,7 @@ export default function SupportChatWidget() {
                     onClick={() => {
                       resetChat();
                       setOpen(false);
-                    
+
                       // let React finish resetting state
                       setTimeout(() => {
                         openChat();
@@ -313,6 +347,39 @@ export default function SupportChatWidget() {
 function MessageBubble({ msg }) {
   const mine = msg.sender_type === 'customer';
 
+  const handleDownloadAttachment = async (attachmentId, fileName) => {
+    try {
+      const response = await fetch(getAttachmentDownloadUrl(attachmentId), {
+        method: 'GET',
+        credentials: 'include', // Important: send cookies for authentication
+      });
+
+      if (!response.ok) {
+        console.error('Download failed:', response.status, response.statusText);
+        alert('Failed to download attachment. Please try again.');
+        return;
+      }
+
+      // Create blob from response
+      const blob = await response.blob();
+
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName || 'attachment';
+      document.body.appendChild(link);
+      link.click();
+
+      // Cleanup
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading attachment:', error);
+      alert('Failed to download attachment. Please try again.');
+    }
+  };
+
   return (
     <div className={`${styles.bubbleRow} ${mine ? styles.mine : styles.theirs}`}>
       <div className={`${styles.bubble} ${mine ? styles.bubbleMine : styles.bubbleTheirs}`}>
@@ -321,15 +388,22 @@ function MessageBubble({ msg }) {
         {msg.attachments?.length > 0 && (
           <div className={styles.attachments}>
             {msg.attachments.map(a => (
-              <a
+              <button
                 key={a.attachment_id}
-                href={getAttachmentDownloadUrl(a.attachment_id)}
-                target="_blank"
-                rel="noreferrer"
+                onClick={() => handleDownloadAttachment(a.attachment_id, a.file_name)}
                 className={styles.attachmentLink}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#2563eb',
+                  textDecoration: 'underline',
+                  cursor: 'pointer',
+                  padding: 0,
+                  font: 'inherit',
+                }}
               >
                 📄 {a.file_name}
-              </a>
+              </button>
             ))}
           </div>
         )}

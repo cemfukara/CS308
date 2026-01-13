@@ -127,5 +127,21 @@ export async function getMessageById(messageId) {
     [messageId]
   );
 
-  return rows[0] || null;
+  if (!rows[0]) return null;
+
+  // Get attachments for this message
+  const [attachments] = await db.query(
+    `SELECT 
+      attachment_id,
+      file_name,
+      file_path,
+      file_type,
+      file_size,
+      created_at
+    FROM support_attachments
+    WHERE message_id = ?`,
+    [messageId]
+  );
+
+  return { ...rows[0], attachments };
 }

@@ -185,37 +185,85 @@ export async function downloadAttachment(req, res) {
     const userId = req.user?.user_id;
     const guestId = req.cookies.guest_id;
 
+    logger.info('Download attachment request', {
+      attachmentId,
+      userId,
+      guestId,
+      userRole: req.user?.role,
+      hasUser: !!req.user,
+    });
+
     // Get attachment with chat context for permission check
     const attachment =
       await SupportAttachment.getAttachmentWithChatContext(attachmentId);
 
     if (!attachment) {
+      logger.warn('Attachment not found', { attachmentId });
       return res.status(404).json({ message: 'Attachment not found' });
     }
 
-    // Check permission
-    const isOwner = userId && attachment.user_id === userId;
-    const isAgent =
-      req.user?.role === 'support agent' && attachment.agent_user_id === userId;
-    const isGuest =
-      !attachment.user_id && attachment.guest_identifier === guestId;
+    logger.info('Attachment found', {
+      attachmentId,
+      fileName: attachment.file_name,
+      filePath: attachment.file_path,
+      chatUserId: attachment.user_id,
+      chatAgentUserId: attachment.agent_user_id,
+      chatGuestId: attachment.guest_identifier,
+    });
 
-    if (!isOwner && !isAgent && !isGuest) {
+    // Check permission
+    // Allow access if:
+    // 1. User is a support agent (any agent can view attachments in chats they're handling)
+    // 2. User is the customer who owns the chat
+    // 3. User is the guest who owns the chat
+    const isAgent = req.user?.role === 'support agent';
+    const isCustomerOwner = userId && attachment.user_id === userId;
+    const isGuestOwner = !userId && !attachment.user_id && attachment.guest_identifier === guestId;
+
+    logger.info('Permission check', {
+      isAgent,
+      isCustomerOwner,
+      isGuestOwner,
+      userId,
+      attachmentUserId: attachment.user_id,
+      guestId,
+      attachmentGuestId: attachment.guest_identifier,
+    });
+
+    if (!isAgent && !isCustomerOwner && !isGuestOwner) {
+      logger.warn('Access denied to attachment', {
+        attachmentId,
+        userId,
+        guestId,
+        userRole: req.user?.role,
+      });
       return res.status(403).json({ message: 'Access denied' });
     }
 
     // Check if file exists
     if (!fs.existsSync(attachment.file_path)) {
+      logger.error('File not found on server', {
+        attachmentId,
+        filePath: attachment.file_path,
+      });
       return res.status(404).json({ message: 'File not found on server' });
     }
+
+    logger.info('Sending file', {
+      attachmentId,
+      fileName: attachment.file_name,
+      filePath: attachment.file_path,
+    });
 
     // Send file
     res.download(attachment.file_path, attachment.file_name);
   } catch (error) {
     logger.error('Error downloading attachment:', {
+      attachmentId: req.params.attachmentId,
       userId: req.user?.user_id,
       guestId: req.cookies.guest_id,
-      error,
+      error: error.message,
+      stack: error.stack,
     });
     res.status(500).json({ message: 'Failed to download file' });
   }

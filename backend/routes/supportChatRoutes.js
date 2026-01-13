@@ -33,15 +33,20 @@ router.get(
   supportChatController.getChatMessages
 );
 
-// Upload attachment to a message
+// Upload attachment to a message (optional auth - supports both authenticated users and guests)
 router.post(
   '/chats/:chatId/attachments',
+  optionalAuthenticate,
   upload.single('file'),
   supportChatController.uploadAttachment
 );
 
-// Download attachment
-router.get('/attachments/:attachmentId', supportChatController.downloadAttachment);
+// Download attachment (optional auth - supports agents, authenticated users, and guests)
+router.get(
+  '/attachments/:attachmentId',
+  optionalAuthenticate,
+  supportChatController.downloadAttachment
+);
 
 // ============================================================
 // AGENT ENDPOINTS (require 'support agent' role)
