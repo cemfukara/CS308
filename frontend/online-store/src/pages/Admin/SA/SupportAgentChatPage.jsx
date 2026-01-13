@@ -155,11 +155,15 @@ export default function SupportAgentChatPage() {
 
     const text = input.trim();
     const sendingFile = !!pendingFile;
-    const placeholderText = text.length ? text : sendingFile ? '📎 Attachment' : '';
+    const messageText = text;
 
-    if (placeholderText) {
-      s.emit('agent:send-message', { chatId, messageText: placeholderText });
-    }
+    // Capture the current latest message ID BEFORE sending
+    const previousMsgId = [...messagesRef.current]
+      .reverse()
+      .find(m => m.sender_type === 'agent')?.message_id || null;
+
+    // Always emit message (even empty) when we have a file to attach
+    s.emit('agent:send-message', { chatId, messageText });
 
     setInput('');
 
@@ -167,7 +171,8 @@ export default function SupportAgentChatPage() {
       const file = pendingFile;
       setPendingFile(null);
 
-      const msgId = await waitForLatestAgentMessageId(4000);
+      // Wait for a NEW message (different from previousMsgId)
+      const msgId = await waitForNewAgentMessageId(previousMsgId, 4000);
       if (!msgId) {
         setError('Could not attach file: messageId not received');
         return;
@@ -181,13 +186,16 @@ export default function SupportAgentChatPage() {
     }
   }
 
-  function waitForLatestAgentMessageId(timeoutMs) {
+  function waitForNewAgentMessageId(previousMsgId, timeoutMs) {
     return new Promise(resolve => {
       const start = Date.now();
       const tick = () => {
         // Use messagesRef.current to get the latest messages (avoid stale closure)
         const last = [...messagesRef.current].reverse().find(m => m.sender_type === 'agent');
-        if (last?.message_id) return resolve(last.message_id);
+        // Only resolve if we found a NEW message (different ID from before)
+        if (last?.message_id && last.message_id !== previousMsgId) {
+          return resolve(last.message_id);
+        }
         if (Date.now() - start > timeoutMs) return resolve(null);
         setTimeout(tick, 120);
       };
@@ -397,6 +405,11 @@ function Bubble({ msg }) {
   // Minimal bubble styling; keeps your layout clean.
   const isAgent = msg?.sender_type === 'agent';
 
+  // Hide placeholder text if actual attachments are present
+  const hasAttachments = Array.isArray(msg?.attachments) && msg.attachments.length > 0;
+  const isPlaceholderText = msg?.message_text === '📎 Attachment';
+  const showMessageText = msg?.message_text && !(isPlaceholderText && hasAttachments);
+
   const handleDownloadAttachment = async (attachmentId, fileName) => {
     try {
       const response = await fetch(getAttachmentDownloadUrl(attachmentId), {
@@ -441,9 +454,9 @@ function Bubble({ msg }) {
           background: isAgent ? '#eef2ff' : '#ffffff',
         }}
       >
-        <div style={{ fontSize: 13 }}>{msg?.message_text}</div>
+        {showMessageText && <div style={{ fontSize: 13 }}>{msg?.message_text}</div>}
 
-        {Array.isArray(msg?.attachments) && msg.attachments.length > 0 ? (
+        {hasAttachments ? (
           <div style={{ marginTop: 8, display: 'grid', gap: 6 }}>
             {msg.attachments.map(a => (
               <button

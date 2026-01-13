@@ -30,3 +30,6 @@ Thumbs.db
 
 # misc
 *.swp
+
+# uploads
+backend/uploads/support-attachments/

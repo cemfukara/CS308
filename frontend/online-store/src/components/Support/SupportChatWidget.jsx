@@ -188,7 +188,12 @@ export default function SupportChatWidget() {
 
     const text = input.trim();
     const sendingFile = !!pendingFile;
-    const messageText = text.length ? text : sendingFile ? '📎 Attachment' : '';
+    const messageText = text;
+
+    // Capture the current latest message ID BEFORE sending
+    const previousMsgId = [...messagesRef.current]
+      .reverse()
+      .find(m => m.sender_type === 'customer')?.message_id || null;
 
     // Send message via socket
     socketRef.current.emit('customer:send-message', {
@@ -204,8 +209,8 @@ export default function SupportChatWidget() {
       setPendingFile(null);
 
       try {
-        // Wait for the message to appear in the messages array
-        const msgId = await waitForLatestCustomerMessageId(4000);
+        // Wait for a NEW message (different from previousMsgId)
+        const msgId = await waitForNewCustomerMessageId(previousMsgId, 4000);
         if (!msgId) {
           console.error('Could not get message ID for attachment upload');
           return;
@@ -224,13 +229,16 @@ export default function SupportChatWidget() {
     }
   }
 
-  function waitForLatestCustomerMessageId(timeoutMs) {
+  function waitForNewCustomerMessageId(previousMsgId, timeoutMs) {
     return new Promise((resolve) => {
       const start = Date.now();
       const tick = () => {
         // Use messagesRef.current to get the latest messages (avoid stale closure)
         const last = [...messagesRef.current].reverse().find(m => m.sender_type === 'customer');
-        if (last?.message_id) return resolve(last.message_id);
+        // Only resolve if we found a NEW message (different ID from before)
+        if (last?.message_id && last.message_id !== previousMsgId) {
+          return resolve(last.message_id);
+        }
         if (Date.now() - start > timeoutMs) return resolve(null);
         setTimeout(tick, 120);
       };
@@ -358,6 +366,11 @@ export default function SupportChatWidget() {
 function MessageBubble({ msg }) {
   const mine = msg.sender_type === 'customer';
 
+  // Hide placeholder text if actual attachments are present
+  const hasAttachments = msg.attachments?.length > 0;
+  const isPlaceholderText = msg.message_text === '📎 Attachment';
+  const showMessageText = msg.message_text && !(isPlaceholderText && hasAttachments);
+
   const handleDownloadAttachment = async (attachmentId, fileName) => {
     try {
       const response = await fetch(getAttachmentDownloadUrl(attachmentId), {
@@ -394,9 +407,9 @@ function MessageBubble({ msg }) {
   return (
     <div className={`${styles.bubbleRow} ${mine ? styles.mine : styles.theirs}`}>
       <div className={`${styles.bubble} ${mine ? styles.bubbleMine : styles.bubbleTheirs}`}>
-        {msg.message_text && <div className={styles.text}>{msg.message_text}</div>}
+        {showMessageText && <div className={styles.text}>{msg.message_text}</div>}
 
-        {msg.attachments?.length > 0 && (
+        {hasAttachments && (
           <div className={styles.attachments}>
             {msg.attachments.map(a => (
               <button
