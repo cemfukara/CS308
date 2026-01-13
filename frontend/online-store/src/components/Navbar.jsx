@@ -215,10 +215,6 @@ const Navbar = () => {
               <Link to="/account/favorites" onClick={() => setShowDropdown(false)}>
                 Favorites
               </Link>
-              <Link to="/account/support" onClick={() => setShowDropdown(false)}>
-                Support
-              </Link>
-
               {/* 🛠 Admin link only for PM / dev */}
               {user.role === 'product manager' ||
               user.role === 'dev' ||

@@ -32,7 +32,6 @@ import ChangePassword from './pages/Account/ChangePassword';
 import Addresses from './pages/Account/Addresses';
 import Favorites from './pages/Account/Favorites';
 import Orders from './pages/Account/Orders';
-import Support from './pages/Account/Support';
 import Logout from './pages/Account/Logout';
 import OrderDetails from './pages/Account/OrderDetails';
 
@@ -109,7 +108,6 @@ export function AppContent() {
           <Route path="favorites" element={<Favorites />} />
           <Route path="orders" element={<Orders />} />
           <Route path="orders/:id" element={<OrderDetails />} />
-          <Route path="support" element={<Support />} />
           <Route path="logout" element={<Logout />} />
         </Route>
 

@@ -27,9 +27,6 @@ const AccountSidebar = () => {
           <NavLink to="/account/favorites">Favorites</NavLink>
         </li>
         <li>
-          <NavLink to="/account/support">Support</NavLink>
-        </li>
-        <li>
           <NavLink to="/account/password">Change Password</NavLink>
         </li>
       </ul>
