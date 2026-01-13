@@ -12,6 +12,12 @@ const OrderDetails = () => {
   const [order, setOrder] = useState(null);
   const [isRefundMode, setIsRefundMode] = useState(false); // Controls visibility of checkboxes/expanded view
   const [selectedKeys, setSelectedKeys] = useState(new Set()); // Tracks selected items (using unique keys)
+  
+  // Refund Modal State
+  const [showRefundModal, setShowRefundModal] = useState(false);
+  const [refundReason, setRefundReason] = useState("");
+  const [isSubmittingRefund, setIsSubmittingRefund] = useState(false);
+
   const navigate = useNavigate();
   const { addToCart } = useCartStore();
 
@@ -47,14 +53,22 @@ const OrderDetails = () => {
     });
   };
 
-  const handleRefundSubmit = async () => {
+  const handleRefundClick = () => {
     if (selectedKeys.size === 0) {
       toast.error("Please select items to refund.");
       return;
     }
+    setRefundReason(""); // Reset reason
+    setShowRefundModal(true);
+  };
 
-    const reason = prompt("Please enter a reason for the refund:");
-    if (!reason) return;
+  const submitRefundRequest = async () => {
+    if (!refundReason.trim()) {
+      toast.error("Please enter a reason for the refund.");
+      return;
+    }
+
+    setIsSubmittingRefund(true);
 
     // 1. Aggregate selections: Count how many units of each item are selected
     const refundsMap = {}; // { orderItemId: quantity }
@@ -64,27 +78,38 @@ const OrderDetails = () => {
       refundsMap[itemId] = (refundsMap[itemId] || 0) + 1;
     });
 
-    // 2. Send requests sequentially (or parallel)
+    // 2. Send requests sequentially
     let successCount = 0;
+    let errorOccurred = false;
+
     for (const [itemId, qty] of Object.entries(refundsMap)) {
       try {
         await api.post('/refunds/request', {
           orderId: order.order_id,
           orderItemId: itemId,
           quantity: qty,
-          reason: reason
+          reason: refundReason
         });
         successCount += qty;
       } catch (err) {
+        console.error(err);
+        errorOccurred = true;
         toast.error(err.response?.data?.message || "Error processing refund.");
       }
     }
 
+    setIsSubmittingRefund(false);
+
     if (successCount > 0) {
-      toast.success(`Refund requested for ${successCount} item(s).`);
+      if (!errorOccurred) {
+        toast.success(`Refund requested for ${successCount} item(s).`);
+      } else {
+        toast('Some refunds were requested successfully, but errors occurred for others.', { icon: '⚠️' });
+      }
       setIsRefundMode(false);
       setSelectedKeys(new Set());
-      fetchOrder(true); // Refresh data to update status and disabled rows
+      setShowRefundModal(false);
+      fetchOrder(true); // Refresh data
     }
   };
 
@@ -105,7 +130,6 @@ const OrderDetails = () => {
   const orderStatusLower = order.status?.toLowerCase() || '';
   const isEligibleTime = (new Date() - new Date(order.order_date)) / (1000 * 3600 * 24) <= 30;
   
-  // Statuses where the button should be VISIBLE
   const isVisibleStatus = [
     'delivered', 
     'refund request sent', 
@@ -113,7 +137,6 @@ const OrderDetails = () => {
     'refund rejected'
   ].includes(orderStatusLower);
 
-  // Statuses where the button should be DISABLED (Locked)
   const isLockedStatus = [
     'refund request sent', 
     'refund accepted', 
@@ -126,7 +149,6 @@ const OrderDetails = () => {
   let visibleItems = [];
 
   if (isRefundMode) {
-    // EXPAND ITEMS: If quantity is 3, create 3 rows
     visibleItems = order.items.flatMap(item => {
       const totalQty = item.quantity || 1;
       const refundedQty = Number(item.refunded_quantity || 0);
@@ -134,14 +156,17 @@ const OrderDetails = () => {
       return Array.from({ length: totalQty }).map((_, idx) => ({
         ...item,
         uniqueKey: getExpandedKey(item.order_item_id, idx),
-        // The first N items are considered "already refunded"
         isAlreadyRefunded: idx < refundedQty, 
         displayIndex: idx + 1
       }));
     });
   } else {
-    // STANDARD VIEW: One row per product type
     visibleItems = order.items;
+  }
+
+  let displayOrderStatus = order.status;
+  if (['Refund Accepted', 'Refund Rejected'].includes(order.status)) {
+    displayOrderStatus = 'Delivered';
   }
 
   return (
@@ -166,8 +191,8 @@ const OrderDetails = () => {
             }}
           >
             {orderStatusLower === 'refund request sent' && 'Refund Request Pending'}
-            {orderStatusLower === 'refund accepted' && 'Refund Completed'}
-            {orderStatusLower === 'refund rejected' && 'Refund Request Denied'}
+            {orderStatusLower === 'refund accepted' && 'Refund Request Concluded'}
+            {orderStatusLower === 'refund rejected' && 'Refund Request Concluded'}
             {orderStatusLower === 'delivered' && 'Request Refund / Return'}
           </button>
         )}
@@ -185,9 +210,9 @@ const OrderDetails = () => {
             <button 
               className="submit-refund-btn"
               style={{ background: '#e11d48', color: 'white', padding: '8px 16px', borderRadius: '6px', border: 'none', cursor: 'pointer' }}
-              onClick={handleRefundSubmit}
+              onClick={handleRefundClick} // Changed from handleRefundSubmit to handleRefundClick
             >
-              Submit Refund ({selectedKeys.size})
+              Request Refund ({selectedKeys.size})
             </button>
           </div>
         )}
@@ -198,17 +223,25 @@ const OrderDetails = () => {
           Order #{order.order_id} 
           {isRefundMode && <span style={{ color: '#e11d48', marginLeft: '10px', fontSize: '0.8em' }}>(Select items to return)</span>}
         </h2>
-        <p style={{ marginBottom: '20px' }}>Status: <strong>{order.status}</strong></p>
+        <p style={{ marginBottom: '20px' }}>Status: <strong>{displayOrderStatus}</strong></p>
 
         <div className="order-items">
           {visibleItems.map(item => {
             const isSelected = isRefundMode && selectedKeys.has(item.uniqueKey);
             const isRefunded = isRefundMode && item.isAlreadyRefunded;
             
-            // In Refund Mode, we show unit price. In Normal Mode, we show line total.
             const displayPrice = isRefundMode 
               ? Number(item.price_at_purchase) 
               : Number(item.price_at_purchase) * (item.quantity || 1);
+
+            const requestedQty = Number(item.refund_requested_qty || 0);
+            const approvedQty = Number(item.refund_approved_qty || 0);
+            const rejectedQty = Number(item.refund_rejected_qty || 0);
+
+            const refundStatusParts = [];
+            if (requestedQty > 0) refundStatusParts.push(`Refund Pending: ${requestedQty}`);
+            if (approvedQty > 0) refundStatusParts.push(`Refund Accepted: ${approvedQty}`);
+            if (rejectedQty > 0) refundStatusParts.push(`Refund Rejected: ${rejectedQty}`);
 
             return (
               <div 
@@ -221,7 +254,6 @@ const OrderDetails = () => {
                    transition: 'all 0.2s'
                 }}
               >
-                {/* CHECKBOX - Only visible in Refund Mode */}
                 {isRefundMode && (
                    <div style={{ marginRight: '15px', display: 'flex', alignItems: 'center' }}>
                      {isRefunded ? (
@@ -258,6 +290,16 @@ const OrderDetails = () => {
                         Repurchase
                       </button>
                     )}
+
+                    {!isRefundMode && refundStatusParts.length > 0 && (
+                      <div className="refund-status-breakdown" style={{ marginTop: '5px', fontSize: '0.85rem', fontWeight: '500', color: '#666' }}>
+                        {refundStatusParts.map((part, i) => (
+                           <span key={i} style={{ marginRight: '15px', color: part.includes('Rejected') ? '#e11d48' : part.includes('Accepted') ? '#10b981' : '#f59e0b' }}>
+                             {part}
+                           </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -274,6 +316,42 @@ const OrderDetails = () => {
           <p>{order.shipping_address || 'Default Address'}</p>
         </div>
       </div>
+
+      {/* Refund Message Modal */}
+      {showRefundModal && (
+        <div className="refund-modal-overlay">
+          <div className="refund-modal">
+            <h3>Request Refund</h3>
+            <p>You are requesting a refund for <strong>{selectedKeys.size}</strong> item(s).</p>
+            <p className="refund-subtitle">Please explain why you are returning these items:</p>
+            
+            <textarea 
+              className="refund-textarea"
+              placeholder="e.g. Item defective, arrived damaged, changed mind..."
+              value={refundReason}
+              onChange={(e) => setRefundReason(e.target.value)}
+              autoFocus
+            />
+
+            <div className="refund-modal-actions">
+              <button 
+                className="cancel-btn modal-btn" 
+                onClick={() => setShowRefundModal(false)}
+                disabled={isSubmittingRefund}
+              >
+                Cancel
+              </button>
+              <button 
+                className="submit-refund-btn modal-btn" 
+                onClick={submitRefundRequest}
+                disabled={isSubmittingRefund}
+              >
+                {isSubmittingRefund ? 'Submitting...' : 'Confirm Request'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

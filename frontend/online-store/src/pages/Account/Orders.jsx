@@ -60,9 +60,14 @@ const Orders = () => {
       ) : (
         <div className="orders-list">
           {displayOrders.map(order => {
-            // FIX: Replace spaces with hyphens for CSS classes
-            // "Refund Rejected" -> "refund-rejected"
-            const statusClass = order.status.toLowerCase().replace(/\s+/g, '-');
+            // Logic to display "Delivered" for Refund Accepted/Rejected
+            let displayStatus = order.status;
+            if (['Refund Accepted', 'Refund Rejected'].includes(order.status)) {
+              displayStatus = 'Delivered';
+            }
+
+            // CSS class based on the DISPLAYED status
+            const statusClass = displayStatus.toLowerCase().replace(/\s+/g, '-');
 
             return (
               <div className="order-card" key={order.order_id}>
@@ -81,7 +86,7 @@ const Orders = () => {
                   <div className="order-actions">
                     {/* Apply the fixed class name */}
                     <span className={`status ${statusClass}`}>
-                      {order.status}
+                      {displayStatus}
                     </span>
 
                     <button

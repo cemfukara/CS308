@@ -143,11 +143,10 @@ export async function getUserOrders(userId) {
 }
 
 // --------------------------------------------------
-// Get items inside an order (UPDATED for Refund Logic)
+// Get items inside an order (UPDATED for Refund Breakdown)
 // --------------------------------------------------
 export async function getOrderItems(orderId, userId) {
-  // We Left Join with refunds to calculate how many of each item have been requested/refunded
-  // We exclude 'rejected' refunds so the user can try again if valid.
+  // We Left Join with refunds to calculate quantities for each status
   const [rows] = await db.query(
     `
       SELECT
@@ -158,6 +157,11 @@ export async function getOrderItems(orderId, userId) {
         p.name,
         p.model,
         p.currency,
+        -- Calculate quantities for each refund status
+        COALESCE(SUM(CASE WHEN r.status = 'requested' THEN r.quantity ELSE 0 END), 0) AS refund_requested_qty,
+        COALESCE(SUM(CASE WHEN r.status = 'approved' THEN r.quantity ELSE 0 END), 0) AS refund_approved_qty,
+        COALESCE(SUM(CASE WHEN r.status = 'rejected' THEN r.quantity ELSE 0 END), 0) AS refund_rejected_qty,
+        -- 'refunded_quantity' blocks selection. It includes requested + approved (not rejected).
         COALESCE(SUM(CASE WHEN r.status != 'rejected' THEN r.quantity ELSE 0 END), 0) AS refunded_quantity
       FROM order_items oi
       JOIN products p ON oi.product_id = p.product_id

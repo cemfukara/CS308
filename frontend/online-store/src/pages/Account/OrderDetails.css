@@ -212,3 +212,107 @@
 .animate-leave {
   animation: leave 0.3s ease-in forwards;
 }
+
+/* Refund Modal Styles */
+.refund-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(2px);
+  animation: fadeIn 0.2s ease;
+}
+
+.refund-modal {
+  background: white;
+  width: 90%;
+  max-width: 500px;
+  
+  padding: 25px 40px 25px 25px; 
+  
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  animation: slideUp 0.3s ease;
+}
+
+.refund-modal h3 {
+  margin: 0 0 10px 0;
+  color: #111827;
+  font-size: 1.4rem;
+}
+
+.refund-subtitle {
+  color: #4b5563;
+  margin-bottom: 12px;
+  font-size: 0.95rem;
+}
+
+.refund-textarea {
+  width: 100%;
+  height: 120px;
+  padding: 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  resize: vertical;
+  margin-bottom: 20px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.refund-textarea:focus {
+  border-color: #e11d48;
+  box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.1);
+}
+
+.refund-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.modal-btn {
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: opacity 0.2s;
+}
+
+.modal-btn.cancel-btn {
+  background-color: #f3f4f6;
+  color: #374151;
+}
+
+.modal-btn.cancel-btn:hover {
+  background-color: #e5e7eb;
+}
+
+.modal-btn.submit-refund-btn {
+  background-color: #e11d48;
+  color: white;
+}
+
+.modal-btn.submit-refund-btn:hover {
+  background-color: #be123c;
+}
+
+.modal-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
