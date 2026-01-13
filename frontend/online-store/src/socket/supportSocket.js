@@ -5,7 +5,7 @@ import { io } from 'socket.io-client';
 const SOCKET_URL =
   import.meta.env.VITE_SOCKET_URL?.replace(/\/$/, '') ||
   import.meta.env.VITE_API_URL?.replace(/\/$/, '') ||
-  'http://localhost:5173';
+  'http://localhost:5000';
 
 let socket = null;
 
