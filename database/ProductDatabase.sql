@@ -250,6 +250,7 @@ CREATE TABLE support_attachments (
 -- DATA INSERTIONS
 -- =========================
 
+
 -- 02_data.sql
 -- Seed data
 
